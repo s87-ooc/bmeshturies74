@@ -17,7 +17,7 @@
 #include <fstream>
 
 #include "algebra.h"
-//#include "mesh.h"
+#include "mesh.h"
 //#include "visualization.h"
 
 using namespace std;
@@ -186,6 +186,15 @@ int main(int argc, char* argv[])
 		
 		cout << d << endl;
 	}
+    
+    {
+        ifstream meshfile;
+        meshfile.open("data/mesh/mesh.msh", ios::in);
+        
+        Mesh M;
+        meshfile >> M;
+        
+    }
 
 	return 0;
 }
