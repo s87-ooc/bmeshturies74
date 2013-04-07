@@ -103,9 +103,9 @@ public:
     unsigned int sizeColumns() const;
     unsigned int sizeRows() const;
     unsigned int sizeNNZ() const;
-    
-    double operator() (unsigned int col, unsigned int row) const;
-    double& operator() (unsigned int col, unsigned int row);
+
+    double operator() (unsigned int row, unsigned int col) const;
+    double& operator() (unsigned int row, unsigned int col);
     
 	/** solve Ax = b with jacobi */
     Vector jacobi(Vector const& v) const;
