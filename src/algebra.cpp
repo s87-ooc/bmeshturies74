@@ -17,106 +17,110 @@
 
 #include <cstring>
 #include <assert.h>
+#include <math.h>
 
+// ----------------------------------------------------------------------------
 
-Vector::Vector(unsigned int size):
-vals_(size), col_vect(true)
+#define JACOBI_TOLERANCE 0.000001
+
+// ----------------------------------------------------------------------------
+
+Vector::Vector()
+{
+}
+
+Vector::Vector(unsigned int size) :
+mVals(size)
 {
 }
 
 Vector::Vector(TVals &vals):
-vals_(vals), col_vect(true)
+mVals(vals)
 {
 }
 
 unsigned int Vector::size() const
 {
-	return (int)vals_.size();
+	return mVals.size();
 }
 
 
 double Vector::norm2() const
 {
-	double norm = 0;
-	
-	for (int i = 0; i < vals_.size(); i++)
-		norm += pow(vals_[0], 2);
-	
-	return sqrt(norm);
+	return sqrt(dot(*this, *this));
 }
 
-double Vector::operator()(unsigned int pos) const
+double Vector::operator() (unsigned int pos) const
 {
-	return vals_[pos];
+	return mVals[pos];
 }
 
-double& Vector::operator()(unsigned int pos)
+double& Vector::operator() (unsigned int pos)
 {
-	return vals_[pos];
+	return mVals[pos];
 }
 
-Vector Vector::operator*(Sparse const& M) const
+Vector Vector::operator+ (Vector const& v) const
 {
-	int n = (*this).size();
-	Vector res(n);
-	
-    // implement multiplication
-    
-	
-	return res;
-}
+	assert(v.size() == mVals.size());
 
-Vector Vector::operator*(double s) const
-{
-    int n = (int)vals_.size();
-	Vector res(n);
-	
-	for (int i = 0; i < n; i++)
-		res(i) = s * vals_[i];
-	
-	return res;
-}
-
-Vector Vector::operator+(Vector const& v) const
-{
     int n = v.size();
 	Vector res(n);
 	
 	for (int i = 0; i < n; i++)
-		res(i) = vals_[i] + v(i);
+		res(i) = mVals[i] + v(i);
 	
 	return res;
 }
 
 
-Vector Vector::operator-(Vector const& v) const
+Vector Vector::operator- (Vector const& v) const
 {
+	assert(v.size() == mVals.size());
+
     int n = v.size();
 	Vector res(n);
 	
 	for (int i = 0; i < n; i++)
-		res(i) = vals_[i] - v(i);
+		res(i) = mVals[i] - v(i);
 	
 	return res;
 }
 
-Vector& Vector::operator+=(Vector &v)
+
+Vector& Vector::operator+= (Vector &v)
 {
+	assert(v.size() == mVals.size());
+
 	for (int i = 0; i < v.size(); i++)
-		vals_[i] += v(i);
+		mVals[i] += v(i);
     
 	return *this;
 }
 
-Vector& Vector::operator-=(Vector &v)
+Vector& Vector::operator-= (Vector &v)
 {
+	assert(v.size() == mVals.size());
+
 	for (int i = 0; i < v.size(); i++)
-		vals_[i] -= v(i);
+		mVals[i] -= v(i);
 	
 	return *this;
 }
 
-// ----------------------------------------------------------------------------
+Vector& Vector::operator*= (const double s)
+{
+	for (int i = 0; i < mVals.size(); i++)
+		mVals[i] *= s;
+	
+	return *this;
+}
+
+istream& operator>> (istream &in, Vector& v)
+{
+	// TODO
+	return in;
+}
 
 ostream& operator<<(ostream &out, Vector& v)
 {
@@ -130,152 +134,241 @@ ostream& operator<<(ostream &out, Vector& v)
 	return out;
 }
 
-// ----------------------------------------------------------------------------
+Vector operator* (const Vector& v, const double s)
+{
+	Vector res(v.size());
 
+	for (int i = 0; i < res.size(); i++)
+		res(i) = v(i) * s;
+	
+	return res;
+}
+
+Vector operator* (const double s, const Vector& v)
+{
+	Vector res(v.size());
+
+	for (int i = 0; i < res.size(); i++)
+		res(i) = v(i) * s;
+	
+	return res;
+}
+
+double dot(const Vector& v1, const Vector& v2)
+{
+	assert(v1.size() == v2.size());
+
+	double res = 0.0;
+
+	for (int i = 0; i < v1.size(); i++)
+		res += v1(i) * v2(i);
+
+	return res;
+}
+
+// ----------------------------------------------------------------------------
 
 Sparse::Sparse()
 {
 }
 
-Sparse::Sparse(unsigned int nrows, unsigned int ncols):
-nrows_(nrows), ncols_(ncols)
+Sparse::Sparse(const Sparse& m) :
+mVals(m.mVals),
+mColInd(m.mColInd),
+mRowPtr(m.mRowPtr),
+mColumns(m.mColumns)
 {
 }
 
-unsigned int Sparse::ncols() const
+Sparse::Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, unsigned int columns) :
+mVals(vals),
+mColInd(colInd),
+mRowPtr(rowPtr),
+mColumns(columns)
 {
-    return ncols_;
 }
 
-unsigned int Sparse::nrows() const
+unsigned int Sparse::sizeColumns() const
 {
-    return nrows_;
+    return mColumns;
 }
 
-unsigned int Sparse::nnz() const
+unsigned int Sparse::sizeRows() const
 {
-    return nnz_;
+	assert(mRowPtr.size() > 0);
+
+    return mRowPtr.size() - 1;
 }
 
-istream& operator >>(istream &is, Sparse &M)
+unsigned int Sparse::sizeNNZ() const
+
 {
-    is >> M.nrows_ >> M.ncols_ >> M.nnz_;
-    
-    M.col_ind = TInd(M.nnz_);
-    M.row_ptr = TInd(M.nrows_+1, -1);
-    M.vals = TVals(M.nnz_);
-    
-    int r;
-    
-    for(int k = 0; k < M.nnz_; k++)
+    return mVals.size();
+}
+
+double Sparse::operator() (unsigned int row, unsigned int col) const
+{
+    assert(row < sizeRows() && col < sizeColumns());
+
+    for (unsigned int i = mRowPtr[row]; i < mRowPtr[row+1]; i++)
     {
-        is >> r >> M.col_ind[k] >> M.vals[k];
-        if (M.row_ptr[r] < 0) { M.row_ptr[r] = k; }
-    }
-    
-    M.row_ptr[M.nnz_] = M.row_ptr[M.nnz_ - 1] + 1;
-    
-    return is;
-}
-
-ostream& operator <<(ostream &os, Sparse &M)
-{
-    return os;
-}
-
-
-double Sparse::operator()(unsigned int row, unsigned int col) const
-{
-    cout << "operator() const" << endl;
-    if (row > nrows_-1 || col > ncols_-1)
-    {
-        cout << "Erreur de dimension de la matrice" << endl;
-        return 0.0;
-    }
-    
-    for (int i = row_ptr[row]; i < row_ptr[row+1]; i++)
-    {
-        if ( col_ind[i] == col)
-            return vals[i];
+        if (mColInd[i] == col)
+			return mVals[i];
     }
     
     return 0.0;
 }
 
-double& Sparse::operator()(unsigned int row, unsigned int col)
+double& Sparse::operator() (unsigned int row, unsigned int col)
 {
-    cout << "operator() non-const" << endl;
-    
-    if (row > nrows_-1 || col > ncols_-1)
+    assert(row < sizeRows() && col < sizeColumns());
+
+    for (unsigned int i = mRowPtr[row]; i < mRowPtr[row+1]; i++)
     {
-        cout << "Erreur de dimension de la matrice" << endl;
-        return vals[0];
+        if (mColInd[i] == col)
+			return mVals[i];
     }
     
-    
-    return vals[0];
-}
+	// we never add new nnz elements at this point
+	cout << "Can't add new NNZ element here!" << endl;
+	assert(false);
 
-
-
-Vector Sparse::operator*(Vector const& x) const
-{
-    // dimension check
-    // if (ncols != v.size()) { // throw error }
-    
-    TVals y(ncols_);
-    for(int i=0; i<nrows_; i++)
-    {
-        y[i] = 0.0;
-        for(int k = row_ptr[i]; k < row_ptr[i+1]; k++)
-        {
-            y[i] += vals[k]*x(col_ind[k]);
-        }
-    }
-    return y;
+	// won't be called
+    return mVals[0];
 }
 
 Vector Sparse::jacobi(Vector const& b) const
 {
-    Vector x1(ncols_);
-    Vector x2(ncols_);
+    Vector x1(sizeColumns());
+    Vector x2(sizeColumns());
     Vector& xcur = x1;
     Vector& xnew = x2;
     
-    int k = 0;
+    unsigned int k = 0;
     double diag;
     bool convergence = false;
     
     while (!convergence)
     {
-        for(int i=0; i<nrows_; i++)
+        for(unsigned int i = 0; i < sizeRows(); i++)
         {
             xnew(i) = b(i);
             diag = 0;
             // iterate over the ith row of the matrix
-            for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+
+            for (k = mRowPtr[i]; k < mRowPtr[i+1]; k++)
             {
-                if( col_ind[k] != i)
-                    xnew(i) -= vals[k]*xcur(col_ind[k]);
+                if(mColInd[k] != i)
+					xnew(i) -= mVals[k] * xcur(mColInd[k]);
+
                 else
-                    diag = vals[k];
+                    diag = mVals[k];
             }
-            // do zero check
+
             xnew(i) /= diag;
         }
-        // TODO: convergence check
+
+		convergence = (xnew - xcur).norm2() < JACOBI_TOLERANCE;
+
         // implement equality operator for Vector
+		Vector& xtmp = xcur;
         xcur = xnew;
+		xnew = xtmp;
     }
-    
+   
     return xnew;
-    
 }
 
-
-
-Vector Sparse::gradient_conj(Vector const& b) const
+Vector Sparse::conjGradient(Vector const& b) const
 {
-    Vector p = b - (*this)*b;
+	// TODO: Implement!
+	Vector p;
     return p;
 }
+
+Vector Sparse::LU(Vector const& v, Sparse* m) const
+{
+	Vector p;
+	return p;
+}
+
+istream& operator >> (istream &is, Sparse &m)
+{
+	unsigned int sizeRows, sizeColumns, sizeNNZ;
+	is >> sizeRows >> sizeColumns >> sizeNNZ;
+
+    TVals vals(sizeNNZ);    
+	TInd colInd(sizeNNZ);
+	TInd rowPtr(sizeRows + 1);
+    
+    unsigned int r;
+    
+    for(unsigned int k = 0; k < sizeNNZ; k++)
+    {
+        is >> r >> colInd[k] >> vals[k];
+        if (k == 0 || r > rowPtr[k-1])
+        {
+			rowPtr[r] = k;
+		}
+    }
+    
+    rowPtr[sizeRows] = rowPtr[sizeRows - 1] + 1;
+    
+    m = Sparse(vals, colInd, rowPtr, sizeColumns);
+    
+    return is;
+}
+
+ostream& operator<< (ostream &os, Sparse &m)
+{
+	cout << m.sizeRows() << " "
+		<< m.sizeColumns() << " "
+		<< m.sizeNNZ() << endl;
+	
+	for (unsigned int i = 0; i < m.sizeRows(); i++)
+	{
+		for (unsigned int k = m.mRowPtr[i]; k < m.mRowPtr[i+1]; k++)
+		{
+			cout << i << " " << m.mColInd[k] << " " << m.mVals[k] << endl;
+		}
+	}
+
+    return os;
+}
+
+Vector operator* (const Vector& v, const Sparse& m)
+{
+	Vector res(m.sizeColumns());
+    
+    // TODO (maybe)
+    
+    return res;
+}
+
+Vector operator* (const Sparse& m, const Vector& v)
+{
+    assert(m.sizeColumns() == v.size());
+    
+    Vector res(m.sizeColumns());
+    
+    for(unsigned int i = 0; i < m.sizeRows(); i++)
+    {
+        for(unsigned int k = m.mRowPtr[i]; k < m.mRowPtr[i+1]; k++)
+        {
+            res(i) += m.mVals[k] * v(m.mColInd[k]);
+        }
+    }
+    
+    return res;
+}
+
+double prod (const Vector& v1, const Sparse& m, const Vector& v2)
+{
+	double res;
+	
+	Vector vTmp = m * v2;
+	res = dot(v1, vTmp);
+	
+	return res;
+}
+

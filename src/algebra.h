@@ -19,7 +19,6 @@
 
 #include <iostream>
 #include <vector>
-#include <math.h>
 
 using namespace std;
 
@@ -34,6 +33,8 @@ class Vector
 {
 private:
 	TVals mVals;
+
+	// ---
 
 	friend istream& operator>> (istream &in, Vector& v);
 	friend ostream& operator<< (ostream &out, Vector& v);
@@ -68,27 +69,36 @@ double dot(const Vector& v1, const Vector& v2);
 
 // ----------------------------------------------------------------------------
 
+/** General assumption: we don't have empty rows */
+
 class Sparse
 {
 private:
     TVals mVals;
-    TInd mColInd, mRowPtr;
-    
+    TInd mColInd;
+	/** number of rows + 1, last entry is last nnz in row + 1 */
+	TInd mRowPtr;
+
+	unsigned int mColumns;
+
+	// ---
+
+	/** format: "i j value", row i ascending */
     friend istream& operator >>(istream&, Sparse&);
     friend ostream& operator <<(ostream&, Sparse&);
 
+	/// (v' * m)' ?!
 	friend Vector operator* (const Vector& v, const Sparse& m);
 	friend Vector operator* (const Sparse& m, const Vector& v);
 
-	/// x' * m * x
-	friend double prod (const Vector& v, const Sparse& m);
+	/// v1' * m * v2
+	friend double prod (const Vector& v1, const Sparse& m, const Vector& v2);
     
 public:
     Sparse();
     Sparse(const Sparse& m);
 
-    Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr);
-    Sparse(unsigned int nrows, unsigned int ncols);
+    Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, unsigned int columns);
     
     unsigned int sizeColumns() const;
     unsigned int sizeRows() const;
@@ -97,8 +107,14 @@ public:
     double operator() (unsigned int col, unsigned int row) const;
     double& operator() (unsigned int col, unsigned int row);
     
+	/** solve Ax = b with jacobi */
     Vector jacobi(Vector const& v) const;
-    Vector gradient_conj(Vector const& v) const;
+
+	/** solve Ax = b with conjugate Gradient */
+    Vector conjGradient(Vector const& v) const;
+
+	/** solve Ax = b with LU, return decomposition if needed */
+    Vector LU(Vector const& v, Sparse* m = 0) const;
 };
 
 
