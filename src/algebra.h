@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 
 using namespace std;
 
@@ -99,7 +100,9 @@ public:
     Sparse(const Sparse& m);
 
     Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, unsigned int columns);
-    
+    Sparse(const map<int, double>& M, unsigned int rows, unsigned int cols);
+
+
     unsigned int sizeColumns() const;
     unsigned int sizeRows() const;
     unsigned int sizeNNZ() const;

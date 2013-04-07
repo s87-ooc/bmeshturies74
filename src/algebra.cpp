@@ -188,6 +188,32 @@ mColumns(columns)
 {
 }
 
+Sparse::Sparse(const map<int, double>& M, unsigned int sizeRows, unsigned int sizeColumns):
+mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mColumns(sizeColumns)
+{
+	int k = 0;
+	int index, row_cur, row_prev=-1;
+	for(map<int,double>::const_iterator iter = M.begin(); iter != M.end(); ++iter)
+	{
+		index = iter->first;
+		mColInd[k] = index % sizeColumns;
+		mVals[k] = iter->second;
+		row_cur = index / sizeColumns;
+
+		if (row_cur > row_prev)
+        {
+			mRowPtr[row_cur] = k;
+		}
+		row_prev = row_cur;
+		k++;
+	}
+
+	mRowPtr[sizeRows] = mRowPtr[sizeRows - 1] + 1;
+
+
+}
+
+
 unsigned int Sparse::sizeColumns() const
 {
     return mColumns;
@@ -302,14 +328,16 @@ istream& operator >> (istream &is, Sparse &m)
 	TInd rowPtr(sizeRows + 1);
     
     unsigned int r;
+    int row_cur, row_prev=-1;
     
     for(unsigned int k = 0; k < sizeNNZ; k++)
     {
-        is >> r >> colInd[k] >> vals[k];
-        if (k == 0 || r > rowPtr[k-1])
+        is >> row_cur >> colInd[k] >> vals[k];
+		if (row_cur > row_prev)
         {
-			rowPtr[r] = k;
+			rowPtr[row_cur] = k;
 		}
+		row_prev = row_cur;
     }
     
     rowPtr[sizeRows] = rowPtr[sizeRows - 1] + 1;
