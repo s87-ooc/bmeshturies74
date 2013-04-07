@@ -16,7 +16,6 @@
 #include <iostream>
 #include <math.h>
 
-
 #include "mesh.h"
 
 using namespace std;
@@ -51,9 +50,6 @@ label(label), id(id)
     V.push_back(a);
     V.push_back(b);
 }
-
-
-
 
 istream& operator>>(istream &is, Mesh &M)
 {

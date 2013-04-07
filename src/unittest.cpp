@@ -18,7 +18,7 @@
 
 #include "algebra.h"
 #include "mesh.h"
-//#include "visualization.h"
+#include "visualization.h"
 
 using namespace std;
 
@@ -193,7 +193,17 @@ int main(int argc, char* argv[])
         
         Mesh M;
         meshfile >> M;
+    }
+	
+	{
+        ifstream meshfile;
+        meshfile.open("data/mesh/mesh.msh", ios::in);
         
+        Mesh M;
+        meshfile >> M;
+		
+		Plot p("plot01", "data/_gnuplot/surface.ptpl", &M);
+		p.generate(true);
     }
 
 	return 0;

@@ -23,6 +23,8 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------------
+
 class Vertex;
 class Triangle;
 
@@ -34,6 +36,8 @@ public:
     int label;
     Vertex(double x, double y, int label, int id);
 };
+
+// ----------------------------------------------------------------------------
 
 class Triangle {
 private:
@@ -47,6 +51,8 @@ public:
 
 };
 
+// ----------------------------------------------------------------------------
+
 class BoundEdge {
 public:
     vector<Vertex*> V;
@@ -56,20 +62,28 @@ public:
     BoundEdge(Vertex* a, Vertex* b, int label, int id);
 };
 
+// ----------------------------------------------------------------------------
+
+class Plot;
+
+typedef vector<Vertex> TVertices;
+typedef vector<Triangle> TTriangles;
+typedef vector<BoundEdge> TEdges;
+
 class Mesh {
 private:
     friend istream& operator >>(istream &is, Mesh &obj);
-    
-    
+    friend class Plot;
+	
 public:
+	// Stjepan: the following ints should be only local in >> and UNSIGNED!!! :-P
     int Nv;
     int Nt;
     int Ne;
-    vector<Vertex> V;
-    vector<Triangle> T;
-    vector<BoundEdge> E;
+	
+    TVertices V;
+    TTriangles T;
+    TEdges E;
 };
-
-typedef Mesh maillage;
 
 #endif // __MESH_H__
