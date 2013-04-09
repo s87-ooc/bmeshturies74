@@ -48,6 +48,29 @@ void dump(Sparse& m)
 	cout << "] " << m.sizeRows() << "x" << m.sizeColumns() << endl;
 }
 
+void dump(const SparseLIL& m)
+{
+	if (m.sizeColumns() > 10 || m.sizeRows() > 10)
+	{
+		cout << "Matrix is bigger than 9x9, use the << operator to print it" << endl;
+	}
+	
+	cout << "[ ";
+	for (uint i = 0; i < m.sizeRows(); i++)
+	{
+		for (uint j = 0; j < m.sizeColumns(); j++)
+		{
+			cout << m(i, j) << " ";
+		}
+		
+		if (i < m.sizeRows() - 1)
+		{
+			cout << "; ";
+		}
+	}
+	cout << "] " << m.sizeRows() << "x" << m.sizeColumns() << endl;
+}
+
 // ----------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
@@ -112,6 +135,70 @@ int main(int argc, char* argv[])
 		dump(t);
 	}
 
+	{
+		cout << "= Matrix LIL" << endl;
+		
+		SparseLIL m(3, 4);
+	
+		m(0, 1) = 2.0;
+		m(0, 3) = 4.0;
+		m(1, 1) = 1.0;
+		m(2, 1) = 5.0;
+		m(2, 0) = 3.0;
+	
+		dump(m);
+		
+		cout << "Rows: " << m.sizeRows() << endl;
+		cout << "Columns: " << m.sizeColumns() << endl;
+		cout << "NNZ: " << m.sizeNNZ() << endl;
+		
+		SparseLIL n(m);
+		dump(n);
+	}
+
+	{
+		cout << "= Matrix <-> Matrix LIL conversions" << endl;
+		
+		SparseLIL matLIL(3, 4);
+	
+		matLIL(0, 1) = 2.0;
+		matLIL(0, 3) = 4.0;
+		matLIL(1, 1) = 1.0;
+		matLIL(2, 1) = 5.0;
+		matLIL(2, 0) = 3.0;
+		
+		dump(matLIL);
+		
+		Sparse m(matLIL);
+		dump(m);
+		
+		// ---
+		
+		TVals vals;
+		vals.push_back(2.);
+		vals.push_back(1.);
+		vals.push_back(5.);
+		vals.push_back(7.);
+
+	    TInd colInd;
+		colInd.push_back(0);
+		colInd.push_back(1);
+		colInd.push_back(0);
+		colInd.push_back(2);
+
+		TInd rowPtr;
+		rowPtr.push_back(0);
+		rowPtr.push_back(2);
+		rowPtr.push_back(4);
+
+		Sparse s(vals, colInd, rowPtr, 3);
+		dump(s);
+		
+		SparseLIL nLIL(s);
+		dump(nLIL);
+	}
+	
+	
 	{
 		cout << "= Jacobi solver" << endl;
 	

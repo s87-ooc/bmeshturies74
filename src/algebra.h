@@ -32,7 +32,7 @@
 
 typedef std::vector<double> TVals;
 typedef std::map<int, double> TValsMap;
-typedef std::vector<int> TInd;
+typedef std::vector<uint> TInd;
 
 // ----------------------------------------------------------------------------
 
@@ -95,9 +95,9 @@ class SparseLIL
 {
 private:
 	/** values per row */
-	TVals mRowVals[]; // should we use pointers here?
+	TVals* mRowVals; // should we use pointers here?
 	/** column indices per row */
-	TInd mColInd[];
+	TInd* mColInd;
 	
 	uint mSizeRows;
 	uint mSizeColumns;
@@ -108,6 +108,8 @@ private:
 
 public:
 	SparseLIL();
+	~SparseLIL();
+	
 	SparseLIL(const SparseLIL& m);
 	
 	/** create empty sparse matrix with specified dimensions */
@@ -117,6 +119,8 @@ public:
 	SparseLIL(const Sparse& matCSR);
 
     double operator() (uint row, uint col) const;
+	
+	/** before assigning values at (i, j) make sure not to add zeros */
     double& operator() (uint row, uint col);
 
 	uint sizeColumns() const;

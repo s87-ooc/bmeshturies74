@@ -168,41 +168,105 @@ double dot(const Vector& v1, const Vector& v2)
 
 SparseLIL::SparseLIL() :
 mSizeRows(0),
-mSizeColumns(0)
+mSizeColumns(0),
+mRowVals(0),
+mColInd(0)
 {
+}
+
+SparseLIL::~SparseLIL()
+{
+	if (mRowVals)
+	{
+		delete mRowVals;
+	}
+	
+	if (mColInd)
+	{
+		delete mColInd;
+	}
 }
 
 SparseLIL::SparseLIL(const SparseLIL& m) :
 mSizeRows(m.sizeRows()),
 mSizeColumns(m.sizeColumns())
 {
-	// TODO
+	mRowVals = new TVals[mSizeRows];
+	mColInd = new TInd[mSizeRows];
+	
+	mRowVals = m.mRowVals;
+	mColInd = m.mColInd;
 }
 
 SparseLIL::SparseLIL(uint rows, uint columns) :
 mSizeRows(rows),
 mSizeColumns(columns)
 {
+	mRowVals = new TVals[rows];
+	mColInd = new TInd[rows];
+
+	// all values are zero by default
 }
 
 SparseLIL::SparseLIL(const Sparse& matCSR) :
 mSizeRows(matCSR.sizeRows()),
 mSizeColumns(matCSR.sizeColumns())
 {
-	// TODO
+	mRowVals = new TVals[mSizeRows];
+	mColInd = new TInd[mSizeRows];
+
+	for(uint i = 0; i < matCSR.sizeRows(); i++)
+	{
+		// K = index of values
+		for (uint k = matCSR.mRowPtr[i]; k < matCSR.mRowPtr[i+1]; k++)
+		{
+			mRowVals[i].push_back(matCSR.mVals[k]);
+			mColInd[i].push_back(matCSR.mColInd[k]);
+		}
+	}
 }
 
 double SparseLIL::operator() (uint row, uint col) const
 {
-	// TODO
+	for (uint i = 0; i < mRowVals[row].size(); i++)
+	{
+		if (mColInd[row][i] == col)
+		{
+			return mRowVals[row][i];
+		}
+		else if (mColInd[row][i] > col)
+		{
+			return 0.0;
+		}
+	}
+	
 	return 0.0;
 }
 
 double& SparseLIL::operator() (uint row, uint col)
 {
-	// TODO
-	double* pNull = 0;
-	return *pNull;
+	TVals::iterator it;
+	TInd::iterator itInd;
+	
+	for (it = mRowVals[row].begin(), itInd = mColInd[row].begin();
+		it != mRowVals[row].end(), itInd != mColInd[row].end();
+		++it, ++itInd)
+	{
+		if (*itInd == col)
+		{
+			return *it;
+		}
+		else if (*itInd > col)
+		{
+			break;
+		}
+	}
+	
+	// create a new entry
+	TVals::iterator itNew = mRowVals[row].insert(it, 0.0);
+	mColInd[row].insert(itInd, col);
+
+	return *itNew;
 }
 
 uint SparseLIL::sizeColumns() const
@@ -217,8 +281,14 @@ uint SparseLIL::sizeRows() const
 
 uint SparseLIL::sizeNNZ() const
 {
-	// TODO
-	return 0;
+	uint nnz = 0;
+	
+	for (uint i = 0; i < mSizeRows; i++)
+	{
+		nnz += mRowVals[i].size();
+	}
+	
+	return nnz;
 }
 
 // ----------------------------------------------------------------------------
@@ -265,14 +335,25 @@ mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mSizeColumns(sizeColumn
 	}
 
 	mRowPtr[sizeRows] = mRowPtr[sizeRows - 1] + 1;
-
-
 }
 
 Sparse::Sparse(const SparseLIL& matLIL) :
 mSizeColumns(matLIL.sizeColumns())
 {
-	// TODO
+	uint k = 0;
+	
+	mRowPtr.push_back(0);
+	
+	for (uint i = 0; i < matLIL.sizeRows(); i++)
+	{
+		for (uint j = 0; j < matLIL.mRowVals[i].size(); j++)
+		{
+			mVals.push_back(matLIL.mRowVals[i][j]);
+			mColInd.push_back(matLIL.mColInd[i][j]);
+			k++;
+		}
+		mRowPtr.push_back(k);
+	}
 }
 
 unsigned int Sparse::sizeColumns() const
@@ -319,7 +400,7 @@ Vector Sparse::jacobi(Vector const& b) const
     
     while (!convergence)
     {
-        for(unsigned int i = 0; i < sizeRows(); i++)
+        for(uint i = 0; i < sizeRows(); i++)
         {
             // iterate over the ith row of the matrix
 
