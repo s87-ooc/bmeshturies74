@@ -24,6 +24,32 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+// use this helper function only for very small sparse matrices!
+void dump(Sparse& m)
+{
+	if (m.sizeColumns() > 10 || m.sizeRows() > 10)
+	{
+		cout << "Matrix is bigger than 9x9, use the << operator to print it" << endl;
+	}
+	
+	cout << "[ ";
+	for (uint i = 0; i < m.sizeRows(); i++)
+	{
+		for (uint j = 0; j < m.sizeColumns(); j++)
+		{
+			cout << m(i, j) << " ";
+		}
+		
+		if (i < m.sizeRows() - 1)
+		{
+			cout << "; ";
+		}
+	}
+	cout << "] " << m.sizeRows() << "x" << m.sizeColumns() << endl;
+}
+
+// ----------------------------------------------------------------------------
+
 int main(int argc, char* argv[])
 {
 	cout << "== Unittest ==" << endl;
@@ -74,12 +100,12 @@ int main(int argc, char* argv[])
 		rowPtr.push_back(4);
 
 		Sparse s(vals, colInd, rowPtr, 2);
-		cout << s << endl;
+		dump(s);
 
 		Sparse t;
 
 		t = s;
-		cout << t << endl;
+		dump(t);
 	}
 
 	{
@@ -103,7 +129,7 @@ int main(int argc, char* argv[])
 		rowPtr.push_back(4);
 
 		Sparse s(vals, colInd, rowPtr, 2);
-		cout << s << endl;
+		dump(s);
 
 		// Jacobi test
 		Vector b(2);
@@ -111,6 +137,42 @@ int main(int argc, char* argv[])
 		b(1) = 13.;
 
 		// [ 2 1 ; 5 7 ] * [ x ; y ] = [ 11 ; 13 ]
+		Vector solution = s.jacobi(b);
+		cout << solution << endl;
+	}
+	
+	{
+		// [ 1 c ; 0 1 ] 2x2
+
+		double c = 100.;
+		
+	    TVals vals;
+		vals.push_back(1.);
+		vals.push_back(c);
+		vals.push_back(1.);
+
+	    TInd colInd;
+		colInd.push_back(0);
+		colInd.push_back(1);
+		colInd.push_back(1);
+
+		TInd rowPtr;
+		rowPtr.push_back(0);
+		rowPtr.push_back(2);
+		rowPtr.push_back(3);
+
+		Sparse s(vals, colInd, rowPtr, 2);
+		dump(s);
+
+		// Jacobi test
+		Vector b(2);
+		
+		b(0) = JACOBI_TOLERANCE;
+		b(1) = JACOBI_TOLERANCE;
+
+		// [ 1 c ; 0 1 ] * [ x ; y ] = [ JACOBI_TOLERANCE ; JACOBI_TOLERANCE ]
+		// exact solution: [ JACOBI_TOLERANCE * (1 - c) ; JACOBI_TOLERANCE ]
+		// for big c this solution is FAR from [ 0 ; 0 ] !
 		Vector solution = s.jacobi(b);
 		cout << solution << endl;
 	}
@@ -132,7 +194,7 @@ int main(int argc, char* argv[])
 		rowPtr.push_back(2);
 
 		Sparse s(vals, colInd, rowPtr, 2);
-		cout << s << endl;
+		dump(s);
 
 		// Jacobi test
 		Vector b(2);
@@ -149,7 +211,7 @@ int main(int argc, char* argv[])
 		ifstream f("data/mtest01.dat");
 		f >> m;
 		
-		cout << m << endl;
+		dump(m);
 	}
 
 	{
@@ -203,7 +265,7 @@ int main(int argc, char* argv[])
         meshfile >> M;
 		
 		Plot p("plot01", "data/_gnuplot/surface.ptpl", &M);
-		p.generate(true);
+		//p.generate(true);
     }
 
 	return 0;
