@@ -79,7 +79,7 @@ Vector Vector::operator- (Vector const& v) const
     int n = v.size();
 	Vector res(n);
 	
-	for (int i = 0; i < n; i++)
+	for (uint i = 0; i < n; i++)
 		res(i) = mVals[i] - v(i);
 	
 	return res;
@@ -90,7 +90,7 @@ Vector& Vector::operator+= (Vector &v)
 {
 	assert(v.size() == mVals.size());
 
-	for (int i = 0; i < v.size(); i++)
+	for (uint i = 0; i < v.size(); i++)
 		mVals[i] += v(i);
     
 	return *this;
@@ -100,7 +100,7 @@ Vector& Vector::operator-= (Vector &v)
 {
 	assert(v.size() == mVals.size());
 
-	for (int i = 0; i < v.size(); i++)
+	for (uint i = 0; i < v.size(); i++)
 		mVals[i] -= v(i);
 	
 	return *this;
@@ -108,7 +108,7 @@ Vector& Vector::operator-= (Vector &v)
 
 Vector& Vector::operator*= (const double s)
 {
-	for (int i = 0; i < mVals.size(); i++)
+	for (uint i = 0; i < mVals.size(); i++)
 		mVals[i] *= s;
 	
 	return *this;
@@ -123,7 +123,7 @@ istream& operator>> (istream &in, Vector& v)
 ostream& operator<<(ostream &out, Vector& v)
 {
 	cout << "[ ";
-	for (int i = 0; i < v.size(); i++)
+	for (uint i = 0; i < v.size(); i++)
 	{
 		out << v(i) << " ";
 	}
@@ -136,7 +136,7 @@ Vector operator* (const Vector& v, const double s)
 {
 	Vector res(v.size());
 
-	for (int i = 0; i < res.size(); i++)
+	for (uint i = 0; i < res.size(); i++)
 		res(i) = v(i) * s;
 	
 	return res;
@@ -146,7 +146,7 @@ Vector operator* (const double s, const Vector& v)
 {
 	Vector res(v.size());
 
-	for (int i = 0; i < res.size(); i++)
+	for (uint i = 0; i < res.size(); i++)
 		res(i) = v(i) * s;
 	
 	return res;
@@ -158,15 +158,13 @@ double dot(const Vector& v1, const Vector& v2)
 
 	double res = 0.0;
 
-	for (int i = 0; i < v1.size(); i++)
+	for (uint i = 0; i < v1.size(); i++)
 		res += v1(i) * v2(i);
 
 	return res;
 }
 
 // ----------------------------------------------------------------------------
-
-
 
 SparseLIL::SparseLIL() :
 mSizeRows(0),
@@ -323,9 +321,10 @@ Vector Sparse::jacobi(Vector const& b) const
     {
         for(unsigned int i = 0; i < sizeRows(); i++)
         {
-            xnew(i) = b(i);
-            diag = 0;
             // iterate over the ith row of the matrix
+
+			xnew(i) = b(i);
+            diag = 0;
 
             for (k = mRowPtr[i]; k < mRowPtr[i+1]; k++)
             {
@@ -345,7 +344,6 @@ Vector Sparse::jacobi(Vector const& b) const
 		// TODO: discuss convergence criterium
 		convergence = (xnew - xcur).norm2() < JACOBI_TOLERANCE;
 
-        // implement equality operator for Vector
 		Vector& xtmp = xcur;
         xcur = xnew;
 		xnew = xtmp;
@@ -356,9 +354,33 @@ Vector Sparse::jacobi(Vector const& b) const
 
 Vector Sparse::conjGradient(Vector const& b) const
 {
-	// TODO: Implement!
-	Vector p;
-    return p;
+	assert(this->sizeColumns() == b.size() && this->sizeRows() == b.size());
+	
+	uint n = sizeColumns();
+
+	Vector x(n);
+	Vector r = b; // r = b - A * 0
+	Vector p = r;
+	
+	double rSquare = dot(r,r);
+	
+	// in the worst case we have to calculate all of the conjugate directions
+	for(uint i = 0; i < n; i++)
+	{
+		double alpha = rSquare / dot(p, (*this) * p);
+		Vector v = alpha * p;
+		x += v;
+		r = r - alpha * ((*this) * p);
+		double rSquareNew = dot(r,r);
+		if (rSquareNew < CONJGRADIENT_TOLERANCE)
+		{
+			break;
+		}
+		p = r + (rSquareNew / rSquare) * p;
+		rSquare = rSquareNew;
+	}
+	
+    return x;
 }
 
 Vector Sparse::LU(Vector const& v, Sparse* m) const
@@ -448,4 +470,3 @@ double prod (const Vector& v1, const Sparse& m, const Vector& v2)
 	
 	return res;
 }
-

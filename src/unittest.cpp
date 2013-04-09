@@ -55,6 +55,8 @@ int main(int argc, char* argv[])
 	cout << "== Unittest ==" << endl;
 
 	{
+		cout << "= Vector" << endl;
+		
 		Vector v(3);
 		
 		cout << v << endl;
@@ -80,6 +82,8 @@ int main(int argc, char* argv[])
 	}
 
 	{
+		cout << "= Matrix construcor" << endl;
+		
 		// [ 2 1 ; 5 7 ] 2x2
 
 	    TVals vals;
@@ -109,7 +113,9 @@ int main(int argc, char* argv[])
 	}
 
 	{
-		// [ 2 1 ; 5 7 ] 2x2
+		cout << "= Jacobi solver" << endl;
+	
+		// [ 2 1 ; 5 7 ] * [ x ; y ] = [ 11 ; 13 ]
 
 	    TVals vals;
 		vals.push_back(2.);
@@ -129,84 +135,56 @@ int main(int argc, char* argv[])
 		rowPtr.push_back(4);
 
 		Sparse s(vals, colInd, rowPtr, 2);
-		dump(s);
+		//dump(s);
 
-		// Jacobi test
 		Vector b(2);
 		b(0) = 11.;
 		b(1) = 13.;
 
-		// [ 2 1 ; 5 7 ] * [ x ; y ] = [ 11 ; 13 ]
 		Vector solution = s.jacobi(b);
 		cout << solution << endl;
+		
+		cout << "Expected: [ 7.1111 ; -3.2222 ]" << endl;
 	}
+
+	{
+		cout << "= Conjugate Gradient solver" << endl;
 	
-	{
-		// [ 1 c ; 0 1 ] 2x2
-
-		double c = 100.;
+		// [ 4 1 ; 1 3 ] * [ 0.0909 ; 0.6364 ] = [ 1 ; 2 ]
 		
 	    TVals vals;
+		vals.push_back(4.);
 		vals.push_back(1.);
-		vals.push_back(c);
 		vals.push_back(1.);
+		vals.push_back(3.);
 
 	    TInd colInd;
 		colInd.push_back(0);
 		colInd.push_back(1);
-		colInd.push_back(1);
-
-		TInd rowPtr;
-		rowPtr.push_back(0);
-		rowPtr.push_back(2);
-		rowPtr.push_back(3);
-
-		Sparse s(vals, colInd, rowPtr, 2);
-		dump(s);
-
-		// Jacobi test
-		Vector b(2);
-		
-		b(0) = JACOBI_TOLERANCE;
-		b(1) = JACOBI_TOLERANCE;
-
-		// [ 1 c ; 0 1 ] * [ x ; y ] = [ JACOBI_TOLERANCE ; JACOBI_TOLERANCE ]
-		// exact solution: [ JACOBI_TOLERANCE * (1 - c) ; JACOBI_TOLERANCE ]
-		// for big c this solution is FAR from [ 0 ; 0 ] !
-		Vector solution = s.jacobi(b);
-		cout << solution << endl;
-	}
-
-	{
-		// [ 1 0 ; 0 1 ] 2x2
-
-	    TVals vals;
-		vals.push_back(1.);
-		vals.push_back(1.);
-
-	    TInd colInd;
 		colInd.push_back(0);
 		colInd.push_back(1);
 
 		TInd rowPtr;
 		rowPtr.push_back(0);
-		rowPtr.push_back(1);
 		rowPtr.push_back(2);
+		rowPtr.push_back(4);
 
 		Sparse s(vals, colInd, rowPtr, 2);
 		dump(s);
 
-		// Jacobi test
 		Vector b(2);
-		b(0) = 11.;
-		b(1) = 13.;
-
-		// [ 1 0 ; 0 1 ] * [ x ; y ] = [ 11 ; 13 ]
-		Vector solution = s.jacobi(b);
+		b(0) = 1.0;
+		b(1) = 2.0;
+		
+		Vector solution = s.conjGradient(b);
 		cout << solution << endl;
+		
+		cout << "Expected: [ 0.0909 ; 0.6364 ]" << endl;
 	}
 
 	{
+		cout << "= Matrix load" << endl;
+	
 		Sparse m;
 		ifstream f("data/mtest01.dat");
 		f >> m;
@@ -215,6 +193,8 @@ int main(int argc, char* argv[])
 	}
 
 	{
+		cout << "= Matrix multiplication" << endl;
+	
 		Sparse m;
 		ifstream f("data/mtest01.dat");
 		f >> m;
@@ -230,6 +210,8 @@ int main(int argc, char* argv[])
 	}
 
 	{
+		cout << "= Matrix product v' * M * w" << endl;
+		
 		Sparse m;
 		ifstream f("data/mtest01.dat");
 		f >> m;
@@ -250,6 +232,8 @@ int main(int argc, char* argv[])
 	}
     
     {
+		cout << "= Mesh load" << endl;
+		
         ifstream meshfile;
         meshfile.open("data/mesh/mesh.msh", ios::in);
         
@@ -258,6 +242,8 @@ int main(int argc, char* argv[])
     }
 	
 	{
+		cout << "= Plot Mesh" << endl;
+		
         ifstream meshfile;
         meshfile.open("data/mesh/mesh.msh", ios::in);
         

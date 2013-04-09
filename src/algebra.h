@@ -26,6 +26,7 @@
 // ----------------------------------------------------------------------------
 
 #define JACOBI_TOLERANCE 0.000001
+#define CONJGRADIENT_TOLERANCE 0.000001
 
 // ----------------------------------------------------------------------------
 
@@ -177,14 +178,16 @@ public:
     double operator() (uint row, uint col) const;
     //double& operator() (uint row, uint col);
     
-	/** solve Ax = b with jacobi */
-    Vector jacobi(Vector const& v) const;
+	/** solve Ax = b with jacobi
+		Assumption: the matrix is strictly diagonally dominant */
+    Vector jacobi(Vector const& b) const;
 
-	/** solve Ax = b with conjugate Gradient */
-    Vector conjGradient(Vector const& v) const;
+	/** solve Ax = b with conjugate Gradient
+		Assumption: the matrix is symmetric positive-definite */
+    Vector conjGradient(Vector const& b) const;
 
 	/** solve Ax = b with LU, return decomposition if needed */
-    Vector LU(Vector const& v, Sparse* m = 0) const;
+    Vector LU(Vector const& b, Sparse* m = 0) const;
 	
 	void constructA(const Mesh& m);
 	void constructM(const Mesh& m);
