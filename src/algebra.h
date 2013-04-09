@@ -60,6 +60,9 @@ public:
 	Vector& operator-= (Vector& v);
 
 	Vector& operator*= (const double s);
+	
+	//void constructF(const Mesh& m);
+	//void constructG(const Mesh& m);
 };
 
 Vector operator* (const Vector& v, const double s);
@@ -71,6 +74,8 @@ double dot(const Vector& v1, const Vector& v2);
 // ----------------------------------------------------------------------------
 
 /** General assumption: we don't have empty rows */
+
+class Mesh;
 
 class Sparse
 {
@@ -118,6 +123,10 @@ public:
 
 	/** solve Ax = b with LU, return decomposition if needed */
     Vector LU(Vector const& v, Sparse* m = 0) const;
+	
+	void constructA(const Mesh& m);
+	void constructM(const Mesh& m);
+	void constructB(const Mesh& m);
 };
 
 

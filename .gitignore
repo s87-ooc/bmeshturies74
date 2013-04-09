@@ -1,5 +1,5 @@
 bin/*
 *.o
 .DS_Store
-.p
-.pdat
+*.p
+*.pdat
