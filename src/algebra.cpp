@@ -343,6 +343,10 @@ Vector Sparse::jacobi(Vector const& b) const
             xnew(i) /= diag;
         }
 
+		// Stjepan: the convergence criterium may not be correct in this way,
+		// we should do either |Axnew - b| < epsilon (costly) or
+		// using the "vecteur residu" as described on http://fr.wikipedia.org/wiki/M%C3%A9thode_de_Jacobi
+		// TODO: discuss convergence criterium
 		convergence = (xnew - xcur).norm2() < JACOBI_TOLERANCE;
 
         // implement equality operator for Vector
