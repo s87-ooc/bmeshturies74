@@ -29,10 +29,17 @@ class Vertex;
 class Triangle;
 
 class Vertex {
+private:
+	/*
+	vector<Triangle*> mT;
+	double mX, mY;
+    unsigned int mId;
+    unsigned int mLabel;
+	*/
 public:
     vector<Triangle*> T;
     double x, y;
-    int id;
+    int id; // redundant
     int label;
     Vertex(double x, double y, int label, int id);
 };
@@ -42,7 +49,14 @@ public:
 class Triangle {
 private:
     double calculate_area();
+	/*
+	vector<Vertex*> mV;
+    int mLabel;
+    int mId;
+    double mArea;
+	*/
 public:
+	// Vertex& V[3];
     vector<Vertex*> V;
     int label;
     int id;
@@ -54,7 +68,14 @@ public:
 // ----------------------------------------------------------------------------
 
 class BoundEdge {
+private:
+	/*
+	int mId;
+    int mLabel;
+    double mLength;
+	*/
 public:
+	// Vertex& V[2];
     vector<Vertex*> V;
     int id;
     int label;
@@ -77,7 +98,10 @@ private:
 	
 public:
 	// Stjepan: the following ints should be only local in >> and UNSIGNED!!! :-P
-    int Nv;
+    // unsigned int countVertices() const;
+	// unsigned int countTriangles() const;
+	// unsigned int countEdges() const;
+	int Nv;
     int Nt;
     int Ne;
 	
