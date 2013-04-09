@@ -23,6 +23,8 @@
 #include "mesh.h"
 #include "visualization.h"
 
+using namespace std;
+
 // ----------------------------------------------------------------------------
 
 Plot::Plot() :

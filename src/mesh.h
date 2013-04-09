@@ -21,7 +21,21 @@
 #include <string>
 #include <vector>
 
-using namespace std;
+#include "types.h"
+
+// ----------------------------------------------------------------------------
+
+class Vertex;
+class Triangle;
+class BoundEdge;
+
+typedef std::vector<Vertex> TVertices;
+typedef std::vector<Vertex*> TVerticesP;
+
+typedef std::vector<Triangle> TTriangles;
+typedef std::vector<Triangle*> TTrianglesP;
+
+typedef std::vector<BoundEdge> TEdges;
 
 // ----------------------------------------------------------------------------
 
@@ -37,7 +51,7 @@ private:
     unsigned int mLabel;
 	*/
 public:
-    vector<Triangle*> T;
+    TTrianglesP T;
     double x, y;
     int id; // redundant
     int label;
@@ -57,7 +71,7 @@ private:
 	*/
 public:
 	// Vertex& V[3];
-    vector<Vertex*> V;
+    TVerticesP V;
     int label;
     int id;
     double area;
@@ -76,7 +90,7 @@ private:
 	*/
 public:
 	// Vertex& V[2];
-    vector<Vertex*> V;
+    TVerticesP V;
     int id;
     int label;
     double length;
@@ -87,13 +101,9 @@ public:
 
 class Plot;
 
-typedef vector<Vertex> TVertices;
-typedef vector<Triangle> TTriangles;
-typedef vector<BoundEdge> TEdges;
-
 class Mesh {
 private:
-    friend istream& operator >>(istream &is, Mesh &obj);
+    friend std::istream& operator >>(std::istream &is, Mesh &obj);
     friend class Plot;
 	
 public:

@@ -19,6 +19,8 @@
 #include <assert.h>
 #include <math.h>
 
+using namespace std;
+
 // ----------------------------------------------------------------------------
 
 #define JACOBI_TOLERANCE 0.000001
@@ -168,7 +170,67 @@ double dot(const Vector& v1, const Vector& v2)
 
 // ----------------------------------------------------------------------------
 
-Sparse::Sparse()
+
+
+SparseLIL::SparseLIL() :
+mSizeRows(0),
+mSizeColumns(0)
+{
+}
+
+SparseLIL::SparseLIL(const SparseLIL& m) :
+mSizeRows(m.sizeRows()),
+mSizeColumns(m.sizeColumns())
+{
+	// TODO
+}
+
+SparseLIL::SparseLIL(uint rows, uint columns) :
+mSizeRows(rows),
+mSizeColumns(columns)
+{
+}
+
+SparseLIL::SparseLIL(const Sparse& matCSR) :
+mSizeRows(matCSR.sizeRows()),
+mSizeColumns(matCSR.sizeColumns())
+{
+	// TODO
+}
+
+double SparseLIL::operator() (uint row, uint col) const
+{
+	// TODO
+	return 0.0;
+}
+
+double& SparseLIL::operator() (uint row, uint col)
+{
+	// TODO
+	double* pNull = 0;
+	return *pNull;
+}
+
+uint SparseLIL::sizeColumns() const
+{
+	return mSizeColumns;
+}
+
+uint SparseLIL::sizeRows() const
+{
+	return mSizeRows;
+}
+
+uint SparseLIL::sizeNNZ() const
+{
+	// TODO
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+
+Sparse::Sparse() :
+mSizeColumns(0)
 {
 }
 
@@ -176,7 +238,7 @@ Sparse::Sparse(const Sparse& m) :
 mVals(m.mVals),
 mColInd(m.mColInd),
 mRowPtr(m.mRowPtr),
-mColumns(m.mColumns)
+mSizeColumns(m.mSizeColumns)
 {
 }
 
@@ -184,12 +246,12 @@ Sparse::Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, unsign
 mVals(vals),
 mColInd(colInd),
 mRowPtr(rowPtr),
-mColumns(columns)
+mSizeColumns(columns)
 {
 }
 
 Sparse::Sparse(const map<int, double>& M, unsigned int sizeRows, unsigned int sizeColumns):
-mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mColumns(sizeColumns)
+mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mSizeColumns(sizeColumns)
 {
 	int k = 0;
 	int index, row_cur, row_prev=-1;
@@ -213,10 +275,15 @@ mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mColumns(sizeColumns)
 
 }
 
+Sparse::Sparse(const SparseLIL& matLIL) :
+mSizeColumns(matLIL.sizeColumns())
+{
+	// TODO
+}
 
 unsigned int Sparse::sizeColumns() const
 {
-    return mColumns;
+    return mSizeColumns;
 }
 
 unsigned int Sparse::sizeRows() const
@@ -243,24 +310,6 @@ double Sparse::operator() (unsigned int row, unsigned int col) const
     }
     
     return 0.0;
-}
-
-double& Sparse::operator() (unsigned int row, unsigned int col)
-{
-    assert(row < sizeRows() && col < sizeColumns());
-
-    for (unsigned int i = mRowPtr[row]; i < mRowPtr[row+1]; i++)
-    {
-        if (mColInd[i] == col)
-			return mVals[i];
-    }
-    
-	// we never add new nnz elements at this point
-	cout << "Can't add new NNZ element here!" << endl;
-	assert(false);
-
-	// won't be called
-    return mVals[0];
 }
 
 Vector Sparse::jacobi(Vector const& b) const

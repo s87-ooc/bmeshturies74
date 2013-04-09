@@ -16,15 +16,19 @@
 
 **************************************************************/
 
-
 #include <iostream>
+
 #include <vector>
 #include <map>
 
-using namespace std;
+#include "types.h"
 
-typedef vector<double> TVals;
-typedef vector<int> TInd;
+
+// ----------------------------------------------------------------------------
+
+typedef std::vector<double> TVals;
+typedef std::map<int, double> TValsMap;
+typedef std::vector<int> TInd;
 
 // ----------------------------------------------------------------------------
 
@@ -37,21 +41,21 @@ private:
 
 	// ---
 
-	friend istream& operator>> (istream &in, Vector& v);
-	friend ostream& operator<< (ostream &out, Vector& v);
+	friend std::istream& operator>> (std::istream &in, Vector& v);
+	friend std::ostream& operator<< (std::ostream &out, Vector& v);
 	
 public:
 	Vector();
-    Vector(unsigned int size);
+    Vector(uint size);
 	Vector(TVals &vals);
     
-	unsigned int size() const;
+	uint size() const;
 
 	/** Euclidean norm */
 	double norm2() const;
 
-	double operator() (unsigned int pos) const;
-	double& operator() (unsigned int pos);
+	double operator() (uint pos) const;
+	double& operator() (uint pos);
 	
 	Vector operator+ (Vector const& v) const;
 	Vector operator- (Vector const& v) const;
@@ -73,7 +77,57 @@ double dot(const Vector& v1, const Vector& v2);
 
 // ----------------------------------------------------------------------------
 
-/** General assumption: we don't have empty rows */
+/** Sparse matrix stored in LIL (List of Lists) format
+	Optimized for manipulation of single entries/rows.
+	Not effective for Matrix/Vector operations, convert to Sparse instead.
+	
+	We're using this class for the LU solver, Sparse should be preferred.
+
+	General assumption: we don't have empty rows */
+
+class Sparse;
+
+class SparseLIL
+{
+private:
+	/** values per row */
+	TVals mRowVals[]; // should we use pointers here?
+	/** column indices per row */
+	TInd mColInd[];
+	
+	uint mSizeRows;
+	uint mSizeColumns;
+	
+	// ---
+	
+	friend class Sparse;
+
+public:
+	SparseLIL();
+	SparseLIL(const SparseLIL& m);
+	
+	/** create empty sparse matrix with specified dimensions */
+	SparseLIL(uint rows, uint columns);
+	
+	/** convert CSR to LIL */
+	SparseLIL(const Sparse& matCSR);
+
+    double operator() (uint row, uint col) const;
+    double& operator() (uint row, uint col);
+
+	uint sizeColumns() const;
+    uint sizeRows() const;
+    uint sizeNNZ() const;
+};
+
+// ----------------------------------------------------------------------------
+
+/** Sparse matrix stored in CSR (Compressed Sparse Row) format
+	Optimized for Matrix/Vector operations.
+	After the matrix was constructed, it's no longer possible to manipulate
+	elements directly, convert to SparseLIL instead.
+	
+	General assumption: we don't have empty rows */
 
 class Mesh;
 
@@ -85,13 +139,15 @@ private:
 	/** number of rows + 1, last entry is last nnz in row + 1 */
 	TInd mRowPtr;
 
-	unsigned int mColumns;
+	uint mSizeColumns;
 
 	// ---
 
+	friend class SparseLIL;
+	
 	/** format: "i j value", row i ascending */
-    friend istream& operator >>(istream&, Sparse&);
-    friend ostream& operator <<(ostream&, Sparse&);
+    friend std::istream& operator >>(std::istream&, Sparse&);
+    friend std::ostream& operator <<(std::ostream&, Sparse&);
 
 	/// (v' * m)' ?!
 	friend Vector operator* (const Vector& v, const Sparse& m);
@@ -104,16 +160,19 @@ public:
     Sparse();
     Sparse(const Sparse& m);
 
-    Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, unsigned int columns);
-    Sparse(const map<int, double>& M, unsigned int rows, unsigned int cols);
+    Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, uint columns);
+    Sparse(const TValsMap& M, uint rows, uint cols);
+	
+	/** convert LIL to CSR */
+	Sparse(const SparseLIL& matLIL);
 
+    uint sizeColumns() const;
+    uint sizeRows() const;
+    uint sizeNNZ() const;
 
-    unsigned int sizeColumns() const;
-    unsigned int sizeRows() const;
-    unsigned int sizeNNZ() const;
-
-    double operator() (unsigned int row, unsigned int col) const;
-    double& operator() (unsigned int row, unsigned int col);
+	/** values can only be accessed read-only  */
+    double operator() (uint row, uint col) const;
+    //double& operator() (uint row, uint col);
     
 	/** solve Ax = b with jacobi */
     Vector jacobi(Vector const& v) const;
@@ -128,6 +187,5 @@ public:
 	void constructM(const Mesh& m);
 	void constructB(const Mesh& m);
 };
-
 
 #endif // __ALGEBRA_H__

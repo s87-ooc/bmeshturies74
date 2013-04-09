@@ -16,6 +16,8 @@
 #include <iostream>
 #include <math.h>
 
+#include <map>
+
 #include "mesh.h"
 
 using namespace std;

@@ -16,7 +16,7 @@
 
 **************************************************************/
 
-using namespace std;
+// ----------------------------------------------------------------------------
 
 /** which application and plot type is used for plotting */
 enum EPlotType
@@ -27,19 +27,21 @@ enum EPlotType
 	ePT_TECPLOT_ERROR,
 };
 
+// ----------------------------------------------------------------------------
+
 class Mesh;
 
 class Plot
 {
 private:
 	/** name base for data and script files */
-	string mName;
+	std::string mName;
 	
 	/** initial template for the gnuplot script file */
-	string mTemplate;
+	std::string mTemplate;
 	
 	/** additional plotting arguments */
-	string mArgs;
+	std::string mArgs;
 	
 	/** mesh the values should be plotted on */
 	Mesh* mMesh;
