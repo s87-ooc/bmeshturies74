@@ -25,6 +25,7 @@
 
 // ----------------------------------------------------------------------------
 
+#define EQ_TOL 0.0000000001
 #define JACOBI_TOLERANCE 0.000001
 #define CONJGRADIENT_TOLERANCE 0.000001
 
@@ -90,6 +91,33 @@ double dot(const Vector& v1, const Vector& v2);
 	General assumption: we don't have empty rows */
 
 class Sparse;
+
+class SparseMap
+{
+private:
+	TValsMap mVals;
+	uint mSizeRows;
+	uint mSizeColumns;
+
+	friend class Sparse;
+
+public:
+	SparseMap(uint rows, uint columns);
+
+	double operator() (uint row, uint col) const;
+	double& operator() (uint row, uint col);
+	void addAt(uint row, uint col, double value);
+	void setZero(uint row, uint col);
+
+	SparseMap& operator+=(const SparseMap& rhs);
+	SparseMap& operator*=(const double& val);
+
+	uint sizeColumns() const;
+    uint sizeRows() const;
+    uint sizeNNZ() const;
+
+
+};
 
 class SparseLIL
 {
@@ -166,10 +194,11 @@ private:
     
 public:
     Sparse();
+    /** Assumption: each row contains at least one value */
     Sparse(const Sparse& m);
 
     Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, uint columns);
-    Sparse(const TValsMap& M, uint rows, uint cols);
+    Sparse(const SparseMap& M);
 	
 	/** convert LIL to CSR */
 	Sparse(const SparseLIL& matLIL);

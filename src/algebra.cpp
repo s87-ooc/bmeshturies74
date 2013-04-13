@@ -166,6 +166,95 @@ double dot(const Vector& v1, const Vector& v2)
 
 // ----------------------------------------------------------------------------
 
+SparseMap::SparseMap(uint rows, uint columns) :
+mSizeRows(rows),
+mSizeColumns(columns),
+mVals()
+{
+}
+
+double SparseMap::operator() (uint row, uint col) const
+{
+	// check if there is a non-zero value at a given index
+	try
+	{
+		return mVals.at(row * mSizeColumns + col);
+	}
+	catch(...)
+	{
+		return 0.0;
+	}
+}
+
+double& SparseMap::operator() (uint row, uint col)
+{
+	return mVals[row*mSizeColumns + col];
+}
+
+void SparseMap::addAt(uint row, uint col, double value)
+{
+	// only add non-zero values to avoid filling with zeros
+	if (fabs(value) > EQ_TOL)
+	{
+		mVals[row*mSizeColumns + col] += value;
+	}
+}
+
+void SparseMap::setZero(uint row, uint col)
+{
+	mVals.erase(row*mSizeColumns + col);
+}
+
+SparseMap& SparseMap::operator+=(const SparseMap& rhs)
+{
+	// Dimension check
+	assert( rhs.sizeColumns() == this->sizeColumns());
+	assert( rhs.sizeRows() == this->sizeRows());
+
+	for(TValsMap::const_iterator iter = rhs.mVals.begin(); iter != rhs.mVals.end(); iter++)
+	{
+		this->mVals[iter->first] += iter->second;
+
+		if( fabs(this->mVals[iter->first]) < EQ_TOL)
+		{
+			this->mVals.erase(iter->first);
+		}
+	}
+	return (*this);
+}
+SparseMap& SparseMap::operator*=(const double& val)
+{
+	for(TValsMap::iterator iter = this->mVals.begin(); iter != this->mVals.end(); iter++)
+	{
+		iter->second *= val;
+
+		if( fabs(iter->second) < EQ_TOL)
+		{
+			mVals.erase(iter->first);
+		}
+	}
+	return (*this);
+}
+
+uint SparseMap::sizeColumns() const
+{
+	return mSizeColumns;
+}
+
+uint SparseMap::sizeRows() const
+{
+	return mSizeRows;
+}
+
+uint SparseMap::sizeNNZ() const
+{
+	return mVals.size();
+}
+
+
+
+// ----------------------------------------------------------------------------
+
 SparseLIL::SparseLIL() :
 mSizeRows(0),
 mSizeColumns(0),
@@ -317,17 +406,20 @@ mSizeColumns(columns)
 {
 }
 
-Sparse::Sparse(const map<int, double>& M, unsigned int sizeRows, unsigned int sizeColumns):
-mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mSizeColumns(sizeColumns)
+Sparse::Sparse(const SparseMap& M):
+mVals(M.sizeNNZ()), 
+mColInd(M.sizeNNZ()), 
+mRowPtr(M.sizeRows()+1), 
+mSizeColumns(M.sizeColumns())
 {
 	int k = 0;
 	int index, row_cur, row_prev=-1;
-	for(map<int,double>::const_iterator iter = M.begin(); iter != M.end(); ++iter)
+	for(TValsMap::const_iterator iter = M.mVals.begin(); iter != M.mVals.end(); ++iter)
 	{
 		index = iter->first;
-		mColInd[k] = index % sizeColumns;
+		mColInd[k] = index % mSizeColumns;
 		mVals[k] = iter->second;
-		row_cur = index / sizeColumns;
+		row_cur = index / mSizeColumns;
 
 		if (row_cur > row_prev)
         {
@@ -337,7 +429,7 @@ mVals(M.size()), mColInd(M.size()), mRowPtr(sizeRows+1), mSizeColumns(sizeColumn
 		k++;
 	}
 
-	mRowPtr[sizeRows] = mRowPtr[sizeRows - 1] + 1;
+	mRowPtr[M.sizeRows()] = mRowPtr[M.sizeRows() - 1] + 1;
 }
 
 Sparse::Sparse(const SparseLIL& matLIL) :
