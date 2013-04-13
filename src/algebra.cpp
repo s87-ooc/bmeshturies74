@@ -251,6 +251,29 @@ uint SparseMap::sizeNNZ() const
 	return mVals.size();
 }
 
+SparseMap constructA(const Mesh& mesh)
+{
+	uint Nv = mesh.countVertices();
+	SparseMap M(Nv, Nv);
+
+	return M;
+
+}
+SparseMap constructM(const Mesh& mesh)
+{
+	uint Nv = mesh.countVertices();
+	SparseMap M(Nv, Nv);
+
+	return M;
+}
+
+SparseMap constructB(const Mesh& mesh)
+{
+	uint Nv = mesh.countVertices();
+	SparseMap M(Nv, Nv);
+
+	return M;
+}
 
 
 // ----------------------------------------------------------------------------

@@ -23,6 +23,8 @@
 
 #include "types.h"
 
+using namespace std;
+
 // ----------------------------------------------------------------------------
 
 class Vertex;
@@ -103,17 +105,23 @@ class Plot;
 
 class Mesh {
 private:
+
+    uint Nv;
+    uint Nt;
+    uint Ne;
+
     friend std::istream& operator >>(std::istream &is, Mesh &obj);
     friend class Plot;
+
 	
 public:
-	// Stjepan: the following ints should be only local in >> and UNSIGNED!!! :-P
-    // unsigned int countVertices() const;
-	// unsigned int countTriangles() const;
-	// unsigned int countEdges() const;
-	int Nv;
-    int Nt;
-    int Ne;
+
+    Mesh(const char* filename);
+
+    uint countVertices() const;
+	uint countTriangles() const;
+	uint countEdges() const;
+
 	
     TVertices V;
     TTriangles T;

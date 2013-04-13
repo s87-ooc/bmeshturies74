@@ -99,3 +99,24 @@ istream& operator>>(istream &is, Mesh &M)
     
     return is;
 }
+
+Mesh::Mesh(const char* filename)
+{
+    ifstream meshfile;
+    meshfile.open(filename, ifstream::in);
+    
+    meshfile >> (*this);
+}
+
+uint Mesh::countVertices() const
+{
+    return Nv;
+}
+uint Mesh::countTriangles() const
+{
+    return Nt;
+}
+uint Mesh::countEdges() const
+{
+    return Ne;
+}

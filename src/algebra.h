@@ -22,6 +22,7 @@
 #include <map>
 
 #include "types.h"
+#include "mesh.h"
 
 // ----------------------------------------------------------------------------
 
@@ -115,6 +116,10 @@ public:
 	uint sizeColumns() const;
     uint sizeRows() const;
     uint sizeNNZ() const;
+
+	SparseMap constructA(const Mesh& mesh);
+	SparseMap constructM(const Mesh& mesh);
+	SparseMap constructB(const Mesh& mesh);
 
 
 };
