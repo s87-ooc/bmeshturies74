@@ -178,12 +178,12 @@ SparseLIL::~SparseLIL()
 {
 	if (mRowVals)
 	{
-		delete mRowVals;
+		delete[] mRowVals;
 	}
 	
 	if (mColInd)
 	{
-		delete mColInd;
+		delete[] mColInd;
 	}
 }
 
@@ -194,8 +194,11 @@ mSizeColumns(m.sizeColumns())
 	mRowVals = new TVals[mSizeRows];
 	mColInd = new TInd[mSizeRows];
 	
-	mRowVals = m.mRowVals;
-	mColInd = m.mColInd;
+	for (uint i = 0; i < mSizeRows; i++)
+	{
+		mRowVals[i] = m.mRowVals[i];		
+		mColInd[i] = m.mColInd[i];
+	}
 }
 
 SparseLIL::SparseLIL(uint rows, uint columns) :

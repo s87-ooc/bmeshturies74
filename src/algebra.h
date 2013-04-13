@@ -95,7 +95,7 @@ class SparseLIL
 {
 private:
 	/** values per row */
-	TVals* mRowVals; // should we use pointers here?
+	TVals* mRowVals;
 	/** column indices per row */
 	TInd* mColInd;
 	

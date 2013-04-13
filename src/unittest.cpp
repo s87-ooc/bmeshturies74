@@ -204,25 +204,14 @@ int main(int argc, char* argv[])
 	
 		// [ 2 1 ; 5 7 ] * [ x ; y ] = [ 11 ; 13 ]
 
-	    TVals vals;
-		vals.push_back(2.);
-		vals.push_back(1.);
-		vals.push_back(5.);
-		vals.push_back(7.);
-
-	    TInd colInd;
-		colInd.push_back(0);
-		colInd.push_back(1);
-		colInd.push_back(0);
-		colInd.push_back(1);
-
-		TInd rowPtr;
-		rowPtr.push_back(0);
-		rowPtr.push_back(2);
-		rowPtr.push_back(4);
-
-		Sparse s(vals, colInd, rowPtr, 2);
-		//dump(s);
+		SparseLIL sLIL(2, 2);
+		sLIL(0, 0) = 2.0;
+		sLIL(0, 1) = 1.0;
+		sLIL(1, 0) = 5.0;
+		sLIL(1, 1) = 7.0;
+		
+		Sparse s(sLIL);
+		dump(s);
 
 		Vector b(2);
 		b(0) = 11.;
@@ -239,24 +228,13 @@ int main(int argc, char* argv[])
 	
 		// [ 4 1 ; 1 3 ] * [ 0.0909 ; 0.6364 ] = [ 1 ; 2 ]
 		
-	    TVals vals;
-		vals.push_back(4.);
-		vals.push_back(1.);
-		vals.push_back(1.);
-		vals.push_back(3.);
-
-	    TInd colInd;
-		colInd.push_back(0);
-		colInd.push_back(1);
-		colInd.push_back(0);
-		colInd.push_back(1);
-
-		TInd rowPtr;
-		rowPtr.push_back(0);
-		rowPtr.push_back(2);
-		rowPtr.push_back(4);
-
-		Sparse s(vals, colInd, rowPtr, 2);
+	    SparseLIL sLIL(2, 2);
+		sLIL(0, 0) = 4.0;
+		sLIL(0, 1) = 1.0;
+		sLIL(1, 0) = 1.0;
+		sLIL(1, 1) = 3.0;
+		
+		Sparse s(sLIL);
 		dump(s);
 
 		Vector b(2);
