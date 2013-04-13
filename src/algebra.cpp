@@ -251,10 +251,32 @@ uint SparseMap::sizeNNZ() const
 	return mVals.size();
 }
 
-SparseMap constructA(const Mesh& mesh)
+SparseMap constructM(const Mesh& mesh)
 {
 	uint Nv = mesh.countVertices();
 	SparseMap M(Nv, Nv);
+
+	double area;
+	double mel = 1/12.0;
+	double value;
+	int coef;
+
+	// iterate over the triangles of the mesh
+	for(  uint t = 0; t < mesh.countTriangles(); t++)
+	{
+		area = mesh.T[t].area;
+
+		// iterate over vertices of the current triangle
+		for(uint i=0; i < 2; i++)
+		{
+			for(uint j=0; j<2; j++)
+			{
+				coef = ( i == j ) ? 2 : 1;
+				value = coef * mel * area;
+				M.addAt(i, j, value);
+			}
+		}
+	}
 
 	return M;
 
