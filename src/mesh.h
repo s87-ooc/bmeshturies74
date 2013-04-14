@@ -80,12 +80,24 @@ public:
 class BoundEdge {
 private:
     double calculate_length();
+<<<<<<< HEAD
+=======
+    Triangle* findTriangle();
+	/*
+	int mId;
+    int mLabel;
+    double mLength;
+	*/
+>>>>>>> Small fixes.
 public:
 	// Vertex& V[2];
     TVerticesP V;
     int id;
     int label;
     double length;
+    Triangle* edgeOf;
+    
+
     BoundEdge(Vertex* a, Vertex* b, int label, int id);
 
     Vertex& operator() (uint vertex) const;
