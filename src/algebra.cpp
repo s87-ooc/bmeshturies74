@@ -186,10 +186,10 @@ double SparseMap::operator() (uint row, uint col) const
 	}
 }
 
-double& SparseMap::operator() (uint row, uint col)
-{
-	return mVals[row*mSizeColumns + col];
-}
+// double& SparseMap::operator() (uint row, uint col)
+// {
+// 	return mVals[row*mSizeColumns + col];
+// }
 
 void SparseMap::addAt(uint row, uint col, double value)
 {
@@ -222,6 +222,7 @@ SparseMap& SparseMap::operator+=(const SparseMap& rhs)
 	}
 	return (*this);
 }
+
 SparseMap& SparseMap::operator*=(const double& val)
 {
 	for(TValsMap::iterator iter = this->mVals.begin(); iter != this->mVals.end(); iter++)
@@ -251,20 +252,70 @@ uint SparseMap::sizeNNZ() const
 	return mVals.size();
 }
 
-SparseMap constructM(const Mesh& mesh)
+SparseMap& SparseMap::constructA(const Mesh& mesh)
 {
 	uint Nv = mesh.countVertices();
-	SparseMap M(Nv, Nv);
+	uint Nt = mesh.countTriangles();
 
-	double area;
+	TTriangles const& T = mesh.T;
+
+	this->mSizeRows = Nv;
+	this->mSizeColumns = Nv;
+
+
+	double a,b,c,d, A, B, C, D, l11, l22, l33, l12, l13, l23;
+	// iterate over the triangles of the mesh
+	for( uint t = 0; t < Nt; t++)
+	{
+		a = T[t](1).x - T[t](0).x;
+		b = T[t](2).x - T[t](0).x;
+		c = T[t](1).y - T[t](0).y;
+		d = T[t](2).y - T[t](0).y;
+		A = pow(a,2) + pow(c,2);
+		B = pow(b,2) + pow(d,2);
+		C = a*b + c*d;
+		D = fabs(a*d - b*c);
+
+		l11 = (A + B - 2*C) / D;
+		l22 = B / D;
+		l33 = A / D;
+		l23 = - (C / D);
+		l13 = (C - A) / D;
+		l12 = (C - B) / D;
+
+		this->addAt(T[t](0).id, T[t](0).id, l11);
+		this->addAt(T[t](1).id, T[t](1).id, l22);
+		this->addAt(T[t](2).id, T[t](2).id, l33);
+		this->addAt(T[t](0).id, T[t](1).id, l12);
+		this->addAt(T[t](1).id, T[t](0).id, l12);
+		this->addAt(T[t](0).id, T[t](2).id, l13);
+		this->addAt(T[t](2).id, T[t](0).id, l13);
+		this->addAt(T[t](1).id, T[t](2).id, l23);
+		this->addAt(T[t](2).id, T[t](1).id, l23);
+
+	}
+
+	return (*this);
+}
+
+SparseMap& SparseMap::constructM(const Mesh& mesh)
+{
+	uint Nv = mesh.countVertices();
+	uint Nt = mesh.countTriangles();
+
+	TTriangles const& T = mesh.T;
+
+
+	this->mSizeRows = Nv;
+	this->mSizeColumns = Nv;
+
 	double mel = 1/12.0;
 	double value;
 	int coef;
 
 	// iterate over the triangles of the mesh
-	for(  uint t = 0; t < mesh.countTriangles(); t++)
+	for( uint t = 0; t < Nt; t++)
 	{
-		area = mesh.T[t].area;
 
 		// iterate over vertices of the current triangle
 		for(uint i=0; i < 2; i++)
@@ -272,29 +323,40 @@ SparseMap constructM(const Mesh& mesh)
 			for(uint j=0; j<2; j++)
 			{
 				coef = ( i == j ) ? 2 : 1;
-				value = coef * mel * area;
-				M.addAt(i, j, value);
+				value = coef * mel * T[t].area;
+				this->addAt(T[t](i).id, T[t](j).id, value);
 			}
 		}
 	}
 
-	return M;
+	return (*this);
 
 }
-SparseMap constructM(const Mesh& mesh)
+
+
+SparseMap& SparseMap::constructB(const Mesh& mesh)
 {
 	uint Nv = mesh.countVertices();
-	SparseMap M(Nv, Nv);
+	uint Ne = mesh.countEdges();
 
-	return M;
-}
 
-SparseMap constructB(const Mesh& mesh)
-{
-	uint Nv = mesh.countVertices();
-	SparseMap M(Nv, Nv);
+	TEdges const& E = mesh.E;
 
-	return M;
+	this->mSizeRows = Nv;
+	this->mSizeColumns = Nv;
+
+	double value;
+
+	for( uint e = 0; e < Ne; e++)
+	{
+		value = E[e].length / 6.0;
+		this->addAt(E[e](0).id, E[e](0).id, value);
+		this->addAt(E[e](1).id, E[e](1).id, value);
+		this->addAt(E[e](0).id, E[e](1).id, value);
+		this->addAt(E[e](1).id, E[e](0).id, value);
+	}
+
+	return (*this);
 }
 
 
@@ -641,7 +703,7 @@ istream& operator >> (istream &is, Sparse &m)
 
 ostream& operator<< (ostream &os, Sparse &m)
 {
-	cout << m.sizeRows() << " "
+	os << m.sizeRows() << " "
 		<< m.sizeColumns() << " "
 		<< m.sizeNNZ() << endl;
 	
@@ -649,7 +711,7 @@ ostream& operator<< (ostream &os, Sparse &m)
 	{
 		for (unsigned int k = m.mRowPtr[i]; k < m.mRowPtr[i+1]; k++)
 		{
-			cout << i << " " << m.mColInd[k] << " " << m.mVals[k] << endl;
+			os << i << " " << m.mColInd[k] << " " << m.mVals[k] << endl;
 		}
 	}
 

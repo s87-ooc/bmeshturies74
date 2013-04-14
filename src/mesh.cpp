@@ -46,11 +46,30 @@ double Triangle::calculate_area()
     return 0.5*fabs(a-b);
 }
 
+Vertex& Triangle::operator() (uint vertex) const
+{
+    assert( vertex >=0 && vertex <=2);
+    return *V[vertex];
+}
+
+
 BoundEdge::BoundEdge(Vertex* a, Vertex* b, int label, int id):
 label(label), id(id)
 {
     V.push_back(a);
     V.push_back(b);
+    length = calculate_length();
+}
+
+double BoundEdge::calculate_length()
+{
+    return sqrt( pow(V[0]->x - V[1]->x, 2) + pow(V[0]->y - V[1]->y, 2));
+}
+
+Vertex& BoundEdge::operator() (uint vertex) const
+{
+    assert( vertex >=0 && vertex <=2);
+    return *V[vertex];
 }
 
 istream& operator>>(istream &is, Mesh &M)

@@ -19,6 +19,7 @@
 #include "algebra.h"
 #include "mesh.h"
 #include "visualization.h"
+#include <math.h>
 
 using namespace std;
 
@@ -299,21 +300,56 @@ int main(int argc, char* argv[])
     {
 		cout << "= Mesh load" << endl;
 		
-        ifstream meshfile;
-        meshfile.open("data/mesh/mesh.msh", ios::in);
+        // ifstream meshfile;
+        // meshfile.open("data/mesh/mesh.msh", ios::in);
         
-        Mesh M;
-        meshfile >> M;
+        Mesh M("data/mesh/mesh.msh");
+    }
+
+    {
+		cout << "= Mesh load" << endl;
+		
+        // ifstream meshfile;
+        // meshfile.open("data/mesh/mesh.msh", ios::in);
+        
+        Mesh mesh("data/mesh/mesh.msh");
+
+        uint Nv = mesh.countVertices();
+
+        SparseMap A(Nv,Nv);
+        SparseMap M(Nv,Nv);
+        SparseMap B(Nv,Nv);
+
+        A.constructA(mesh);
+        M.constructM(mesh);
+        B.constructB(mesh);
+
+        double kappa = 10;
+        SparseMap Res(Nv, Nv);
+
+
+        M *= -pow(kappa,2);
+        Res += A;
+        Res += M;
+        Res += B;
+
+
+        Sparse R(Res);
+
+        ofstream resultFile;
+  		resultFile.open("data/result.dat");
+
+  		resultFile << R;
+
+  		resultFile.close();
+
+
     }
 	
 	{
 		cout << "= Plot Mesh" << endl;
 		
-        ifstream meshfile;
-        meshfile.open("data/mesh/mesh.msh", ios::in);
-        
-        Mesh M;
-        meshfile >> M;
+        Mesh M("data/mesh/mesh.msh");
 		
 		Plot p("plot01", "data/_gnuplot/surface.ptpl", &M);
 		//p.generate(true);

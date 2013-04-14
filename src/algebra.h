@@ -106,7 +106,7 @@ public:
 	SparseMap(uint rows, uint columns);
 
 	double operator() (uint row, uint col) const;
-	double& operator() (uint row, uint col);
+	// double& operator() (uint row, uint col);
 	void addAt(uint row, uint col, double value);
 	void setZero(uint row, uint col);
 
@@ -117,9 +117,10 @@ public:
     uint sizeRows() const;
     uint sizeNNZ() const;
 
-	SparseMap constructA(const Mesh& mesh);
-	SparseMap constructM(const Mesh& mesh);
-	SparseMap constructB(const Mesh& mesh);
+    /** Assumption: mVals is empty when construct is called */
+	SparseMap& constructA(const Mesh& mesh);
+	SparseMap& constructM(const Mesh& mesh);
+	SparseMap& constructB(const Mesh& mesh);
 
 
 };
@@ -203,6 +204,8 @@ public:
     Sparse(const Sparse& m);
 
     Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, uint columns);
+
+    /** convert SparseMap to CSR */
     Sparse(const SparseMap& M);
 	
 	/** convert LIL to CSR */

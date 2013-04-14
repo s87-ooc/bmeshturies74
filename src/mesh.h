@@ -20,6 +20,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <assert.h>
 
 #include "types.h"
 
@@ -78,6 +79,9 @@ public:
     int id;
     double area;
     Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id);
+    
+    Vertex& operator() (uint vertex) const;
+
 
 };
 
@@ -85,6 +89,7 @@ public:
 
 class BoundEdge {
 private:
+    double calculate_length();
 	/*
 	int mId;
     int mLabel;
@@ -97,6 +102,9 @@ public:
     int label;
     double length;
     BoundEdge(Vertex* a, Vertex* b, int label, int id);
+
+    Vertex& operator() (uint vertex) const;
+
 };
 
 // ----------------------------------------------------------------------------
