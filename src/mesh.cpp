@@ -1,8 +1,8 @@
-/*************************************************************
+﻿/*************************************************************
 
  Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
@@ -24,10 +24,28 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+Vertex::Vertex() :
+x(0.),
+y(0.),
+label(0),
+id(0)
+{
+}
+
 Vertex::Vertex(double x, double y, int label, int id): 
     x(x), y(y), label(label), id(id)
 {
 }
+
+Vertex::Vertex(const Vertex& v)
+{
+	x = v.x;
+	y = v.y;
+	label = v.label;
+	id = v.id;
+}
+
+// ----------------------------------------------------------------------------
 
 Triangle::Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id):
     label(label), id(id)
@@ -74,10 +92,18 @@ Vertex& BoundEdge::operator() (uint vertex) const
 
 istream& operator>>(istream &is, Mesh &M)
 {
+	// we're resetting the mesh, clear stuff if needed
+	if (M.V)
+	{
+		delete[] M.V;
+	}
+
     // lecture du nombre de sommets, aretes et triangles
     is >> M.Nv >> M.Nt >> M.Ne;
     
-    
+	// allocate memory
+	M.V = new Vertex[M.Nv];
+	
     // initialiser tableau pour stocker les sommets, aretes et triangles
     
     for(int k = 0; k < M.Nv; k++)
@@ -87,7 +113,8 @@ istream& operator>>(istream &is, Mesh &M)
 
         // the ids are 0 indexed
         Vertex v(x, y, label, k);
-        M.V.push_back(v);
+		//Vertex v(x + 0.0001, y + 0.0001, label, k);
+		M.V[k] = v;
     }
 
     for(int k = 0; k < M.Nt; k++)
@@ -119,12 +146,21 @@ istream& operator>>(istream &is, Mesh &M)
     return is;
 }
 
-Mesh::Mesh(const char* filename)
+Mesh::Mesh(const char* filename) :
+V(0)
 {
     ifstream meshfile;
     meshfile.open(filename, ifstream::in);
     
     meshfile >> (*this);
+}
+
+Mesh::~Mesh()
+{
+	if (V)
+	{
+		delete[] V;
+	}
 }
 
 uint Mesh::countVertices() const

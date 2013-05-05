@@ -1,22 +1,29 @@
-#ifndef __TYPES_H__
+ï»¿#ifndef __TYPES_H__
 #define __TYPES_H__
 
 /*************************************************************
 
  Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
 
      Fichier: types.h
 
- Description: définition des types utilisés partout
+ Description: dÃ©finition des types utilisÃ©s partout
 
 **************************************************************/
 
 // general
 typedef unsigned int uint;
+
+/** */
+template <typename T>
+uint getIndex(T* start, const T& entry)
+{
+	return &entry - start;
+}
 
 #endif // __TYPES_H__

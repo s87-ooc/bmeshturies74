@@ -1,18 +1,18 @@
-#ifndef __MESH_H__
+﻿#ifndef __MESH_H__
 #define __MESH_H__
 
 /*************************************************************
 
  Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
 
      Fichier: mesh.h
 
- Description: d�claration de la classe mesh
+ Description: déclaration de la classe mesh
 
 **************************************************************/
 
@@ -46,19 +46,17 @@ class Vertex;
 class Triangle;
 
 class Vertex {
-private:
-	/*
-	vector<Triangle*> mT;
-	double mX, mY;
-    unsigned int mId;
-    unsigned int mLabel;
-	*/
 public:
     TTrianglesP T;
+	
     double x, y;
-    int id; // redundant
-    int label;
-    Vertex(double x, double y, int label, int id);
+    
+	uint id; // redundant
+    uint label;
+	
+	Vertex();
+	Vertex(const Vertex& v);    
+	Vertex(double x, double y, uint label, uint id);
 };
 
 // ----------------------------------------------------------------------------
@@ -66,12 +64,6 @@ public:
 class Triangle {
 private:
     double calculate_area();
-	/*
-	vector<Vertex*> mV;
-    int mLabel;
-    int mId;
-    double mArea;
-	*/
 public:
 	// Vertex& V[3];
     TVerticesP V;
@@ -81,8 +73,6 @@ public:
     Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id);
     
     Vertex& operator() (uint vertex) const;
-
-
 };
 
 // ----------------------------------------------------------------------------
@@ -90,11 +80,6 @@ public:
 class BoundEdge {
 private:
     double calculate_length();
-	/*
-	int mId;
-    int mLabel;
-    double mLength;
-	*/
 public:
 	// Vertex& V[2];
     TVerticesP V;
@@ -113,25 +98,23 @@ class Plot;
 
 class Mesh {
 private:
-
     uint Nv;
     uint Nt;
     uint Ne;
 
     friend std::istream& operator >>(std::istream &is, Mesh &obj);
     friend class Plot;
-
 	
 public:
-
     Mesh(const char* filename);
-
+	~Mesh();
+	
     uint countVertices() const;
 	uint countTriangles() const;
 	uint countEdges() const;
-
 	
-    TVertices V;
+    //TVertices V;
+	Vertex* V;
     TTriangles T;
     TEdges E;
 };

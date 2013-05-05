@@ -1,15 +1,15 @@
-/*************************************************************
+﻿/*************************************************************
 
  Mini Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
 
      Fichier: algebra.cpp
 
- Description: implementation des classes math�matiques pour les matrices, vecteurs, etc
+ Description: implementation des classes mathématiques pour les matrices, vecteurs, etc
 
 **************************************************************/
 
@@ -114,6 +114,36 @@ Vector& Vector::operator*= (const double s)
 	return *this;
 }
 
+Vector& Vector::constructFunc(const Mesh& mesh, double (*f)(const Vertex&))
+{
+	assert(size() == mesh.countVertices());
+	
+	for (uint i = 0; i < size(); i++)
+	{
+		mVals[i] = f(mesh.V[i]);
+	}
+	
+	return *this;
+}
+
+Vector& Vector::constructFuncIntSurf(const Mesh& mesh, double (*f)(const Vertex&))
+{
+	assert(size() == mesh.countVertices());
+	
+	for (uint e = 0; e < mesh.countEdges(); e++)
+	{		
+		// interpolation by affine function, only the function contributes
+		double factor = (mesh.E[e]).length * 0.5;
+		
+		mVals[mesh.E[e](0).id] += factor * f(mesh.E[e](0));
+		mVals[mesh.E[e](1).id] += factor * f(mesh.E[e](1));
+		
+		//cout << "e: " << e << " " << mesh.E[e](0).id << " " << mesh.E[e](1).id << " " << factor * f(mesh.E[e](0)) << " " << mesh.E[e].length << endl;
+	}
+	
+	return *this;
+}
+
 istream& operator>> (istream &in, Vector& v)
 {
 	// TODO
@@ -195,7 +225,7 @@ void SparseMap::addAt(uint row, uint col, double value)
 {
 	// only add non-zero values to avoid filling with zeros
 	if (fabs(value) > EQ_TOL)
-	{
+	{	
 		mVals[row*mSizeColumns + col] += value;
 	}
 }
@@ -208,8 +238,8 @@ void SparseMap::setZero(uint row, uint col)
 SparseMap& SparseMap::operator+=(const SparseMap& rhs)
 {
 	// Dimension check
-	assert( rhs.sizeColumns() == this->sizeColumns());
-	assert( rhs.sizeRows() == this->sizeRows());
+	assert(rhs.sizeColumns() == this->sizeColumns());
+	assert(rhs.sizeRows() == this->sizeRows());
 
 	for(TValsMap::const_iterator iter = rhs.mVals.begin(); iter != rhs.mVals.end(); iter++)
 	{
@@ -259,11 +289,10 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 
 	TTriangles const& T = mesh.T;
 
-	this->mSizeRows = Nv;
-	this->mSizeColumns = Nv;
+	mSizeRows = Nv;
+	mSizeColumns = Nv;
 
-
-	double a,b,c,d, A, B, C, D, l11, l22, l33, l12, l13, l23;
+	/*double a,b,c,d, A, B, C, D, l11, l22, l33, l12, l13, l23;
 	// iterate over the triangles of the mesh
 	for( uint t = 0; t < Nt; t++)
 	{
@@ -292,7 +321,41 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 		this->addAt(T[t](2).id, T[t](0).id, l13);
 		this->addAt(T[t](1).id, T[t](2).id, l23);
 		this->addAt(T[t](2).id, T[t](1).id, l23);
-
+	}
+	*/
+	double x21, x31, y21, y31, a, b, d, D, l11, l22, l33, l12, l13, l23;
+	// iterate over the triangles of the mesh
+	for( uint t = 0; t < Nt; t++)
+	{
+		//cout << t << endl;
+	
+		x21 = T[t](1).x - T[t](0).x;
+		x31 = T[t](2).x - T[t](0).x;
+		y21 = T[t](1).y - T[t](0).y;
+		y31 = T[t](2).y - T[t](0).y;
+		
+		D = fabs(x21*y31 - x31*y21);
+		
+		a = (pow(x31, 2) + pow(y31, 2)) / D;
+		d = (pow(x21, 2) + pow(y21, 2)) / D;
+		b = - (x31 * x21 + y21 * y31) / D;
+		
+		l11 = a + d + 2*b;
+		l22 = a;
+		l33 = d;
+		l12 = -a - b;
+		l13 = -b - d;
+		l23 = b;
+		
+		addAt(T[t](0).id, T[t](0).id, l11);
+		addAt(T[t](1).id, T[t](1).id, l22);
+		addAt(T[t](2).id, T[t](2).id, l33);
+		addAt(T[t](0).id, T[t](1).id, l12);
+		addAt(T[t](1).id, T[t](0).id, l12);
+		addAt(T[t](0).id, T[t](2).id, l13);
+		addAt(T[t](2).id, T[t](0).id, l13);
+		addAt(T[t](1).id, T[t](2).id, l23);
+		addAt(T[t](2).id, T[t](1).id, l23);
 	}
 
 	return (*this);
@@ -305,32 +368,30 @@ SparseMap& SparseMap::constructM(const Mesh& mesh)
 
 	TTriangles const& T = mesh.T;
 
+	mSizeRows = Nv;
+	mSizeColumns = Nv;
 
-	this->mSizeRows = Nv;
-	this->mSizeColumns = Nv;
-
-	double mel = 1/12.0;
+	double mel = 1/12.0; // since det = 2 * area we have 2/24 = 1/12
 	double value;
-	int coef;
+	double coef;
 
 	// iterate over the triangles of the mesh
 	for( uint t = 0; t < Nt; t++)
 	{
 
 		// iterate over vertices of the current triangle
-		for(uint i=0; i < 2; i++)
+		for(uint i=0; i < 3; i++)
 		{
-			for(uint j=0; j<2; j++)
+			for(uint j=0; j < 3; j++)
 			{
-				coef = ( i == j ) ? 2 : 1;
+				coef = ( i == j ) ? 2. : 1.;
 				value = coef * mel * T[t].area;
-				this->addAt(T[t](i).id, T[t](j).id, value);
+				addAt(T[t](i).id, T[t](j).id, value);
 			}
 		}
 	}
 
 	return (*this);
-
 }
 
 
@@ -339,21 +400,25 @@ SparseMap& SparseMap::constructB(const Mesh& mesh)
 	uint Nv = mesh.countVertices();
 	uint Ne = mesh.countEdges();
 
-
 	TEdges const& E = mesh.E;
 
-	this->mSizeRows = Nv;
-	this->mSizeColumns = Nv;
+	mSizeRows = Nv;
+	mSizeColumns = Nv;
 
 	double value;
 
 	for( uint e = 0; e < Ne; e++)
 	{
 		value = E[e].length / 6.0;
-		this->addAt(E[e](0).id, E[e](0).id, value);
+		/*this->addAt(E[e](0).id, E[e](0).id, value);
 		this->addAt(E[e](1).id, E[e](1).id, value);
 		this->addAt(E[e](0).id, E[e](1).id, value);
-		this->addAt(E[e](1).id, E[e](0).id, value);
+		this->addAt(E[e](1).id, E[e](0).id, value);*/
+		// stjepan: integral for i = j gives E[e].length / 3.0
+		addAt(E[e](0).id, E[e](0).id, value * 2.);
+		addAt(E[e](1).id, E[e](1).id, value * 2.);
+		addAt(E[e](0).id, E[e](1).id, value);
+		addAt(E[e](1).id, E[e](0).id, value);
 	}
 
 	return (*this);
@@ -516,16 +581,17 @@ mSizeColumns(columns)
 Sparse::Sparse(const SparseMap& M):
 mVals(M.sizeNNZ()), 
 mColInd(M.sizeNNZ()), 
-mRowPtr(M.sizeRows()+1), 
+mRowPtr(M.sizeRows()+1),
 mSizeColumns(M.sizeColumns())
 {
 	int k = 0;
-	int index, row_cur, row_prev=-1;
+	int index, row_cur, row_prev = -1;
 	for(TValsMap::const_iterator iter = M.mVals.begin(); iter != M.mVals.end(); ++iter)
 	{
 		index = iter->first;
 		mColInd[k] = index % mSizeColumns;
 		mVals[k] = iter->second;
+
 		row_cur = index / mSizeColumns;
 
 		if (row_cur > row_prev)
@@ -536,7 +602,8 @@ mSizeColumns(M.sizeColumns())
 		k++;
 	}
 
-	mRowPtr[M.sizeRows()] = mRowPtr[M.sizeRows() - 1] + 1;
+	// last row points to number of nonzero values (last nnz index + 1, as starts with 0)
+	mRowPtr[M.sizeRows()] = M.sizeNNZ();
 }
 
 Sparse::Sparse(const SparseLIL& matLIL) :
@@ -671,6 +738,8 @@ Vector Sparse::LU(Vector const& v, Sparse* m) const
 	Vector p;
 	return p;
 }
+
+// ----------------------------------------------------------------------------
 
 istream& operator >> (istream &is, Sparse &m)
 {

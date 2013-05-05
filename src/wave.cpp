@@ -1,15 +1,15 @@
-/*************************************************************
+﻿/*************************************************************
 
  Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
 
      Fichier: wave.cpp
 
- Description: solution de la deuxi�me partie
+ Description: solution de la deuxième partie
 
 **************************************************************/
 

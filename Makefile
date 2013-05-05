@@ -2,7 +2,7 @@
 #                                                                             #
 # Projet                                                                      #
 #                                                                             #
-# (C) 2013 Charles Podkanski (charles@gmail.com),                             #
+# (C) 2013 Charles Podkanski (charles@podkanski.com),                             #
 #          Stjepan Stamenkovic (stjepan@stjepan.net)                          #
 #                                                                             #
 # ---                                                                         #
@@ -28,6 +28,12 @@ CXXFLAGS=
 all: bin/helmholtz bin/wave
 
 # solutions of the two parts
+helmholtz: bin/helmholtz
+	bin/helmholtz
+	
+wave: bin/wave
+	bin/wave
+
 bin/helmholtz: src/algebra.o src/mesh.o src/visualization.o src/helmholtz.cpp
 	g++ $(CXXFLAGS) -o bin/helmholtz src/algebra.o src/mesh.o src/visualization.o src/helmholtz.cpp
 

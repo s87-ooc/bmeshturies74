@@ -1,18 +1,18 @@
-#ifndef __ALGEBRA_H__
+ï»¿#ifndef __ALGEBRA_H__
 #define __ALGEBRA_H__
 
 /*************************************************************
 
  Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
 
      Fichier: algebra.h
 
- Description: déclaration des classes mathématiques pour les matrices, vecteurs, etc
+ Description: dÃ©claration des classes mathÃ©matiques pour les matrices, vecteurs, etc
 
 **************************************************************/
 
@@ -71,8 +71,11 @@ public:
 
 	Vector& operator*= (const double s);
 	
-	//void constructF(const Mesh& m);
-	//void constructG(const Mesh& m);
+	/** construct the vector based on vertex values evaluaded in f */
+	Vector& constructFunc(const Mesh& mesh, double (*f)(const Vertex&));
+	
+	/** construct the vector based on integration over the edges of the mesh */
+	Vector& constructFuncIntSurf(const Mesh& mesh, double (*f)(const Vertex&));
 };
 
 Vector operator* (const Vector& v, const double s);
@@ -121,17 +124,13 @@ public:
 	SparseMap& constructA(const Mesh& mesh);
 	SparseMap& constructM(const Mesh& mesh);
 	SparseMap& constructB(const Mesh& mesh);
-
-
 };
 
 class SparseLIL
 {
 private:
-	/** values per row */
-	TVals* mRowVals;
-	/** column indices per row */
-	TInd* mColInd;
+	TVals* mRowVals; /** values per row */
+	TInd* mColInd; /** column indices per row */
 	
 	uint mSizeRows;
 	uint mSizeColumns;
@@ -152,6 +151,12 @@ public:
 	/** convert CSR to LIL */
 	SparseLIL(const Sparse& matCSR);
 
+	/** swap rows */
+	void swap(uint row1, uint row2);
+	
+	/** add row1 * factor to row2 */
+	void addFactor(uint row1, uint row2, double factor);
+	
     double operator() (uint row, uint col) const;
 	
 	/** before assigning values at (i, j) make sure not to add zeros */
@@ -165,7 +170,7 @@ public:
 // ----------------------------------------------------------------------------
 
 /** Sparse matrix stored in CSR (Compressed Sparse Row) format
-	Optimized for Matrix/Vector operations.
+	Optimized for Matrix/Vector operations, features solvers.
 	After the matrix was constructed, it's no longer possible to manipulate
 	elements directly, convert to SparseLIL instead.
 	
@@ -178,8 +183,7 @@ class Sparse
 private:
     TVals mVals;
     TInd mColInd;
-	/** number of rows + 1, last entry is last nnz in row + 1 */
-	TInd mRowPtr;
+	TInd mRowPtr; /** number of rows + 1, last entry is last nnz in row + 1 */
 
 	uint mSizeColumns;
 
@@ -200,7 +204,6 @@ private:
     
 public:
     Sparse();
-    /** Assumption: each row contains at least one value */
     Sparse(const Sparse& m);
 
     Sparse(const TVals& vals, const TInd& colInd, const TInd& rowPtr, uint columns);
@@ -215,9 +218,10 @@ public:
     uint sizeRows() const;
     uint sizeNNZ() const;
 
-	/** values can only be accessed read-only  */
+	/** values can only be read  */
     double operator() (uint row, uint col) const;
-    //double& operator() (uint row, uint col);
+
+	// ---
     
 	/** solve Ax = b with jacobi
 		Assumption: the matrix is strictly diagonally dominant */
@@ -229,10 +233,6 @@ public:
 
 	/** solve Ax = b with LU, return decomposition if needed */
     Vector LU(Vector const& b, Sparse* m = 0) const;
-	
-	void constructA(const Mesh& m);
-	void constructM(const Mesh& m);
-	void constructB(const Mesh& m);
 };
 
 #endif // __ALGEBRA_H__

@@ -1,8 +1,8 @@
-/*************************************************************
+﻿/*************************************************************
 
  Projet
 
- (C) 2013 Charles Podkanski (charles@gmail.com),
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
           Stjepan Stamenkovic (stjepan@stjepan.net)
 
  ---
@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <math.h>
 
+#include "algebra.h"
 #include "mesh.h"
 #include "visualization.h"
 
@@ -27,51 +28,107 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
-Plot::Plot() :
+PlotMesh::PlotMesh() :
 mMesh(0)
 {
 }
 
-Plot::~Plot()
+PlotMesh::~PlotMesh()
 {
 }
 
-Plot::Plot(const char* name, const char* temp, Mesh* msh, EPlotType type, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh* msh, EPlotType type, const char* templ, const char* args) :
 mName(name),
-mTemplate(temp),
 mMesh(msh),
+mDataType(ePD_MESH),
 mType(type)
 {
+	if (templ)
+	{
+		mTemplate = templ;
+	}
+	
 	if (args)
 	{
 		mArgs = args;
 	}
 }
 
-void Plot::generate(bool run)
+PlotMesh::PlotMesh(const char* name, Mesh* msh, Vector* vals, EPlotType type, const char* templ, const char* args) :
+mName(name),
+mMesh(msh),
+mVectorPtr(vals),
+mDataType(ePD_VECTOR),
+mType(type)
+{
+	if (templ)
+	{
+		mTemplate = templ;
+	}
+	
+	if (args)
+	{
+		mArgs = args;
+	}
+}
+
+PlotMesh::PlotMesh(const char* name, Mesh* msh, double (*func)(const Vertex&), EPlotType type, const char* templ, const char* args) :
+mName(name),
+mMesh(msh),
+mFuncPtr(func),
+mDataType(ePD_FUNCTION),
+mType(type)
+{
+	if (templ)
+	{
+		mTemplate = templ;
+	}
+	
+	if (args)
+	{
+		mArgs = args;
+	}
+}
+
+void PlotMesh::generate(bool run)
 {
 	assert(mMesh);
 	
 	string fileName = "data/plots/" + mName;
 	
-	if (mType == ePT_GNUPLOT_SURFACE)
+	if (mType == ePT_GNUPLOT)
 	{
 		// data file
 		{
 			ofstream fout((fileName + ".pdat").c_str());
 			
-			TVertices::iterator it = mMesh->V.begin();
+			//TVertices::iterator it = mMesh->V.begin();
 			
-			while (it != mMesh->V.end())
+			if (mDataType == ePD_MESH)
 			{
-				fout << it->x << " " << it->y << " ";
-				
-				// TODO: write actual data that's associated to the node here
-				fout << pow(it->x, 2) + it->y;
-				
-				fout << endl;
-				
-				++it;
+				for (uint t = 0; t < mMesh->countVertices(); t++)
+				{
+					fout << mMesh->V[t].x << " " << mMesh->V[t].y << " ";
+					fout << endl;
+				}
+			}
+			else if (mDataType == ePD_FUNCTION)
+			{
+				for (uint t = 0; t < mMesh->countVertices(); t++)
+				{
+					fout << mMesh->V[t].x << " " << mMesh->V[t].y << " ";
+					fout << mFuncPtr(mMesh->V[t]);
+					fout << endl;
+				}
+			}
+			else if (mDataType == ePD_VECTOR)
+			{
+				for (uint t = 0; t < mMesh->countVertices(); t++)
+				{
+					fout << mMesh->V[t].x << " " << mMesh->V[t].y << " ";
+					fout << (*mVectorPtr)(t);
+					fout << endl;
+				}
 			}
 		}
 		
