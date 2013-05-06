@@ -30,14 +30,19 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+// timing macros
+
+clock_t _t;
+
 #define RESETCLOCK _t = clock
 #define CLOCK(T) T = clock() - _t
 #define LOGTIME(S, T)cout << S << ": " << ((float)T) / CLOCKS_PER_SEC << "s (" << T << " clocks)" << endl;
 #define LOGPARTTIME(S, T, TMAX)cout << S << ": " << ((float)T) / CLOCKS_PER_SEC << "s (" << T << " clocks) " << setprecision(2) << fixed << (double)T / TMAX * 100. << "%" << endl;
 
-clock_t _t;
+// dump info on non-zero entries in (small!) matrices
 
 #define DUMPNZ(M) for (uint i = 0; i < M.sizeRows(); i++) {	for (uint j = 0; j < M.sizeColumns(); j++) { if (fabs(M(i,j)) > 0.0001)	cout << j+1 << " ";	else cout << "-" << " "; } cout << endl; }
+#define DUMPVAL(M) for (uint i = 0; i < M.sizeRows(); i++) {	for (uint j = 0; j < M.sizeColumns(); j++) { cout << M(i,j) << " "; } cout << endl; }
 
 // ----------------------------------------------------------------------------
 
@@ -54,14 +59,16 @@ SHelmholtzParams gParams;
 
 // ----------------------------------------------------------------------------
 
+// we're keeping the problem specific functions in a namespace to avoid any ambiguity
 namespace helmholtz
 {
-
+	// f is just
 	double f(const Vertex& v)
 	{
 		return 0.;
 	}
 
+	// TODO: what is the normal on the corners of the square?
 	double g(const Vertex& v)
 	{
 		// make sure we have a vertex on the edge
@@ -70,40 +77,87 @@ namespace helmholtz
 			return 0.;
 		}
 
-		// constant is the same for any border
+		// this constant is the same for any border
 		double kapxk = gParams.kappa * (gParams.k1 * v.x + gParams.k2 * v.y);
 		
+		// normal vector n = (n1, n2)
 		double n1, n2;
 		
-		// find the proper edge if we have a square
+		// TODO: toggle corner point treatment here to see the impact on the solution
+		bool checkCorners = true;
+		
+		// determine the part of the border the point belongs to
 		double tol = 0.00000001;
+
+		// LEFT BORDER: n = (-1, 0) on the edge
 		if (fabs(v.x) < tol)
 		{
-			if (fabs(v.y) < tol || fabs(v.y - 1.) < tol)
-				return 0.;
-			
-			// left border
-			n1 = -1.;
-			n2 = 0.;
+			if (checkCorners)
+			{
+				// LOWER LEFT CORNER
+				if (fabs(v.y) < tol)
+				{
+					n1 = -1. / sqrt(2.);
+					n2 = -1. / sqrt(2.);
+				}
+				// UPPER LEFT CORNER
+				else if (fabs(v.y - 1.) < tol)
+				{
+					n1 = -1. / sqrt(2.);
+					n2 = 1. / sqrt(2.);
+				}
+				else
+				{
+					n1 = -1.;
+					n2 = 0.;
+				}
+			}
+			else
+			{
+				n1 = -1.;
+				n2 = 0.;
+			}
 		}
+		// RIGHT BORDER: n = (1, 0) on the edge
 		else if (fabs(v.x - 1.) < tol)
 		{
-			if (fabs(v.y) < tol || fabs(v.y - 1.) < tol)
-				return 0.;
-		
-			// right border
-			n1 = 1.;
-			n2 = 0.;
+			if (checkCorners)
+			{
+				// LOWER RIGHT CORNER
+				if (fabs(v.y) < tol)
+				{
+					n1 = -1 / sqrt(2.);
+					n2 = -1 / sqrt(2.);
+				}
+				// UPPER RIGHT CORNER
+				else if (fabs(v.y - 1.) < tol)
+				{
+					n1 = -1 / sqrt(2.);
+					n2 = -1 / sqrt(2.);
+				}
+				else
+				{
+					n1 = 1.;
+					n2 = 0.;
+				}
+			}
+			else
+			{
+				// right border
+				n1 = 1.;
+				n2 = 0.;
+			}
 		}
+		// if we had a corner it was already treated above
+		// BOTTOM BORDER: n = (0, -1) on the edge
 		else if (fabs(v.y) < tol)
 		{
-			// bottom border
 			n1 = 0.;
 			n2 = -1.;
 		}
+		// TOP BORDER: n = (0, 1) on the edge
 		else if (fabs(v.y - 1.) < tol)
 		{
-			// top border
 			n1 = 0.;
 			n2 = 1.;
 		}
@@ -141,7 +195,7 @@ int main(int argc, char* argv[])
 	gParams.k2 = 1./sqrt(2.);
 	gParams.fileMesh = "data/mesh/carre1.msh";
 	
-	// get filenames and parameters from the console
+	// get filenames and parameters from cmdline arguments (if any)
 	
 	for (int iArg = 1; iArg < argc; iArg++)
 	{
@@ -181,28 +235,85 @@ int main(int argc, char* argv[])
 
 	RESETCLOCK();
 	
-	Mesh m(gParams.fileMesh.c_str());
+	Mesh mesh(gParams.fileMesh.c_str());
 	
 	CLOCK(tLoadMesh);
 
 	// ----------
 	
-	// Assembe the matrices
+	// Assemble the matrices and vectors
 	
-	uint nV = m.countVertices();
-	SparseMap Amap(nV, nV), Mmap(nV, nV), Bmap(nV, nV);
+	uint Nv = mesh.countVertices();
+	SparseMap Amap(Nv, Nv), Mmap(Nv, Nv), Bmap(Nv, Nv);
+	
+	// A
 	
 	RESETCLOCK();
 	
-	// @@@
-	Amap.constructA(m);
+	Amap.constructA(mesh);
 	
 	CLOCK(tMatA);
+	
+	// M
+	
+	RESETCLOCK();
+	
+	Mmap.constructM(mesh);
+	
+	CLOCK(tMatM);
+	
+	// B
+	
+	RESETCLOCK();
 
-	if (0)
-	{
-		// Verification
+	Bmap.constructB(mesh);
+	
+	CLOCK(tAssB);
+	
+	// F (rhs)
+	
+	Vector rhsF(Nv), rhsG(Nv);
+	
+	RESETCLOCK();
+	
+	rhsF.constructFuncIntSurf(mesh, helmholtz::f);
+	
+	CLOCK(tRhsF);
+	
+	// G (rhs)
+	
+	RESETCLOCK();
+	
+	rhsG.constructFuncIntSurf(mesh, helmholtz::g);
+	
+	CLOCK(tRhsG);
+	
+	// ----------
+	
+	// verification of constructed matrices according to the course
+	
+	// dumping may make sense for "bin/helmholtz -mesh data/mesh/square_9.msh"
+	
+	bool verify = false;
+	bool dump = false;
+	
+	// A
+
+	if (verify || dump)
 		cout << endl << "A" << endl << endl;
+		
+	if (dump)
+	{
+		DUMPNZ(Amap);
+		cout << endl;
+		DUMPVAL(Amap);
+		cout << endl;
+	}
+	
+	if (verify)
+	{
+		// TEST: A * (1, ..., 1) = 0
+		
 		Vector k(Amap.sizeRows());
 		for (uint i = 0; i < k.size(); i++)
 		{
@@ -211,135 +322,83 @@ int main(int argc, char* argv[])
 		Sparse _A(Amap);
 		Vector Ak = _A*k;
 		cout << "Ak: " << Ak.norm2() << endl;
-		
-		const SparseMap& refA = Amap;
-		DUMPNZ(refA);
-		
-		cout << endl;
-		
-		DUMPNZ(_A);
-	
 	}
 	
-	// ---
-	
-	RESETCLOCK();
-	
-	Mmap.constructM(m);
-	
-	CLOCK(tMatM);
-	
-	if (0)
-	{	
+	// M
+
+	if (verify || dump)
 		cout << endl << "M" << endl << endl;
-	
-		const SparseMap& refM = Mmap;
-		DUMPNZ(refM);
-	
+		
+	if (dump)
+	{
+		DUMPNZ(Mmap);
 		cout << endl;
+		DUMPVAL(Mmap);
+		cout << endl;
+	}
+	
+	if (verify)
+	{
+		// TEST: Sum Mij = area of mesh		
+
 		double area = 0.;
-		for (uint t = 0; t < m.countTriangles(); t++)
+		for (uint t = 0; t < mesh.countTriangles(); t++)
 		{
-			area += m.T[t].area;
+			area += mesh.T[t].area;
 		}
 		cout << "Area: " << area << endl;
 		
 		cout << "Sum over Mij: ";
 		double areaM = 0.;
-		Sparse M(Mmap);
-		for (uint i = 0; i < M.sizeRows(); i++)
+		for (uint i = 0; i < Mmap.sizeRows(); i++)
 		{
-			for (uint j = 0; j < M.sizeColumns(); j++)
+			for (uint j = 0; j < Mmap.sizeColumns(); j++)
 			{
-				areaM += M(i,j);
+				areaM += Mmap(i,j);
 			}
 		}
 		cout << areaM << endl;
-		
-		DUMPNZ(M);
 	}
 	
-	// ---
+	// B
 	
-	RESETCLOCK();
+	if (verify || dump)
+		cout << endl << "B" << endl << endl;
+		
+	if (dump)
+	{
+		DUMPNZ(Bmap);
+		cout << endl;
+		DUMPVAL(Bmap);
+		cout << endl;
+	}
 	
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// @@@
-	Bmap.constructB(m);
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	
-	CLOCK(tAssB);
-
-	cout << endl << "B" << endl << endl;
-	
-	const SparseMap& refB = Bmap;
-	//DUMPNZ(refB);
-	
-	cout << endl;
-	
-	Sparse B(Bmap);
-	//DUMPNZ(B);
-	
-	// ----------	
-	
-	// Assemble rhs
-	
-	Vector rhsF(nV), rhsG(nV);
-	
-	RESETCLOCK();
-	
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	rhsF.constructFunc(m, &helmholtz::f);
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	
-	CLOCK(tRhsF);
-	
-	// ---
-	
-	RESETCLOCK();
-	
-	// @@@
-	rhsG.constructFuncIntSurf(m, &helmholtz::g);
-	
-	CLOCK(tRhsG);
+	if (verify)
+	{
+	}
 	
 	// ----------
-	
-	// solve the stationary problem
 
-	cout << "A1" << endl;
-	//DUMPNZ(refA);
+	// construct the linear system
 	
-	// @@@
 	Mmap *= -pow(gParams.kappa, 2);	
-	
-	cout << "M2" << endl;
-	//DUMPNZ(Mmap);
-	
-	// @@@
 	Amap += Mmap;
-	
-	cout << "A2" << endl;
-	//DUMPNZ(refA);
-	
-	// @@@
 	Amap += Bmap;
-	
-	cout << "A3" << endl;
-	//DUMPNZ(refA);
-	
+
+	// AMB = A - kappa^2 * M + B
+	// convert the matrix to Sparse so we can apply a solver
 	Sparse AMB(Amap);
-	cout << "ASparse" << endl;
-	//DUMPNZ(AMB);
+
+	Vector rhs = rhsF + rhsG;
 	
-	//Vector rhs = rhsF + rhsG;
-	
-	//return 0;
+	// ----------
+
+	// solve the stationary problem	
 	
 	RESETCLOCK();
 
-	Vector solution = AMB.conjGradient(rhsG);
-	//Vector solution = AMB.jacobi(rhsG);
+	Vector uh = AMB.conjGradient(rhs);
+	//Vector uh = AMB.jacobi(rhs);
 	
 	CLOCK(tSolve);
 	
@@ -347,28 +406,43 @@ int main(int argc, char* argv[])
 	
 	// Evaluate stuff
 	
+	// calculate exact solution
+	Vector u(Nv);
+	u.constructFunc(mesh, helmholtz::u);
+	
+	// calculate error
+	Vector err = u - uh;
+	
 	// stop measuring time, display of graphs is optional
 	tEnd = clock();
 	
+	cout << "Error: " << err.norm2() << endl;
+	
 	// ----------
 	
-	// plot rhs functions
+	// Plot problem functions and results
 	
-	//PlotMesh plotF("f", &m, &helmholtz::f);
-	//plotF.generate(true);
+	PlotMesh plotF("f", mesh, helmholtz::f);
+	plotF.generate(true);
 	
-	PlotMesh plotG("g", &m, &helmholtz::g);
-	//plotG.generate(true);
+	// TODO: check the impact of g to the solution
+	PlotMesh plotG("g", mesh, helmholtz::g);
+	plotG.generate(true);
 
-	// plot our solution
+	// our solution
 
-	PlotMesh plotUh("uh", &m, &solution);
+	PlotMesh plotUh("uh", mesh, uh);
 	plotUh.generate(true);
 	
-	// plot exact solution
+	// exact solution
 	
-	PlotMesh plotU("u", &m, &helmholtz::u);
+	PlotMesh plotU("u", mesh, u);
 	plotU.generate(true);
+	
+	// error
+	
+	PlotMesh plotErr("err", mesh, err);
+	plotErr.generate(true);
 	
 	// ---
 	
@@ -406,8 +480,10 @@ int main(int argc, char* argv[])
 	//LOGTIME("Total time", tEnd - tStart);
 	
 	cout << "---" << endl;
-	cout << "Computed: " << gParams.fileMesh << " - Nv: " << m.countVertices() << 
-	", Nt: " << m.countTriangles() << ", nE: " << m.countEdges() << endl;
+	cout << "Computed: " << gParams.fileMesh << " - Nv: " << mesh.countVertices() << 
+	", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << endl;
 	
 	return 0;
 }
+
+// FIN de la partie I :)

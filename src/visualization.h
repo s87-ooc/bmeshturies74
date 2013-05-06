@@ -59,7 +59,7 @@ private:
 	std::string mArgs;
 	
 	/** mesh the values should be plotted on */
-	Mesh* mMesh;
+	Mesh* mMeshPtr;
 	
 	/** type of the plot */
 	EPlotType mType;
@@ -80,13 +80,13 @@ public:
 	// TODO: simpler plots that work with x, y for errors, etc
 	
 	/** set up plot based on a mesh only */
-	PlotMesh(const char* name, Mesh* msh, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
+	PlotMesh(const char* name, Mesh& msh, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
 	
 	/** set up plot based on a value vector */
-	PlotMesh(const char* name, Mesh* msh, Vector* vals, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
+	PlotMesh(const char* name, Mesh& msh, Vector& vals, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
 	
 	/** set up plot based on a value vector */
-	PlotMesh(const char* name, Mesh* msh, double (*func)(const Vertex&), EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
+	PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
 	
 	/** generate the plot out of the mesh and data */
 	void generate(bool run = false);

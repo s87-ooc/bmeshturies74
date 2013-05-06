@@ -423,9 +423,8 @@ int main(int argc, char* argv[])
 		
         Mesh M("data/mesh/square_9.msh");
 		
-		//Plot p("plot01", "data/_gnuplot/surface.ptpl", &M);
-		Plot p("square", &m);
-		p.generate(true);
+		//PlotMesh p("plot01", "data/_gnuplot/surface.ptpl", &M);
+		//p.generate(true);
     }
 
 	return 0;

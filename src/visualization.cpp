@@ -29,7 +29,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 
 PlotMesh::PlotMesh() :
-mMesh(0)
+mMeshPtr(0)
 {
 }
 
@@ -37,9 +37,9 @@ PlotMesh::~PlotMesh()
 {
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh* msh, EPlotType type, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, EPlotType type, const char* templ, const char* args) :
 mName(name),
-mMesh(msh),
+mMeshPtr(&msh),
 mDataType(ePD_MESH),
 mType(type)
 {
@@ -54,10 +54,10 @@ mType(type)
 	}
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh* msh, Vector* vals, EPlotType type, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, Vector& vals, EPlotType type, const char* templ, const char* args) :
 mName(name),
-mMesh(msh),
-mVectorPtr(vals),
+mMeshPtr(&msh),
+mVectorPtr(&vals),
 mDataType(ePD_VECTOR),
 mType(type)
 {
@@ -72,10 +72,10 @@ mType(type)
 	}
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh* msh, double (*func)(const Vertex&), EPlotType type, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), EPlotType type, const char* templ, const char* args) :
 mName(name),
-mMesh(msh),
-mFuncPtr(func),
+mMeshPtr(&msh),
+mFuncPtr(&func),
 mDataType(ePD_FUNCTION),
 mType(type)
 {
@@ -92,7 +92,7 @@ mType(type)
 
 void PlotMesh::generate(bool run)
 {
-	assert(mMesh);
+	assert(mMeshPtr);
 	
 	string fileName = "data/plots/" + mName;
 	
@@ -102,30 +102,30 @@ void PlotMesh::generate(bool run)
 		{
 			ofstream fout((fileName + ".pdat").c_str());
 			
-			//TVertices::iterator it = mMesh->V.begin();
+			//TVertices::iterator it = mMeshPtr->V.begin();
 			
 			if (mDataType == ePD_MESH)
 			{
-				for (uint t = 0; t < mMesh->countVertices(); t++)
+				for (uint t = 0; t < mMeshPtr->countVertices(); t++)
 				{
-					fout << mMesh->V[t].x << " " << mMesh->V[t].y << " ";
+					fout << mMeshPtr->V[t].x << " " << mMeshPtr->V[t].y << " ";
 					fout << endl;
 				}
 			}
 			else if (mDataType == ePD_FUNCTION)
 			{
-				for (uint t = 0; t < mMesh->countVertices(); t++)
+				for (uint t = 0; t < mMeshPtr->countVertices(); t++)
 				{
-					fout << mMesh->V[t].x << " " << mMesh->V[t].y << " ";
-					fout << mFuncPtr(mMesh->V[t]);
+					fout << mMeshPtr->V[t].x << " " << mMeshPtr->V[t].y << " ";
+					fout << mFuncPtr(mMeshPtr->V[t]);
 					fout << endl;
 				}
 			}
 			else if (mDataType == ePD_VECTOR)
 			{
-				for (uint t = 0; t < mMesh->countVertices(); t++)
+				for (uint t = 0; t < mMeshPtr->countVertices(); t++)
 				{
-					fout << mMesh->V[t].x << " " << mMesh->V[t].y << " ";
+					fout << mMeshPtr->V[t].x << " " << mMeshPtr->V[t].y << " ";
 					fout << (*mVectorPtr)(t);
 					fout << endl;
 				}
@@ -135,11 +135,14 @@ void PlotMesh::generate(bool run)
 		// script file
 		{
 			ofstream fout((fileName + ".p").c_str());
-			if (!mTemplate.empty())
+			if (mTemplate.empty())
 			{
-				ifstream fin(mTemplate.c_str());
-				fout << fin.rdbuf() << endl;
+				mTemplate = "data/_gnuplot/default.ptpl";
 			}
+
+			ifstream fin(mTemplate.c_str());
+			fout << fin.rdbuf() << endl;
+
 			fout << "splot '" << fileName << ".pdat'";
 		}
 		

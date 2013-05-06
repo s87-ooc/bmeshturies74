@@ -1,7 +1,8 @@
 # Projet
-# (C) 2013 Charles Podkanski (charles@gmail.com),
+# (C) 2013 Charles Podkanski (charles@podkanski.com),
 #          Stjepan Stamenkovic (stjepan@stjepan.net)
 # Template used to plot surfaces
+bind Close "exit gnuplot"
 set hidden3d
 set isosamples 40
 set xrange [-2.5:2.5]
