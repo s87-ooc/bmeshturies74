@@ -77,11 +77,30 @@ label(label), id(id)
     V.push_back(a);
     V.push_back(b);
     length = calculate_length();
+    edgeOf = findTriangle();
 }
 
 double BoundEdge::calculate_length()
 {
     return sqrt( pow(V[0]->x - V[1]->x, 2) + pow(V[0]->y - V[1]->y, 2));
+}
+
+Triangle* BoundEdge::findTriangle()
+{
+    TTrianglesP& T0 = V[0]->T;
+    TTrianglesP& T1 = V[1]->T;
+
+    for( uint k = 0; k < T0.size(); k++)
+    {
+        for( uint l = 0; l < T1.size(); l++)
+        {
+            if( T0[k]->id == T1[l]->id)
+            {
+                return T0[k];
+            }
+        }
+    }
+    assert(false);
 }
 
 Vertex& BoundEdge::operator() (uint vertex) const

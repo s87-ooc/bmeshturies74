@@ -194,6 +194,23 @@ double dot(const Vector& v1, const Vector& v2)
 	return res;
 }
 
+Vector& Vector::constructF(const Mesh& m)
+{
+
+	uint Nv = m.countVertices();
+	mVals.resize(Nv);
+
+	return (*this);
+}
+Vector& Vector::constructG(const Mesh& m)
+{
+
+	uint Nv = m.countVertices();
+	mVals.resize(Nv);
+
+	return (*this);
+}
+
 // ----------------------------------------------------------------------------
 
 SparseMap::SparseMap(uint rows, uint columns) :
