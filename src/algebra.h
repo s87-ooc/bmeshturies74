@@ -71,17 +71,11 @@ public:
 
 	Vector& operator*= (const double s);
 	
-<<<<<<< HEAD
 	/** construct the vector based on vertex values evaluaded in f */
 	Vector& constructFunc(const Mesh& mesh, double (*f)(const Vertex&));
 	
 	/** construct the vector based on integration over the edges of the mesh */
 	Vector& constructFuncIntSurf(const Mesh& mesh, double (*f)(const Vertex&));
-=======
-	/** Assumption: the vectors are initially empty */
-	Vector& constructF(const Mesh& m);
-	Vector& constructG(const Mesh& m);
->>>>>>> Small fixes.
 };
 
 Vector operator* (const Vector& v, const double s);

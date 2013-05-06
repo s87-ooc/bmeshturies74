@@ -509,7 +509,6 @@ int main(int argc, char* argv[])
 
   		resultFile << R;
 
-
   		resultFile.close();
     }
 	
