@@ -25,19 +25,11 @@
 #include "algebra.h"
 #include "mesh.h"
 #include "visualization.h"
+#include "clock.h"
 
 using namespace std;
 
 // ----------------------------------------------------------------------------
-
-// timing macros
-
-clock_t _t;
-
-#define RESETCLOCK _t = clock
-#define CLOCK(T) T = clock() - _t
-#define LOGTIME(S, T)cout << S << ": " << ((float)T) / CLOCKS_PER_SEC << "s (" << T << " clocks)" << endl;
-#define LOGPARTTIME(S, T, TMAX)cout << S << ": " << ((float)T) / CLOCKS_PER_SEC << "s (" << T << " clocks) " << setprecision(2) << fixed << (double)T / TMAX * 100. << "%" << endl;
 
 // dump info on non-zero entries in (small!) matrices
 
@@ -201,7 +193,7 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: helmholtz -mesh " << gParams.fileMesh << " -kappa " << gParams.kappa << " -k " << gParams.k1 << " " << gParams.k2 << endl;
+			cout << "Usage: bin/helmholtz -mesh " << gParams.fileMesh << " -kappa " << gParams.kappa << " -k " << gParams.k1 << " " << gParams.k2 << endl;
 			return 0;
 		}
 		else if (strcmp(argv[iArg], "-mesh") == 0)
@@ -482,6 +474,7 @@ int main(int argc, char* argv[])
 	cout << "---" << endl;
 	cout << "Computed: " << gParams.fileMesh << " - Nv: " << mesh.countVertices() << 
 	", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << endl;
+	cout << "          Matrix NNZ: " << AMB.sizeNNZ() << " (" << (double)AMB.sizeNNZ() / (AMB.sizeRows() * AMB.sizeColumns()) * 100. << "%)" << endl;
 	
 	return 0;
 }

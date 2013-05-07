@@ -222,16 +222,16 @@ public:
     double operator() (uint row, uint col) const;
 
 	// ---
+
+	/** solve Ax = b with conjugate Gradient
+		Assumption: the matrix is symmetric positive-definite */
+    Vector conjGradient(Vector const& b) const;
     
 	/** solve Ax = b with jacobi
 		Assumption: the matrix is strictly diagonally dominant */
     Vector jacobi(Vector const& b) const;
 
-	/** solve Ax = b with conjugate Gradient
-		Assumption: the matrix is symmetric positive-definite */
-    Vector conjGradient(Vector const& b) const;
-
-	/** solve Ax = b with LU, return decomposition if needed */
+	/** solve Ax = b with LU, optionally return the decomposed matrix */
     Vector LU(Vector const& b, Sparse* lu = 0) const;
 };
 

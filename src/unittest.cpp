@@ -25,33 +25,6 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
-// use this helper function only for very small sparse matrices!
-template <class T>
-void dump(const T& m)
-{
-	if (m.sizeColumns() > 10 || m.sizeRows() > 10)
-	{
-		cout << "Matrix is bigger than 10x10, use the << operator to print it" << endl;
-	}
-	
-	cout << "[ ";
-	for (uint i = 0; i < m.sizeRows(); i++)
-	{
-		for (uint j = 0; j < m.sizeColumns(); j++)
-		{
-			cout << m(i, j) << " ";
-		}
-		
-		if (i < m.sizeRows() - 1)
-		{
-			cout << "; ";
-		}
-	}
-	cout << "] " << m.sizeRows() << "x" << m.sizeColumns() << endl;
-}
-
-// ----------------------------------------------------------------------------
-
 int main(int argc, char* argv[])
 {
 	cout << "== Unittest ==" << endl;
@@ -61,7 +34,7 @@ int main(int argc, char* argv[])
 		
 		Vector v(3);
 		
-		cout << v << endl;
+		DUMP_VEC(v);
 
 		v(0) = 1.0;
 		v(1) = 2.0;
@@ -106,12 +79,12 @@ int main(int argc, char* argv[])
 		rowPtr.push_back(4);
 
 		Sparse s(vals, colInd, rowPtr, 2);
-		dump(s);
+		DUMP_MAT(s);
 
 		Sparse t;
 
 		t = s;
-		dump(t);
+		DUMP_MAT(t);
 	}
 
 	{
@@ -125,14 +98,14 @@ int main(int argc, char* argv[])
 		m(2, 1) = 5.0;
 		m(2, 0) = 3.0;
 	
-		dump(m);
+		DUMP_MAT(m);
 		
 		cout << "Rows: " << m.sizeRows() << endl;
 		cout << "Columns: " << m.sizeColumns() << endl;
 		cout << "NNZ: " << m.sizeNNZ() << endl;
 		
 		SparseLIL n(m);
-		dump(n);
+		DUMP_MAT(n);
 	}
 
 	{
@@ -146,10 +119,10 @@ int main(int argc, char* argv[])
 		matLIL(2, 1) = 5.0;
 		matLIL(2, 0) = 3.0;
 		
-		dump(matLIL);
+		DUMP_MAT(matLIL);
 		
 		Sparse m(matLIL);
-		dump(m);
+		DUMP_MAT(m);
 		
 		// ---
 		
@@ -171,10 +144,10 @@ int main(int argc, char* argv[])
 		rowPtr.push_back(4);
 
 		Sparse s(vals, colInd, rowPtr, 3);
-		dump(s);
+		DUMP_MAT(s);
 		
 		SparseLIL nLIL(s);
-		dump(nLIL);
+		DUMP_MAT(nLIL);
 	}
 	
 	
@@ -190,14 +163,14 @@ int main(int argc, char* argv[])
 		sLIL(1, 1) = 7.0;
 		
 		Sparse s(sLIL);
-		dump(s);
+		DUMP_MAT(s);
 
 		Vector b(2);
 		b(0) = 11.;
 		b(1) = 13.;
 
 		Vector solution = s.jacobi(b);
-		cout << solution << endl;
+		DUMP_VEC(solution);
 		
 		cout << "Expected: [ 7.1111 ; -3.2222 ]" << endl;
 	}
@@ -215,14 +188,14 @@ int main(int argc, char* argv[])
 			sLIL(1, 1) = 3.0;
 			
 			Sparse s(sLIL);
-			dump(s);
+			DUMP_MAT(s);
 
 			Vector b(2);
 			b(0) = 1.0;
 			b(1) = 2.0;
 			
 			Vector solution = s.conjGradient(b);
-			cout << solution << endl;
+			DUMP_VEC(solution);
 			
 			cout << "Expected: [ 0.0909 ; 0.6364 ]" << endl;
 		}
@@ -242,7 +215,7 @@ int main(int argc, char* argv[])
 			sLIL(2, 2) = 2.0;
 			
 			Sparse s(sLIL);
-			dump(s);
+			DUMP_MAT(s);
 
 			Vector b(3);
 			b(0) = 1.0;
@@ -250,7 +223,7 @@ int main(int argc, char* argv[])
 			b(2) = 3.0;
 			
 			Vector solution = s.conjGradient(b);
-			cout << solution << endl;
+			DUMP_VEC(solution);
 			
 			cout << "Expected: [ 2.5 ; 4 ; 3.5 ]" << endl;
 		}
@@ -269,14 +242,14 @@ int main(int argc, char* argv[])
 			sLIL(1, 1) = 3.0;
 			
 			Sparse s(sLIL);
-			dump(s);
+			DUMP_MAT(s);
 
 			Vector b(2);
 			b(0) = 1.0;
 			b(1) = 2.0;
 			
 			Vector solution = s.LU(b);
-			cout << solution << endl;
+			DUMP_VEC(solution);
 			
 			cout << "Expected: [ 0.0909 ; 0.6364 ]" << endl;
 		}
@@ -296,7 +269,7 @@ int main(int argc, char* argv[])
 			sLIL(2, 2) = 2.0;
 			
 			Sparse s(sLIL);
-			dump(s);
+			DUMP_MAT(s);
 
 			Vector b(3);
 			b(0) = 1.0;
@@ -304,7 +277,7 @@ int main(int argc, char* argv[])
 			b(2) = 3.0;
 			
 			Vector solution = s.LU(b);
-			cout << solution << endl;
+			DUMP_VEC(solution);
 			
 			cout << "Expected: [ 2.5 ; 4 ; 3.5 ]" << endl;
 		}
@@ -333,7 +306,7 @@ int main(int argc, char* argv[])
 			sLIL(3, 3) = 1.0;
 			
 			Sparse s(sLIL);
-			dump(s);
+			DUMP_MAT(s);
 
 			Vector b(4);
 			b(0) = 0.0;
@@ -342,9 +315,9 @@ int main(int argc, char* argv[])
 			b(3) = 2.0;
 			
 			Vector solution = s.LU(b);
-			cout << solution << endl;
+			DUMP_VEC(solution);
 			
-			cout << "Expected: [ 0 ; -7 ; 4 ; 2 ]" << endl;
+			cout << "Expected: [ 1 ; -1 ; 0 ; 2 ]" << endl;
 		}
 	}
 	
@@ -357,7 +330,7 @@ int main(int argc, char* argv[])
 		ifstream f("data/mtest01.dat");
 		f >> m;
 		
-		dump(m);
+		DUMP_MAT(m);
 	}
 
 	{
