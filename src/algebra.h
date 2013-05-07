@@ -71,7 +71,7 @@ public:
 
 	Vector& operator*= (const double s);
 	
-	/** construct the vector based on vertex values evaluaded in f */
+	/** construct the vector based on vertex values evaluated in f */
 	Vector& constructFunc(const Mesh& mesh, double (*f)(const Vertex&));
 	
 	/** construct the vector based on integration over the edges of the mesh */

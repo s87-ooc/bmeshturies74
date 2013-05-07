@@ -79,6 +79,7 @@ public:
 
 class BoundEdge {
 private:
+    Triangle* findTriangle();
     double calculate_length();
 public:
 	// Vertex& V[2];
@@ -86,6 +87,7 @@ public:
     int id;
     int label;
     double length;
+    Triangle* edgeOf;
     BoundEdge(Vertex* a, Vertex* b, int label, int id);
 
     Vertex& operator() (uint vertex) const;
