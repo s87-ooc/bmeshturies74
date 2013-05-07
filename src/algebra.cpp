@@ -733,10 +733,121 @@ Vector Sparse::conjGradient(Vector const& b) const
     return x;
 }
 
-Vector Sparse::LU(Vector const& v, Sparse* m) const
+Vector Sparse::LU(Vector const& b, Sparse* lu) const
 {
-	Vector p;
-	return p;
+	const uint n = sizeRows();
+
+	// store the permutations of partial pivoting
+	uint* p = new uint[n];
+	for (uint i = 0; i < n; i++)
+	{
+		p[i] = i;
+	}
+
+	SparseLIL A(*this);
+	
+	// ----------
+
+	// decompose A = LU with partial pivoting
+	
+	for (uint k = 0; k < n - 1; k++)
+	{
+		//cout << "-" << k << " " << A(p[k], p[k]) << endl;
+	
+		if (fabs(A(p[k], p[k])) < EQ_TOL)
+		{
+			// TODO: perform permutation
+			/*for (uint k0 = k+1; k0 < n; k0++)
+			{
+				cout << k0 << " " << A(p[k0], p[k0]) << endl;
+				if (fabs(A(p[k0], p[k0])) >= EQ_TOL)
+				{
+					uint swap = p[k];
+					p[k] = k0;
+					p[k0] = swap;
+					cout << k << " <-> " << p[k0] << endl;
+					break;
+				}
+			}*/
+		}
+
+		for (uint i = k+1; i < n; i++)
+		{
+			A(p[i],k) = A(p[i],k) / A(k,k);
+			
+			for (uint j = k+1; j < n; j++)
+			{
+				A(p[i],j) = A(p[i],j) - A(p[i],k)*A(k,j);
+			}
+		}
+	}
+	
+	/*cout << "--[" << endl;
+	for (uint i = 0; i < n; i++)
+	{
+		for (uint j = 0; j < n; j++)
+		{
+			cout << A(p[i], j) << " ";
+		}
+		cout << endl;
+	}
+	cout << "]--" << endl;*/
+
+	// save the decomposition in m if the pointer was valid
+	if (lu)
+	{
+		// TODO: implement assignment operators for the matrix classes!
+		//*lu = A;
+	}
+	
+	// ----------
+	
+	// Reconstruct solution out of LU decomposition
+	
+	Vector x(n);
+	Vector y(n);
+
+	y(p[0]) = b(p[0]);	// do this outside of the loop as we want to go over uint, -1 not uint
+	for (uint k = 1; k < n; k++)
+	{
+		y(p[k]) = b(p[k]);
+		for (uint j = 0; j <= k-1; j++)
+		{
+			y(p[k]) -= A(p[k], j) * y(p[j]);
+		}
+	}
+	
+	//cout << "y: " << y << endl;
+	
+	for (uint k = n-1; k >= 1; k--)
+	{
+		//cout << k << " " << k+1 << " " << n-1 << endl;
+		x(p[k]) = y(p[k]);
+		for (uint j = n-1; j >= k+1; j--)
+		{
+			//cout << "GO" << endl;
+			x(p[k]) -= A(p[k], j) * x(p[j]);
+		}
+		x(p[k]) /= A(p[k], p[k]);
+	}
+	// do this outside of the loop since we're using uint
+	//cout << 0 << " " << 0+1 << " " << n-1 << endl;
+	x(p[0]) = y(p[0]);
+	for (uint j = n-1; j >= 1; j--)
+	{
+		//cout << "GO" << endl;
+		x(p[0]) -= A(p[0], j) * x(p[j]);
+	}
+	x(p[0]) /= A(p[0], p[0]);
+	
+	//cout << "x: " << x << endl;
+	
+	// ----------
+	
+	// cleanup memory
+	delete[] p;	
+	
+	return x;
 }
 
 // ----------------------------------------------------------------------------

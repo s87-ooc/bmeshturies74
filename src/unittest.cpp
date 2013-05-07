@@ -257,6 +257,100 @@ int main(int argc, char* argv[])
 	}
 	
 	{
+		cout << "= LU solver" << endl;
+	
+		{
+			// [ 4 1 ; 1 3 ] * [ 0.0909 ; 0.6364 ] = [ 1 ; 2 ]
+			
+			SparseLIL sLIL(2, 2);
+			sLIL(0, 0) = 4.0;
+			sLIL(0, 1) = 1.0;
+			sLIL(1, 0) = 1.0;
+			sLIL(1, 1) = 3.0;
+			
+			Sparse s(sLIL);
+			dump(s);
+
+			Vector b(2);
+			b(0) = 1.0;
+			b(1) = 2.0;
+			
+			Vector solution = s.LU(b);
+			cout << solution << endl;
+			
+			cout << "Expected: [ 0.0909 ; 0.6364 ]" << endl;
+		}
+		
+		{
+			// [ 2 -1 0 ; -1 2 -1 ; 0 -1 2 ] * [ 2.5 ; 4 ; 3.5 ] = [ 1 ; 2 ; 3 ]
+			
+			SparseLIL sLIL(3, 3);
+			sLIL(0, 0) = 2.0;
+			sLIL(0, 1) = -1.0;
+			sLIL(0, 2) = 0.0;
+			sLIL(1, 0) = -1.0;
+			sLIL(1, 1) = 2.0;
+			sLIL(1, 2) = -1.0;
+			sLIL(2, 0) = 0.0;
+			sLIL(2, 1) = -1.0;
+			sLIL(2, 2) = 2.0;
+			
+			Sparse s(sLIL);
+			dump(s);
+
+			Vector b(3);
+			b(0) = 1.0;
+			b(1) = 2.0;
+			b(2) = 3.0;
+			
+			Vector solution = s.LU(b);
+			cout << solution << endl;
+			
+			cout << "Expected: [ 2.5 ; 4 ; 3.5 ]" << endl;
+		}
+		
+		{
+			// example where the pivot gets zero
+			// taken from G. Allaire, S. M. Kaber: "Numerical Linear Algebra"
+			// [ 2 4 -4 1 ; 3 6 1 -2 ; -1 1 2 3 ; 1 1 -4 1 ] * [ 1 ; -1 ; 0 ; 2 ] = [ 0 ; -7 ; 4 ; 2 ]
+			
+			SparseLIL sLIL(4, 4);
+			sLIL(0, 0) = 2.0;
+			sLIL(0, 1) = 4.0;
+			sLIL(0, 2) = -4.0;
+			sLIL(0, 3) = 1.0;
+			sLIL(1, 0) = 3.0;
+			sLIL(1, 1) = 6.0;
+			sLIL(1, 2) = 1.0;
+			sLIL(1, 3) = -2.0;
+			sLIL(2, 0) = -1.0;
+			sLIL(2, 1) = 1.0;
+			sLIL(2, 2) = 2.0;
+			sLIL(2, 3) = 3.0;
+			sLIL(3, 0) = 1.0;
+			sLIL(3, 1) = 1.0;
+			sLIL(3, 2) = -4.0;
+			sLIL(3, 3) = 1.0;
+			
+			Sparse s(sLIL);
+			dump(s);
+
+			Vector b(4);
+			b(0) = 0.0;
+			b(1) = -7.0;
+			b(2) = 4.0;
+			b(3) = 2.0;
+			
+			Vector solution = s.LU(b);
+			cout << solution << endl;
+			
+			cout << "Expected: [ 0 ; -7 ; 4 ; 2 ]" << endl;
+		}
+	}
+	
+	return 0;
+	
+	{
 		cout << "= Matrix load" << endl;
 	
 		Sparse m;

@@ -2,7 +2,7 @@
 #                                                                             #
 # Projet                                                                      #
 #                                                                             #
-# (C) 2013 Charles Podkanski (charles@podkanski.com),                             #
+# (C) 2013 Charles Podkanski (charles@podkanski.com),                         #
 #          Stjepan Stamenkovic (stjepan@stjepan.net)                          #
 #                                                                             #
 # ---                                                                         #

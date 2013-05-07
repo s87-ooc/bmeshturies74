@@ -232,7 +232,7 @@ public:
     Vector conjGradient(Vector const& b) const;
 
 	/** solve Ax = b with LU, return decomposition if needed */
-    Vector LU(Vector const& b, Sparse* m = 0) const;
+    Vector LU(Vector const& b, Sparse* lu = 0) const;
 };
 
 #endif // __ALGEBRA_H__
