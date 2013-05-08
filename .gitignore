@@ -3,3 +3,5 @@ bin/*
 .DS_Store
 *.p
 *.pdat
+data/linsys/*.log
+data/linsys/*.linsys

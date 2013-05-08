@@ -19,6 +19,7 @@
 #include <string.h>
 #include <sstream>
 #include <cstdlib>
+#include <vector>
 
 // ---
 
@@ -66,7 +67,7 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/solvertest [-r] -density " << gParams.density << " -count " << gParams.count << " dim1,...,dim[count]" << endl;
+			cout << "Usage: bin/solvertest [-r] -density " << gParams.density << " dim1,...,dim[count]" << endl;
 			cout << "       -r = regenerate existing files" << endl;
 			return 0;
 		}
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
 				buf >> gParams.density;
 			}
 		}
-		else if (strcmp(argv[iArg], "-count") == 0)
+		/*else if (strcmp(argv[iArg], "-count") == 0)
 		{
 			iArg++;
 			
@@ -95,22 +96,33 @@ int main(int argc, char* argv[])
 				buf << argv[iArg];
 				buf >> gParams.count;
 			}
-		}
+		}*/
 		else
 		{
 			// dim1,...,dim[count]
-			gParams.dimensions = new uint[gParams.count];
+			vector<uint> dims;
 			
-			char* dim = strtok(argv[iArg], ",");
-			for (uint i = 0; i < gParams.count; i++)
+			char* sDim = strtok(argv[iArg], ",");
+
+			while (sDim)
 			{
-				assert(dim);
+				int dim;
 			
 				stringstream buf;
-				buf << dim;
-				buf >> gParams.dimensions[i];
+				buf << sDim;
+				buf >> dim;
+				
+				dims.push_back(dim);
 			
-				dim = strtok(0, ",");
+				sDim = strtok(0, ",");
+			}
+			
+			gParams.count = dims.size();
+			gParams.dimensions = new uint[gParams.count];
+			
+			for (uint i = 0; i < gParams.count; i++)
+			{
+				gParams.dimensions[i] = dims[i];
 			}
 		}
 	}

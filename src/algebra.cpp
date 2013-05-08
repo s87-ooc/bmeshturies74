@@ -510,10 +510,12 @@ SparseLIL SparseLIL::prodTranspose() const
 	
 	//val += (i, k) * (j, k)
 	
+	cout << "prodTranspose: ";
+	
 	for (uint i = 0; i < sizeRows(); i++)
 	{
-		if (i % 10 == 0)
-			cout << "i " << i << endl;
+		if (i % (sizeRows()/10) == 0)
+			cout << "#";
 		
 		for (uint j = 0; j < sizeColumns(); j++)
 		{
@@ -544,6 +546,8 @@ SparseLIL SparseLIL::prodTranspose() const
 			}
 		}
 	}
+	
+	cout << endl;
 	
 	return m;
 }
