@@ -3,7 +3,7 @@
  Mini Projet
 
  (C) 2013 Charles Podkanski (charles@podkanski.com),
-          Stjepan Stamenkovic (stjepan@stjepan.net)
+          Stjepan Stamenković (stjepan@stjepan.net)
 
  ---
 
@@ -514,7 +514,7 @@ SparseLIL SparseLIL::prodTranspose() const
 	
 	for (uint i = 0; i < sizeRows(); i++)
 	{
-		if (i % (sizeRows()/10) == 0)
+		if (i > 10 && i % (sizeRows()/10) == 0)
 			cout << "#";
 		
 		for (uint j = 0; j < sizeColumns(); j++)
@@ -751,7 +751,7 @@ Vector Sparse::conjGradient(Vector const& b) const
 
 Vector Sparse::jacobi(Vector const& b) const
 {
-    Vector x1(sizeColumns());
+    /*Vector x1(sizeColumns());
     Vector x2(sizeColumns());
     Vector& xcur = x1;
     Vector& xnew = x2;
@@ -781,18 +781,44 @@ Vector Sparse::jacobi(Vector const& b) const
             xnew(i) /= diag;
         }
 
-		// Stjepan: the convergence criterium may not be correct in this way,
-		// we should do either |Axnew - b| < epsilon (costly) or
-		// using the "vecteur residu" as described on http://fr.wikipedia.org/wiki/M%C3%A9thode_de_Jacobi
-		// TODO: discuss convergence criterium
 		convergence = (xnew - xcur).norm2() < JACOBI_TOLERANCE;
 
 		Vector& xtmp = xcur;
         xcur = xnew;
 		xnew = xtmp;
     }
+	
+	return xnew;*/
    
-    return xnew;
+	// Stjepan: naive implementation according to G. Allaire, S.M. Kaber "Numerical Linear Algebra"
+	
+	uint dim = sizeColumns();
+	
+	Vector x(dim);	/** initial x is 0 */
+    Vector y(dim);
+	Vector r = b - (*this) * x;	/** residual */
+	
+	double limit = JACOBI_TOLERANCE * b.norm2();
+	
+	uint it;
+	uint itMax = pow(dim, 2);
+	
+	while (r.norm2() > limit && it < itMax)
+	{
+		for (uint i = 0; i < dim; i++)
+		{
+			y(i) = r(i) / (*this)(i, i);
+		}
+		x += y;
+		r = r - (*this) * y;
+		
+		it++;
+	}
+	
+	string s = it < itMax ? "" : " (TIMEOUT!)";
+	cout << "Jacobi a fini après " << it << " itération(s)" << s << endl;
+   
+    return x;
 }
 
 Vector Sparse::LU(Vector const& b, Sparse* lu) const

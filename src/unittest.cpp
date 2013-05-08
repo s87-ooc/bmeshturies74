@@ -3,7 +3,7 @@
  Projet
 
  (C) 2013 Charles Podkanski (charles@podkanski.com),
-          Stjepan Stamenkovic (stjepan@stjepan.net)
+          Stjepan Stamenković (stjepan@stjepan.net)
 
  ---
 
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 		m(1, 1) = 2.;
 		m(2, 0) = 5.;
 		m(2, 2) = 3.;
-	
+
 		DUMP_MAT(m);
 
 		SparseLIL mprod = m.prodTranspose();
