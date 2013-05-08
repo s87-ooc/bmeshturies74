@@ -19,6 +19,10 @@
 // general
 typedef unsigned int uint;
 
+#define EQ_TOL 0.0000000001
+
+// ----------------------------------------------------------------------------
+
 /** get the position in an array based on an elements address */
 template <typename T>
 uint getIndex(T* start, const T& entry)
@@ -43,6 +47,8 @@ void deletePtrArray(T* array, uint size)
 	delete[] array;
 }
 
+// ----------------------------------------------------------------------------
+
 /** macro for safe deletion of pointers */
 #define SAFE_DELETE(P) if (P) delete P
 
@@ -50,7 +56,7 @@ void deletePtrArray(T* array, uint size)
 #define SAFE_ARRDELETE(A) if (A) delete[] A
 
 /** macro for dumping an array to the console */
-#define DUMP_ARR(A, NUM) for (uint i = 0; i < NUM; i++) { cout << A[i] << " "; } cout << endl 
+#define DUMP_ARR(A, NUM) cout << #A << ": [ "; for (uint i = 0; i < NUM; i++) { cout << A[i] << " "; } cout << " ]" << endl 
 
 /** macro for dumping a vector to the console */
 #define DUMP_VEC(V) cout << #V << ": [ "; for (uint i = 0; i < V.size(); i++) { cout << V(i); if(i == V.size() - 1) cout << " ] "; else cout << " ; "; } cout << V.size() << endl

@@ -25,12 +25,16 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+#define TESTTITLE(T) cout << endl << "= " << T << " =" << endl << endl
+
+// ----------------------------------------------------------------------------
+
 int main(int argc, char* argv[])
 {
 	cout << "== Unittest ==" << endl;
 
 	{
-		cout << "= Vector" << endl;
+		TESTTITLE("Vector");
 		
 		Vector v(3);
 		
@@ -40,24 +44,56 @@ int main(int argc, char* argv[])
 		v(1) = 2.0;
 		v(2) = 3.0;
 
-		cout << v << endl;
+		DUMP_VEC(v);
 
 		Vector w;
 
 		w = v;
-		cout << w << endl;
+		DUMP_VEC(w);
 
 		cout << v.norm2() << endl;
 
 		w = 3.0 * v;
-		cout << w << endl;
+		DUMP_VEC(w);
 
 		w = v * 3.0;
-		cout << w << endl;
+		DUMP_VEC(w);
+	}
+	
+	{
+		TESTTITLE("Vector I/O");
+		
+		Vector v(3);
+		v(0) = 2.;
+		v(1) = -1.;
+		v(2) = 42.;
+		
+		Vector w(2);
+		w(0) = 9.;
+		w(1) = 7.;
+		
+		string fn = "_vectest.dat";
+		
+		{
+			ofstream fileOut(fn.c_str());
+			fileOut << v << w;
+		}
+		
+		Vector x, y;
+		
+		{
+			ifstream fileIn(fn.c_str());
+			fileIn >> x >> y;			
+		}
+		
+		DUMP_VEC(x);
+		DUMP_VEC(y);
+		
+		remove(fn.c_str());
 	}
 
 	{
-		cout << "= Matrix construcor" << endl;
+		TESTTITLE("Sparse");
 		
 		// [ 2 1 ; 5 7 ] 2x2
 
@@ -86,9 +122,52 @@ int main(int argc, char* argv[])
 		t = s;
 		DUMP_MAT(t);
 	}
+	
+	{
+		TESTTITLE("Sparse I/O");
+		
+		SparseLIL _m(3, 3);
+		_m(0, 0) = 1.;
+		_m(1, 0) = 4.;
+		_m(1, 1) = 2.;
+		_m(2, 0) = 5.;
+		_m(2, 2) = 3.;
+
+		SparseLIL _n(3, 4);
+		_n(0, 1) = 2.0;
+		_n(0, 3) = 4.0;
+		_n(1, 1) = 1.0;
+		_n(2, 1) = 5.0;
+		_n(2, 0) = 3.0;
+		
+		Sparse m(_m);
+		Sparse n(_n);
+
+		DUMP_MAT(m);
+		DUMP_MAT(n);
+		
+		string fn = "_mattest.dat";
+		
+		{
+			ofstream fileOut(fn.c_str());
+			fileOut << m << n;
+		}
+		
+		Sparse a, b;
+		
+		{
+			ifstream fileIn(fn.c_str());
+			fileIn >> a >> b;			
+		}
+		
+		DUMP_MAT(a);
+		DUMP_MAT(b);
+		
+		remove(fn.c_str());
+	}
 
 	{
-		cout << "= Matrix LIL" << endl;
+		TESTTITLE("Sparse LIL");
 		
 		SparseLIL m(3, 4);
 	
@@ -109,7 +188,27 @@ int main(int argc, char* argv[])
 	}
 
 	{
-		cout << "= Matrix <-> Matrix LIL conversions" << endl;
+		TESTTITLE("matrix * transpose(matrix)");
+		
+		SparseLIL m(3, 3);
+	
+		m(0, 0) = 1.;
+		m(1, 0) = 4.;
+		m(1, 1) = 2.;
+		m(2, 0) = 5.;
+		m(2, 2) = 3.;
+	
+		DUMP_MAT(m);
+
+		SparseLIL mprod = m.prodTranspose();
+		
+		DUMP_MAT(mprod);
+		
+		cout << "Expected: [ 1 4 5 ; 4 20 20 ; 5 20 34 ]" << endl;
+	}
+	
+	{
+		TESTTITLE("Matrix <-> Matrix LIL conversions");
 		
 		SparseLIL matLIL(3, 4);
 	
@@ -152,7 +251,7 @@ int main(int argc, char* argv[])
 	
 	
 	{
-		cout << "= Jacobi solver" << endl;
+		TESTTITLE("Jacobi solver");
 	
 		// [ 2 1 ; 5 7 ] * [ x ; y ] = [ 11 ; 13 ]
 
@@ -176,7 +275,7 @@ int main(int argc, char* argv[])
 	}
 
 	{
-		cout << "= Conjugate Gradient solver" << endl;
+		TESTTITLE("Conjugate Gradient solver");
 	
 		{
 			// [ 4 1 ; 1 3 ] * [ 0.0909 ; 0.6364 ] = [ 1 ; 2 ]
@@ -230,7 +329,7 @@ int main(int argc, char* argv[])
 	}
 	
 	{
-		cout << "= LU solver" << endl;
+		TESTTITLE("LU solver");
 	
 		{
 			// [ 4 1 ; 1 3 ] * [ 0.0909 ; 0.6364 ] = [ 1 ; 2 ]
@@ -320,11 +419,9 @@ int main(int argc, char* argv[])
 			cout << "Expected: [ 1 ; -1 ; 0 ; 2 ]" << endl;
 		}
 	}
-	
-	return 0;
-	
+
 	{
-		cout << "= Matrix load" << endl;
+		TESTTITLE("Matrix load");
 	
 		Sparse m;
 		ifstream f("data/mtest01.dat");
@@ -334,7 +431,7 @@ int main(int argc, char* argv[])
 	}
 
 	{
-		cout << "= Matrix multiplication" << endl;
+		TESTTITLE("Matrix multiplication");
 	
 		Sparse m;
 		ifstream f("data/mtest01.dat");
@@ -347,11 +444,11 @@ int main(int argc, char* argv[])
 		
 		Vector w = m * v;
 		
-		cout << w << endl;
+		DUMP_VEC(w);
 	}
 
 	{
-		cout << "= Matrix product v' * M * w" << endl;
+		TESTTITLE("Matrix product v' * M * w");
 		
 		Sparse m;
 		ifstream f("data/mtest01.dat");
@@ -373,7 +470,7 @@ int main(int argc, char* argv[])
 	}
     
     {
-		cout << "= Mesh load" << endl;
+		TESTTITLE("Mesh load");
 		
         // ifstream meshfile;
         // meshfile.open("data/mesh/mesh.msh", ios::in);
@@ -382,7 +479,7 @@ int main(int argc, char* argv[])
     }
 
     {
-		cout << "= Mesh load" << endl;
+		TESTTITLE("Mesh load");
 		
         //Mesh mesh("data/mesh/mesh.msh");
 		Mesh mesh("data/mesh/square_9.msh");
@@ -486,7 +583,7 @@ int main(int argc, char* argv[])
     }
 	
 	{
-		cout << "= Plot Mesh" << endl;
+		TESTTITLE("Plot Mesh");
 		
         Mesh M("data/mesh/square_9.msh");
 		

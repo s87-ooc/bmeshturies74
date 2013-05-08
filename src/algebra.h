@@ -26,7 +26,6 @@
 
 // ----------------------------------------------------------------------------
 
-#define EQ_TOL 0.0000000001
 #define JACOBI_TOLERANCE 0.000001
 #define CONJGRADIENT_TOLERANCE 0.000001
 
@@ -151,12 +150,10 @@ public:
 	/** convert CSR to LIL */
 	SparseLIL(const Sparse& matCSR);
 
-	/** swap rows */
-	void swap(uint row1, uint row2);
+	/** return the product of the matrix and its transpose: M * M' */
+	SparseLIL prodTranspose() const;
 	
-	/** add row1 * factor to row2 */
-	void addFactor(uint row1, uint row2, double factor);
-	
+	/** get value read-only */
     double operator() (uint row, uint col) const;
 	
 	/** before assigning values at (i, j) make sure not to add zeros */

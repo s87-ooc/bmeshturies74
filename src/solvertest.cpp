@@ -142,13 +142,29 @@ int main(int argc, char* argv[])
 	
 	// generate linear systems if needed
 	
+	// prepare the random number generator
+	
 	for (uint k = 0; k < gParams.count; k++)
 	{
-		// generate positive definite matrices 
-
-		SparseLIL m(gParams.dimensions[k], gParams.dimensions[k]);
+		// generate positive definite matrices over the product of a lower triangular matrix and its transpose
+		// fill the diagonal with positive values to assure that its invertible
 		
-		gParams.matrices[k] = m;
+		SparseLIL m(gParams.dimensions[k], gParams.dimensions[k]);
+		for (uint i = 0; i < m.sizeRows(); i++)
+		{
+			for (uint j = 0; j < m.sizeColumns(); j++)
+			{
+				
+				
+				// make sure we have a positive value on the diagonal
+				while (m(j, j) < EQ_TOL)
+				{
+					m(j, j) = j + 1;
+				}
+			}
+		}
+		
+		gParams.matrices[k] = m.prodTranspose();
 
 		// generate solution vectors
 	

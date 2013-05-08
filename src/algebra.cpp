@@ -146,18 +146,30 @@ Vector& Vector::constructFuncIntSurf(const Mesh& mesh, double (*f)(const Vertex&
 
 istream& operator>> (istream &in, Vector& v)
 {
-	// TODO
+	v.mVals.clear();
+	
+	uint size;
+	double val;
+	
+	in >> size;
+	
+	for (uint i = 0; i < size; i++)
+	{
+		in >> val;
+		v.mVals.push_back(val);
+	}
+	
 	return in;
 }
 
 ostream& operator<<(ostream &out, Vector& v)
 {
-	cout << "[ ";
-	for (uint i = 0; i < v.size(); i++)
+	out << v.size() << endl;
+	for (uint i = 0; i < v.size() - 1; i++)
 	{
 		out << v(i) << " ";
 	}
-	cout << "] " << v.size();
+	out << v(v.size() - 1) << endl;
 	
 	return out;
 }
@@ -488,6 +500,32 @@ mSizeColumns(matCSR.sizeColumns())
 			mColInd[i].push_back(matCSR.mColInd[k]);
 		}
 	}
+}
+
+SparseLIL SparseLIL::prodTranspose() const
+{
+	assert (sizeRows() == sizeColumns());
+	
+	SparseLIL m(sizeRows(), sizeColumns());
+	
+	for (uint i = 0; i < sizeRows(); i++)
+	{
+		for (uint j = 0; j < sizeColumns(); j++)
+		{
+			// TODO: this may be VERY inefficient!
+			double val = 0.;
+			for (uint k = 0; k < sizeColumns(); k++)
+			{
+				val += (*this)(i, k) * (*this)(j, k);
+			}
+			if (fabs(val) >= EQ_TOL)
+			{
+				m(i, j) = val;
+			}
+		}
+	}
+	
+	return m;
 }
 
 double SparseLIL::operator() (uint row, uint col) const
@@ -861,7 +899,7 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 
 // ----------------------------------------------------------------------------
 
-istream& operator >> (istream &is, Sparse &m)
+istream& operator>> (istream &is, Sparse &m)
 {
 	unsigned int sizeRows, sizeColumns, sizeNNZ;
 	is >> sizeRows >> sizeColumns >> sizeNNZ;
@@ -870,7 +908,7 @@ istream& operator >> (istream &is, Sparse &m)
 	TInd colInd(sizeNNZ);
 	TInd rowPtr(sizeRows + 1);
     
-    unsigned int r;
+    /*unsigned int r;
     int row_cur, row_prev=-1;
     
     for(unsigned int k = 0; k < sizeNNZ; k++)
@@ -883,7 +921,25 @@ istream& operator >> (istream &is, Sparse &m)
 		row_prev = row_cur;
     }
     
-    rowPtr[sizeRows] = rowPtr[sizeRows - 1] + 1;
+    rowPtr[sizeRows] = rowPtr[sizeRows - 1] + 1;*/
+	
+	// stjepan: use compact format for sparse matrices
+	
+	for (uint i = 0; i < vals.size(); i++)
+	{
+		is >> vals[i];
+	}
+	
+	for (uint i = 0; i < colInd.size(); i++)
+	{
+		is >> colInd[i];
+	}
+	
+	for (uint i = 0; i < rowPtr.size() - 1; i++)
+	{
+		is >> rowPtr[i];
+	}
+	rowPtr[rowPtr.size() - 1] = vals.size();
     
     m = Sparse(vals, colInd, rowPtr, sizeColumns);
     
@@ -896,13 +952,33 @@ ostream& operator<< (ostream &os, Sparse &m)
 		<< m.sizeColumns() << " "
 		<< m.sizeNNZ() << endl;
 	
-	for (unsigned int i = 0; i < m.sizeRows(); i++)
+	/*for (unsigned int i = 0; i < m.sizeRows(); i++)
 	{
 		for (unsigned int k = m.mRowPtr[i]; k < m.mRowPtr[i+1]; k++)
 		{
 			os << i << " " << m.mColInd[k] << " " << m.mVals[k] << endl;
 		}
+	}*/
+	
+	// stjepan: store sparse matrices in a compact manner, use DUMP_MAT for printing the values in a human-readable manner
+	
+	for (uint i = 0; i < m.mVals.size() - 1; i++)
+	{
+		os << m.mVals[i] << " ";
 	}
+	os << m.mVals[m.mVals.size() - 1] << endl;
+	
+	for (uint i = 0; i < m.mColInd.size() - 1; i++)
+	{
+		os << m.mColInd[i] << " ";
+	}
+	os << m.mColInd[m.mColInd.size() - 1] << endl;
+	
+	for (uint i = 0; i < m.mRowPtr.size() - 2; i++)
+	{
+		os << m.mRowPtr[i] << " ";
+	}
+	os << m.mRowPtr[m.mRowPtr.size() - 2] << endl;
 
     return os;
 }
