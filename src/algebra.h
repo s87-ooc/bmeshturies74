@@ -6,7 +6,7 @@
  Projet
 
  (C) 2013 Charles Podkanski (charles@podkanski.com),
-          Stjepan Stamenkovic (stjepan@stjepan.net)
+          Stjepan Stamenković (stjepan@stjepan.net)
 
  ---
 
@@ -26,8 +26,8 @@
 
 // ----------------------------------------------------------------------------
 
-#define JACOBI_TOLERANCE 0.000001
-#define CONJGRADIENT_TOLERANCE 0.000001
+#define JACOBI_TOLERANCE 0.000000001
+#define CONJGRADIENT_TOLERANCE 0.000000001
 
 // ----------------------------------------------------------------------------
 

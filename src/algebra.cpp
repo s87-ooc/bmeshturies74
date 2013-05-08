@@ -720,7 +720,7 @@ double Sparse::operator() (unsigned int row, unsigned int col) const
 
 Vector Sparse::conjGradient(Vector const& b) const
 {
-	assert(this->sizeColumns() == b.size() && this->sizeRows() == b.size());
+	/*assert(this->sizeColumns() == b.size() && this->sizeRows() == b.size());
 	
 	uint n = sizeColumns();
 
@@ -746,11 +746,38 @@ Vector Sparse::conjGradient(Vector const& b) const
 		rSquare = rSquareNew;
 	}
 	
-    return x;
+    return x;*/
+	
+	assert(this->sizeColumns() == b.size() && this->sizeRows() == b.size());
+	
+	uint dim = this->sizeColumns();
+	
+	Vector x(dim);
+	Vector y(dim);
+	Vector r = b - (*this) * x;
+	Vector p = r;
+	double gamma = dot(r, r);
+	double alpha, beta;
+	alpha = beta = 0.;
+	
+	while(gamma > CONJGRADIENT_TOLERANCE)
+	{
+		y = (*this) * p;
+		alpha = gamma / dot(y, p);
+		x = x + alpha * p;
+		r = r - alpha * y;
+		beta = dot(r, r) / gamma;
+		gamma = dot(r, r);
+		p = r + beta * p;
+	}
+	
+	return x;
 }
 
 Vector Sparse::jacobi(Vector const& b) const
 {
+	assert(this->sizeColumns() == b.size() && this->sizeRows() == b.size());
+
     /*Vector x1(sizeColumns());
     Vector x2(sizeColumns());
     Vector& xcur = x1;
