@@ -508,15 +508,35 @@ SparseLIL SparseLIL::prodTranspose() const
 	
 	SparseLIL m(sizeRows(), sizeColumns());
 	
+	//val += (i, k) * (j, k)
+	
 	for (uint i = 0; i < sizeRows(); i++)
 	{
+		if (i % 10 == 0)
+			cout << "i " << i << endl;
+		
 		for (uint j = 0; j < sizeColumns(); j++)
 		{
+			//if (j % 100 == 0)
+			//	cout << "j " << j << endl;
 			// TODO: this may be VERY inefficient!
 			double val = 0.;
 			for (uint k = 0; k < sizeColumns(); k++)
 			{
-				val += (*this)(i, k) * (*this)(j, k);
+				for (uint l = 0; mColInd[j][l] <= k; l++)
+				{
+					//val += (*this)(i, k) * (*this)(j, k);
+					if (mColInd[j][l] == k)
+					{
+						for (uint m = 0; mColInd[i][m] <= k; m++)
+						{
+							if (mColInd[i][m] == k)
+							{
+								val += (*this)(i, k) * mRowVals[j][l];
+							}
+						}
+					}
+				}
 			}
 			if (fabs(val) >= EQ_TOL)
 			{

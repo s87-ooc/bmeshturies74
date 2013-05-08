@@ -436,6 +436,12 @@ int main(int argc, char* argv[])
 	PlotMesh plotErr("err", mesh, err);
 	plotErr.generate(true);
 	
+	// save the linear system (with our solution for debugging)
+	{
+		ofstream f("data/linsys/helmholtz.linsys");
+		f << AMB << rhs << uh;
+	}
+	
 	// ---
 	
 	// display computation time

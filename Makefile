@@ -65,3 +65,9 @@ test: bin/unittest
 	
 clean:
 	rm -Rf src/*.o bin/*
+	
+cleandata:
+	rm -Rf data/linsys/test_* data/linsys/times_* data/linsys/errors_*
+	rm -Rf data/plots/*.p data/plots/*.pdat
+	
+cleanall: clean cleandata

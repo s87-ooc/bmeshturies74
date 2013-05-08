@@ -56,7 +56,7 @@ void deletePtrArray(T* array, uint size)
 #define SAFE_ARRDELETE(A) if (A) delete[] A
 
 /** macro for dumping an array to the console */
-#define DUMP_ARR(A, NUM) cout << #A << ": [ "; for (uint i = 0; i < NUM; i++) { cout << A[i] << " "; } cout << " ]" << endl 
+#define DUMP_ARR(A, NUM) cout << #A << ": [ "; for (uint i = 0; i < NUM; i++) { cout << A[i] << " "; } cout << "]" << endl 
 
 /** macro for dumping a vector to the console */
 #define DUMP_VEC(V) cout << #V << ": [ "; for (uint i = 0; i < V.size(); i++) { cout << V(i); if(i == V.size() - 1) cout << " ] "; else cout << " ; "; } cout << V.size() << endl
