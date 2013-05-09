@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
 	
 	// default values
 
-	gParams.T = 2.25;
-	gParams.n = 10;
+	gParams.T = 1.;
+	gParams.n = 3;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
 	
 	// get filenames and parameters from cmdline arguments (if any)
@@ -142,15 +142,21 @@ int main(int argc, char* argv[])
 	
 	// Assemble the matrices and vectors
 
-	uint Nv = mesh.countVertices();
+	uint dim = mesh.countVertices();
 
+	// @@@
+	DUMP(gParams.T);
+	DUMP(gParams.n);
+	DUMP(dt);
+	DUMP(dim);
+	
 	// vMatV = M
 	Sparse uMatU, vMatU, uMatV, M;
 	
 	{
 		// Assemble simple matrices
 	
-		SparseMap Amap(Nv, Nv), Mmap(Nv, Nv), Bmap(Nv, Nv);
+		SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
 		
 		// A
 		
@@ -178,7 +184,7 @@ int main(int argc, char* argv[])
 	
 		// Assemble combined matrices
 	
-		SparseMap uMatUmap(Nv, Nv), vMatUmap(Nv, Nv), uMatVmap(Nv, Nv);
+		SparseMap uMatUmap(dim, dim), vMatUmap(dim, dim), uMatVmap(dim, dim);
 		
 		SparseMap ABmap = Amap;
 		ABmap += Bmap;
@@ -198,21 +204,42 @@ int main(int argc, char* argv[])
 		
 		// vMatV = M
 		M = Mmap;
+		
+		// @@@
+		DUMP(-pow(dt, 2) / 2.);
+		DUMP(dt);
+		DUMP(-dt / 2.);
+		Vector vOne(dim);
+		for (uint i = 0; i < dim; i++)
+		{
+			vOne(i) = 1.;
+		}
+		DUMP((uMatU * vOne).norm2());
+		DUMP((vMatU * vOne).norm2());
+		DUMP((uMatV * vOne).norm2());
+		DUMP((M * vOne).norm2());
 	}
 
 	// ----------
 
 	// solve the problem
 	
-	Vector x(Nv);
-	Vector xLast(Nv);
-	Vector y(Nv);
-	Vector yLast(Nv);
+	Vector x(dim);
+	Vector xLast(dim);
+	Vector y(dim);
+	Vector yLast(dim);
 	
 	// initial values
 	xLast.constructFunc(mesh, wave::u0);
 	yLast.constructFunc(mesh, wave::u1);
 	
+	// @@@
+	DUMP(x.norm2());
+	DUMP(xLast.norm2());
+	DUMP(y.norm2());
+	DUMP(yLast.norm2());
+	PlotMesh plot0("x", mesh, xLast);
+	plot0.generate(true);
 	
 	for (uint i = 0; i < gParams.n; i++)
 	{
@@ -222,6 +249,12 @@ int main(int argc, char* argv[])
 
 		M.newmark(x, y, xLast, yLast, uMatU, vMatU, uMatV);
 		
+		// @@@
+		DUMP(x.norm2());
+		DUMP(xLast.norm2());
+		DUMP(y.norm2());
+		DUMP(yLast.norm2());
+		
 		xLast = x;
 		yLast = y;
 		
@@ -230,16 +263,18 @@ int main(int argc, char* argv[])
 		//tSteps[i] = ((double)tSolve) / CLOCKS_PER_SEC;
 		
 		// @@@
-		PlotMesh plotX("x", mesh, x);
-		plotX.generate(true);
+		PlotMesh plotD("x", mesh, x);
+		plotD.generate(true);
 	}
-
+	
 	// ----------
 
 	// Evaluate stuff
 		
 	// stop measuring time, display of graphs is optional
 	tEnd = clock();
+
+	return 0;
 	
 	// ----------
 

@@ -55,6 +55,11 @@ void deletePtrArray(T* array, uint size)
 /** macro for safe deletion of dynamic arrays */
 #define SAFE_ARRDELETE(A) if (A) delete[] A
 
+// ---
+
+/** macro for dumping an expressions to the console */
+#define DUMP(E) cout << #E << ": " << E << endl
+
 /** macro for dumping an array to the console */
 #define DUMP_ARR(A, NUM) cout << #A << ": [ "; for (uint i = 0; i < NUM; i++) { cout << A[i] << " "; } cout << "]" << endl 
 

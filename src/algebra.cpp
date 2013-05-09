@@ -1021,6 +1021,7 @@ void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& 
 	// NOTE: in the treated problems we have f = 0 and g = 0, so rhs is simple
 
 	assert(&uNew != &u);
+	assert(&vNew != &v);
 	
 	uint dim = u.size();
 
@@ -1034,8 +1035,24 @@ void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& 
 	
 	// calculate values for new v
 	
-	rhsV = uMatU * (u + uNew) + (*this) * v;
+	rhsV = uMatV * (u + uNew) + (*this) * v;
+	
 	vNew = conjGradient(rhsV);
+
+	// @@@
+	DUMP((u + uNew).norm2());
+	DUMP((uMatV * (u + uNew)).norm2());
+	DUMP(((*this) * v).norm2());
+	DUMP(rhsV.norm2());
+	DUMP(jacobi(rhsV).norm2());
+	DUMP(conjGradient(rhsV).norm2());
+	//DUMP(LU(rhsV).norm2());
+	Vector vOne(dim);
+	for (uint i = 0; i < dim; i++)
+	{
+		vOne(i) = 1.;
+	}
+	DUMP(((*this) * vOne).norm2());
 }
 
 // ----------------------------------------------------------------------------
