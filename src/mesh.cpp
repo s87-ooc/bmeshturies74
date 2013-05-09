@@ -123,7 +123,6 @@ bool BoundEdge::inEdge(const Vertex* v) const
 Vertex& BoundEdge::findOppositeVertex() const
 {
     //Triangle* edgeOf = findTriangle();
-    cout << "looking for opposite vertex in triangle " << edgeOf->id << endl;
     for(int i=0; i<3; i++)
     {
         if ( !inEdge(edgeOf->V[i]) ) 

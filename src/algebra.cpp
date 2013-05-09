@@ -149,20 +149,15 @@ Vector& Vector::constructFuncSurf(const Mesh& mesh, double (*f)(const Vertex&, c
 {
 	assert(size() == mesh.countVertices());
 
-	cout << "Ne = " << mesh.countEdges() << endl;
 	for (uint e = 0; e < mesh.countEdges(); e++)
 	{	
-		cout << "integrating boundary term for edge " << mesh.E[e].id << "...";
+		double factor = (mesh.E[e]).length * 0.5;
 
-		mVals[mesh.E[e](0).id] += f(mesh.E[e](0), mesh.E[e]);
-		mVals[mesh.E[e](1).id] += f(mesh.E[e](1), mesh.E[e]);
-
-		cout << "edge done" << endl;
+		mVals[mesh.E[e](0).id] += factor * f(mesh.E[e](0), mesh.E[e]);
+		mVals[mesh.E[e](1).id] += factor * f(mesh.E[e](1), mesh.E[e]);
 
 		//cout << "e: " << e << " " << mesh.E[e](0).id << " " << mesh.E[e](1).id << " " << factor * f(mesh.E[e](0)) << " " << mesh.E[e].length << endl;
 	}
-
-	cout << "constructFuncSurf exit" << endl;
 	
 	return *this;
 }
@@ -186,7 +181,6 @@ Vector& Vector::constructNormal(const BoundEdge& edge)
 
     // normalize
     (*this) *= 1./norm2();
-    cout << "done" << endl;
 
     return *this;
 }
