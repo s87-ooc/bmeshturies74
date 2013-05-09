@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <math.h>
 
-
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -1021,6 +1020,28 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 	delete[] p;	
 	
 	return x;
+}
+
+void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& v, const Sparse& uMatU, const Sparse& vMatU, const Sparse& uMatV, double uFactor, double vFactor, double dt, double t, double (*f)(const Vertex&, double), double (*g)(const Vertex&, double)) const
+{
+	// NOTE: in the treated problems we have f = 0 and g = 0, so rhs is simple
+
+	assert(&uNew != &u);
+	
+	uint dim = u.size();
+
+	Vector rhsU(dim);
+	Vector rhsV(dim);
+	
+	// calculate value for new u
+	
+	rhsU = uMatU * u + vMatU * v;
+	uNew = conjGradient(rhsU);
+	
+	// calculate values for new v
+	
+	rhsV = uMatU * (u + uNew) + (*this) * v;
+	vNew = conjGradient(rhsV);
 }
 
 // ----------------------------------------------------------------------------

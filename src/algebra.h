@@ -237,6 +237,12 @@ public:
 
 	/** solve Ax = b with LU, optionally return the decomposed matrix */
     Vector LU(Vector const& b, Sparse* lu = 0) const;
+	
+	/** calculate uNew and vNew using the Newmark method using this matrix as mass matrix M
+		according to the notation from the course we have:
+		M * uNew = uMatU * u + vMatU * v + uFactor * (F(t) + G(t))
+		M * vNew = uMatV * (u + uNew) + M * v + vFactor * (F(t) + G(t) + F(t + dt) + G(t + dt)) */
+	void newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& v, const Sparse& uMatU, const Sparse& vMatU, const Sparse& uMatV, double uFactor = 0., double vFactor = 0., double dt = 0., double t = 0., double (*f)(const Vertex&, double) = 0, double (*g)(const Vertex&, double) = 0) const;
 };
 
 #endif // __ALGEBRA_H__
