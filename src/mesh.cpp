@@ -20,7 +20,6 @@
 
 #include "mesh.h"
 
-using namespace std;
 
 // ----------------------------------------------------------------------------
 
@@ -102,6 +101,48 @@ Triangle* BoundEdge::findTriangle()
     }
     assert(false);
 }
+
+bool BoundEdge::inEdge(const Vertex* v) const
+{
+    return ( v->id == V[0]->id || v->id == V[1]->id );
+}
+
+Vertex& BoundEdge::findOppositeVertex()
+{
+    for(int i=0; i<3; i++)
+    {
+        if ( !inEdge(edgeOf->V[i]) ) 
+        {
+            return *V[i];
+        }
+    }
+    assert(false);
+}
+
+// Vector& BoundEdge::normal()
+// {
+//     Vector n(2);
+//     Vertex& opp = findOppositeVertex();
+
+//     // calculate normal to edge
+//     n(0) = V[1]->x - V[0]->x;
+//     n(1) = V[1]->y - V[0]->y;
+
+//     // check orientation
+//     double D = n(0)*( opp.x - V[0]->x ) + n(1)*( opp.y - V[0]->y);
+
+//     if (D > 0)
+//     {
+//         // UGLY, could use - operator ?
+//         n(0) = -n(0);
+//         n(1) = -n(1);
+//     }
+
+//     // normalize
+//     n *= 1./n.norm2();
+
+//     return n;
+// }
 
 
 Vertex& BoundEdge::operator() (uint vertex) const

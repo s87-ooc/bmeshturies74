@@ -81,6 +81,7 @@ class BoundEdge {
 private:
     Triangle* findTriangle();
     double calculate_length();
+    Vertex& findOppositeVertex();
 public:
 	// Vertex& V[2];
     TVerticesP V;
@@ -91,6 +92,8 @@ public:
     BoundEdge(Vertex* a, Vertex* b, int label, int id);
 
     Vertex& operator() (uint vertex) const;
+    bool inEdge(const Vertex* v) const;
+    // Vector& normal() const;
 
 };
 
