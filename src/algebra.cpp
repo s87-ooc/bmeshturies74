@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <math.h>
 
+
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -143,6 +144,54 @@ Vector& Vector::constructFuncIntSurf(const Mesh& mesh, double (*f)(const Vertex&
 	
 	return *this;
 }
+
+// TODO: FIX
+Vector& Vector::constructFuncSurf(const Mesh& mesh, double (*f)(const Vertex&, const BoundEdge&))
+{
+	assert(size() == mesh.countVertices());
+
+	cout << "Ne = " << mesh.countEdges() << endl;
+	for (uint e = 0; e < mesh.countEdges(); e++)
+	{	
+		cout << "integrating boundary term for edge " << mesh.E[e].id << "...";
+
+		mVals[mesh.E[e](0).id] += f(mesh.E[e](0), mesh.E[e]);
+		mVals[mesh.E[e](1).id] += f(mesh.E[e](1), mesh.E[e]);
+
+		cout << "edge done" << endl;
+
+		//cout << "e: " << e << " " << mesh.E[e](0).id << " " << mesh.E[e](1).id << " " << factor * f(mesh.E[e](0)) << " " << mesh.E[e].length << endl;
+	}
+
+	cout << "constructFuncSurf exit" << endl;
+	
+	return *this;
+}
+
+Vector& Vector::constructNormal(const BoundEdge& edge)
+{
+	assert(size() == 2);
+
+    Vertex& opp = edge.findOppositeVertex();
+    // calculate normal to edge
+    mVals[0] = edge.V[1]->x - edge.V[0]->x;
+    mVals[1] = edge.V[1]->y - edge.V[0]->y;
+
+    // check orientation as we want a normal pointing outwards
+    double D = mVals[0]*( opp.x - edge.V[0]->x ) + mVals[1]*( opp.y - edge.V[0]->y);
+
+    if (D > 0)
+    {
+        (*this) *= -1;
+    }
+
+    // normalize
+    (*this) *= 1./norm2();
+    cout << "done" << endl;
+
+    return *this;
+}
+
 
 istream& operator>> (istream &in, Vector& v)
 {
@@ -299,7 +348,7 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 	uint Nv = mesh.countVertices();
 	uint Nt = mesh.countTriangles();
 
-	TTriangles const& T = mesh.T;
+	Triangle* const& T = mesh.T;
 
 	mSizeRows = Nv;
 	mSizeColumns = Nv;
@@ -378,7 +427,7 @@ SparseMap& SparseMap::constructM(const Mesh& mesh)
 	uint Nv = mesh.countVertices();
 	uint Nt = mesh.countTriangles();
 
-	TTriangles const& T = mesh.T;
+	Triangle* const& T = mesh.T;
 
 	mSizeRows = Nv;
 	mSizeColumns = Nv;
@@ -412,7 +461,7 @@ SparseMap& SparseMap::constructB(const Mesh& mesh)
 	uint Nv = mesh.countVertices();
 	uint Ne = mesh.countEdges();
 
-	TEdges const& E = mesh.E;
+	BoundEdge* const& E = mesh.E;
 
 	mSizeRows = Nv;
 	mSizeColumns = Nv;

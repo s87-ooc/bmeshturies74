@@ -161,6 +161,19 @@ namespace helmholtz
 		
 		return val;
 	}
+
+	double g2(const Vertex& v, const BoundEdge& e)
+	{
+		double kapxk = gParams.kappa * (gParams.k1 * v.x + gParams.k2 * v.y);
+
+		Vector n(2);
+		n.constructNormal(e);
+
+		double kn = n(0)*gParams.k1 + n(1)*gParams.k2;
+		double val = sin(kapxk) + gParams.kappa * cos(kapxk) * kn;
+
+		return val;
+	}
 	
 	/** exact solution */
 	double u(const Vertex& v)
@@ -220,7 +233,7 @@ int main(int argc, char* argv[])
 	}
 
 	cout << "== Partie I: Helmholtz ==" << endl;
-	
+
 	// ----------
 	
 	// Load the mesh
@@ -276,7 +289,8 @@ int main(int argc, char* argv[])
 	
 	RESETCLOCK();
 	
-	rhsG.constructFuncIntSurf(mesh, helmholtz::g);
+	//rhsG.constructFuncIntSurf(mesh, helmholtz::g);
+	rhsG.constructFuncSurf(mesh, helmholtz::g2);
 	
 	CLOCK(tRhsG);
 	

@@ -22,7 +22,7 @@
 #include <vector>
 #include <assert.h>
 
-#include "types.h"
+#include "types.h"m
 
 using namespace std;
 
@@ -39,6 +39,8 @@ typedef std::vector<Triangle> TTriangles;
 typedef std::vector<Triangle*> TTrianglesP;
 
 typedef std::vector<BoundEdge> TEdges;
+typedef std::vector<BoundEdge*> TEdgesP;
+
 
 // ----------------------------------------------------------------------------
 
@@ -70,6 +72,7 @@ public:
     int label;
     int id;
     double area;
+    Triangle();
     Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id);
     
     Vertex& operator() (uint vertex) const;
@@ -79,9 +82,8 @@ public:
 
 class BoundEdge {
 private:
-    Triangle* findTriangle();
+    Triangle* findTriangle() const;
     double calculate_length();
-    Vertex& findOppositeVertex();
 public:
 	// Vertex& V[2];
     TVerticesP V;
@@ -89,11 +91,12 @@ public:
     int label;
     double length;
     Triangle* edgeOf;
+    BoundEdge();
     BoundEdge(Vertex* a, Vertex* b, int label, int id);
 
+    Vertex& findOppositeVertex() const;
     Vertex& operator() (uint vertex) const;
     bool inEdge(const Vertex* v) const;
-    // Vector& normal() const;
 
 };
 
@@ -118,10 +121,9 @@ public:
 	uint countTriangles() const;
 	uint countEdges() const;
 	
-    //TVertices V;
 	Vertex* V;
-    TTriangles T;
-    TEdges E;
+    Triangle* T;
+    BoundEdge* E;
 };
 
 #endif // __MESH_H__

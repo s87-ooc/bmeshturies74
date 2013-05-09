@@ -75,6 +75,13 @@ public:
 	
 	/** construct the vector based on integration over the edges of the mesh */
 	Vector& constructFuncIntSurf(const Mesh& mesh, double (*f)(const Vertex&));
+
+	/** construct the vector based on integration over the edges of the mesh 
+	taking into account the normal vector to the domain boundary */
+	Vector& constructFuncSurf(const Mesh& mesh, double (*f)(const Vertex&, const BoundEdge&));
+
+	/** construct normal vector to edge */
+	Vector& constructNormal(const BoundEdge& edge);
 };
 
 Vector operator* (const Vector& v, const double s);

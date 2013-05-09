@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <assert.h>
 
 #include <map>
 
@@ -27,12 +28,13 @@ Vertex::Vertex() :
 x(0.),
 y(0.),
 label(0),
-id(0)
+id(0),
+T(0)
 {
 }
 
 Vertex::Vertex(double x, double y, uint label, uint id): 
-    x(x), y(y), label(label), id(id)
+    x(x), y(y), label(label), id(id), T(0)
 {
 }
 
@@ -42,9 +44,15 @@ Vertex::Vertex(const Vertex& v)
 	y = v.y;
 	label = v.label;
 	id = v.id;
+    T = v.T;
 }
 
 // ----------------------------------------------------------------------------
+
+Triangle::Triangle(): label(-1), id(-1), V(0)
+{
+    // don't use this constructor
+}
 
 Triangle::Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id):
     label(label), id(id)
@@ -70,11 +78,17 @@ Vertex& Triangle::operator() (uint vertex) const
 }
 
 
-BoundEdge::BoundEdge(Vertex* a, Vertex* b, int label, int id):
-label(label), id(id)
+BoundEdge::BoundEdge():
+V(0), label(-1), id(-1)
 {
-    V.push_back(a);
-    V.push_back(b);
+    // don't use this constructor
+}
+
+BoundEdge::BoundEdge(Vertex* a, Vertex* b, int label, int id):
+label(label), id(id), V(2)
+{
+    V[0]=a;
+    V[1]=b;
     length = calculate_length();
     edgeOf = findTriangle();
 }
@@ -84,18 +98,17 @@ double BoundEdge::calculate_length()
     return sqrt( pow(V[0]->x - V[1]->x, 2) + pow(V[0]->y - V[1]->y, 2));
 }
 
-Triangle* BoundEdge::findTriangle()
+Triangle* BoundEdge::findTriangle() const
 {
-    TTrianglesP& T0 = V[0]->T;
-    TTrianglesP& T1 = V[1]->T;
 
-    for( uint k = 0; k < T0.size(); k++)
+    for( uint k = 0; k < V[0]->T.size(); k++)
     {
-        for( uint l = 0; l < T1.size(); l++)
+        for( uint l = 0; l < V[1]->T.size(); l++)
         {
-            if( T0[k]->id == T1[l]->id)
+            if( V[0]->T[k]->id == V[1]->T[l]->id)
             {
-                return T0[k];
+                cout << V[0]->T[k]->id << endl;
+                return V[0]->T[k];
             }
         }
     }
@@ -104,46 +117,22 @@ Triangle* BoundEdge::findTriangle()
 
 bool BoundEdge::inEdge(const Vertex* v) const
 {
-    return ( v->id == V[0]->id || v->id == V[1]->id );
+   return ( v->id == V[0]->id || v->id == V[1]->id );
 }
 
-Vertex& BoundEdge::findOppositeVertex()
+Vertex& BoundEdge::findOppositeVertex() const
 {
+    //Triangle* edgeOf = findTriangle();
+    cout << "looking for opposite vertex in triangle " << edgeOf->id << endl;
     for(int i=0; i<3; i++)
     {
         if ( !inEdge(edgeOf->V[i]) ) 
         {
-            return *V[i];
+            return *(edgeOf->V[i]);
         }
     }
     assert(false);
 }
-
-// Vector& BoundEdge::normal()
-// {
-//     Vector n(2);
-//     Vertex& opp = findOppositeVertex();
-
-//     // calculate normal to edge
-//     n(0) = V[1]->x - V[0]->x;
-//     n(1) = V[1]->y - V[0]->y;
-
-//     // check orientation
-//     double D = n(0)*( opp.x - V[0]->x ) + n(1)*( opp.y - V[0]->y);
-
-//     if (D > 0)
-//     {
-//         // UGLY, could use - operator ?
-//         n(0) = -n(0);
-//         n(1) = -n(1);
-//     }
-
-//     // normalize
-//     n *= 1./n.norm2();
-
-//     return n;
-// }
-
 
 Vertex& BoundEdge::operator() (uint vertex) const
 {
@@ -153,7 +142,7 @@ Vertex& BoundEdge::operator() (uint vertex) const
 
 istream& operator>>(istream &is, Mesh &M)
 {
-	// we're resetting the mesh, clear stuff if needed
+	// // we're resetting the mesh, clear stuff if needed
 	if (M.V)
 	{
 		delete[] M.V;
@@ -162,8 +151,9 @@ istream& operator>>(istream &is, Mesh &M)
     // lecture du nombre de sommets, aretes et triangles
     is >> M.Nv >> M.Nt >> M.Ne;
     
-	// allocate memory
-	M.V = new Vertex[M.Nv];
+    M.V = new Vertex[M.Nv];
+    M.T = new Triangle[M.Nt];
+    M.E = new BoundEdge[M.Ne];
 	
     // initialiser tableau pour stocker les sommets, aretes et triangles
     
@@ -173,6 +163,7 @@ istream& operator>>(istream &is, Mesh &M)
         is >> x >> y >> label;
 
         // the ids are 0 indexed
+        
         Vertex v(x, y, label, k);
 		//Vertex v(x + 0.0001, y + 0.0001, label, k);
 		M.V[k] = v;
@@ -186,29 +177,41 @@ istream& operator>>(istream &is, Mesh &M)
 
         Triangle t(&M.V[a-1], &M.V[b-1], &M.V[c-1], label, k);
 
-        M.T.push_back(t);
+        M.T[k] = t;
 
-        for(int i=0; i<3; i++)
-        {
-            M.T[k].V[i]->T.push_back(&(M.T[k]));
-        }
+        M.V[a-1].T.push_back(&M.T[k]);
+        M.V[b-1].T.push_back(&M.T[k]);
+        M.V[c-1].T.push_back(&M.T[k]);
 
     }
+
     for(int k = 0; k < M.Ne; k++)
     {
         int label;
         int a, b;
         is >> a >> b >> label;
 
-        BoundEdge e(&(M.V[a-1]), &(M.V[b-1]), label, k);
-        M.E.push_back(e);
+        BoundEdge e(&M.V[a-1], &M.V[b-1], label, k);
+        M.E[k] = e;
     }
+
+
+    // for(int k = 0; k < M.Nv; k++)
+    // {
+    //     cout << "Vertex " << M.V[k].id << " is in triangles";
+    //     for(int l = 0; l < M.V[k].T.size(); l++)
+    //     {
+    //         cout << " " << M.V[k].T[l]->id;
+    //     }
+    //     cout << endl;
+    // }
+    
+    cout << "Finished reading Mesh from file" << endl;
     
     return is;
 }
 
-Mesh::Mesh(const char* filename) :
-V(0)
+Mesh::Mesh(const char* filename)
 {
     ifstream meshfile;
     meshfile.open(filename, ifstream::in);
@@ -218,10 +221,6 @@ V(0)
 
 Mesh::~Mesh()
 {
-	if (V)
-	{
-		delete[] V;
-	}
 }
 
 uint Mesh::countVertices() const
