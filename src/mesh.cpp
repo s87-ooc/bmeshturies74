@@ -141,11 +141,10 @@ Vertex& BoundEdge::operator() (uint vertex) const
 
 istream& operator>>(istream &is, Mesh &M)
 {
-	// // we're resetting the mesh, clear stuff if needed
-	if (M.V)
-	{
-		delete[] M.V;
-	}
+	// we're resetting the mesh, clear stuff if needed
+	SAFE_ARRDELETE(M.V);
+	SAFE_ARRDELETE(M.T);
+	SAFE_ARRDELETE(M.E);
 
     // lecture du nombre de sommets, aretes et triangles
     is >> M.Nv >> M.Nt >> M.Ne;
@@ -210,7 +209,10 @@ istream& operator>>(istream &is, Mesh &M)
     return is;
 }
 
-Mesh::Mesh(const char* filename)
+Mesh::Mesh(const char* filename) :
+V(0),
+T(0),
+E(0)
 {
     ifstream meshfile;
     meshfile.open(filename, ifstream::in);
@@ -220,6 +222,9 @@ Mesh::Mesh(const char* filename)
 
 Mesh::~Mesh()
 {
+	SAFE_ARRDELETE(V);
+	SAFE_ARRDELETE(T);
+	SAFE_ARRDELETE(E);
 }
 
 uint Mesh::countVertices() const
