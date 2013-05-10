@@ -33,8 +33,8 @@ using namespace std;
 
 // dump info on non-zero entries in (small!) matrices
 
-#define DUMPNZ(M) for (uint i = 0; i < M.sizeRows(); i++) {	for (uint j = 0; j < M.sizeColumns(); j++) { if (fabs(M(i,j)) > 0.0001)	cout << j+1 << " ";	else cout << "-" << " "; } cout << endl; }
-#define DUMPVAL(M) for (uint i = 0; i < M.sizeRows(); i++) {	for (uint j = 0; j < M.sizeColumns(); j++) { cout << M(i,j) << " "; } cout << endl; }
+//#define DUMPNZ(M) for (uint i = 0; i < M.sizeRows(); i++) {	for (uint j = 0; j < M.sizeColumns(); j++) { if (fabs(M(i,j)) > 0.0001)	cout << j+1 << " ";	else cout << "-" << " "; } cout << endl; }
+//#define DUMPVAL(M) for (uint i = 0; i < M.sizeRows(); i++) {	for (uint j = 0; j < M.sizeColumns(); j++) { cout << M(i,j) << " "; } cout << endl; }
 
 // ----------------------------------------------------------------------------
 
@@ -54,14 +54,14 @@ SHelmholtzParams gParams;
 // we're keeping the problem specific functions in a namespace to avoid any ambiguity
 namespace helmholtz
 {
-	// f is just
+	// f is just 0
 	double f(const Vertex& v)
 	{
 		return 0.;
 	}
 
 	// TODO: what is the normal on the corners of the square?
-	double g(const Vertex& v)
+	/*double g(const Vertex& v)
 	{
 		// make sure we have a vertex on the edge
 		if (v.label != 1)
@@ -160,16 +160,17 @@ namespace helmholtz
 		//cout << v.x << " " << v.y << " " << val << endl;
 		
 		return val;
-	}
+	}*/
 
-	double g2(const Vertex& v, const BoundEdge& e)
+	//double g2(const Vertex& v, const BoundEdge& e)
+	double g(const Vertex& v, const BoundEdge& e)
 	{
 		double kapxk = gParams.kappa * (gParams.k1 * v.x + gParams.k2 * v.y);
 
 		Vector n(2);
 		n.constructNormal(e);
 
-		double kn = n(0)*gParams.k1 + n(1)*gParams.k2;
+		double kn = n(0) * gParams.k1 + n(1) * gParams.k2;
 		double val = sin(kapxk) + gParams.kappa * cos(kapxk) * kn;
 
 		return val;
@@ -187,7 +188,7 @@ namespace helmholtz
 
 int main(int argc, char* argv[])
 {
-	clock_t t, tStart, tLoadMesh, tMatA, tMatM, tAssB, tRhsF, tRhsG, tSolve, tEnd;
+	clock_t t, tStart, tLoadMesh, tMatA, tMatM, tMatB, tRhsF, tRhsG, tSolve, tEnd;
 	
 	tStart = clock();
 
@@ -206,17 +207,8 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/helmholtz -mesh " << gParams.fileMesh << " -kappa " << gParams.kappa << " -k " << gParams.k1 << " " << gParams.k2 << endl;
+			cout << "Usage: bin/helmholtz -kappa " << gParams.kappa << " -k " << gParams.k1 << "," << gParams.k2  << " " << gParams.fileMesh << endl;
 			return 0;
-		}
-		else if (strcmp(argv[iArg], "-mesh") == 0)
-		{
-			iArg++;
-			
-			if (iArg < argc)
-			{
-				gParams.fileMesh = argv[iArg];
-			}
 		}
 		else if (strcmp(argv[iArg], "-kappa") == 0)
 		{
@@ -229,12 +221,50 @@ int main(int argc, char* argv[])
 				buf >> gParams.kappa;
 			}
 		}
-		// TODO: k as parameter
+		else if (strcmp(argv[iArg], "-k") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				char* sDim = strtok(argv[iArg], ",");
+				
+				{
+					stringstream buf;
+					buf << sDim;
+					buf >> gParams.k1;
+				}
+				
+				sDim = strtok(0, ",");
+				
+				{
+					stringstream buf;
+					buf << sDim;
+					buf >> gParams.k2;
+				}
+			}
+			
+			cout << "k1 " << gParams.k1 << " k2 " << gParams.k2 << endl;
+		}
+		else
+		{
+			gParams.fileMesh = argv[iArg];
+		}
 	}
 
 	cout << "== Partie I: Helmholtz ==" << endl;
 
 	// ----------
+
+	{
+		ifstream fileTest(gParams.fileMesh.c_str());
+		
+		if (!fileTest)
+		{
+			cout << "No valid mesh " << gParams.fileMesh << endl;
+			return 0;
+		}
+	}
 	
 	// Load the mesh
 
@@ -243,7 +273,7 @@ int main(int argc, char* argv[])
 	Mesh mesh(gParams.fileMesh.c_str());
 	
 	CLOCK(tLoadMesh);
-
+	
 	// ----------
 	
 	// Assemble the matrices and vectors
@@ -273,7 +303,7 @@ int main(int argc, char* argv[])
 
 	Bmap.constructB(mesh);
 	
-	CLOCK(tAssB);
+	CLOCK(tMatB);
 	
 	// F (rhs)
 	
@@ -288,18 +318,20 @@ int main(int argc, char* argv[])
 	// G (rhs)
 	
 	RESETCLOCK();
-	
-	//rhsG.constructFuncIntSurf(mesh, helmholtz::g);
-	rhsG.constructFuncSurf(mesh, helmholtz::g2);
+
+	rhsG.constructFuncSurf(mesh, helmholtz::g);
 	
 	CLOCK(tRhsG);
 	
 	// ----------
 	
+	// TODO: the whole verification part should go into unittest, only leave stuff here that's needed
+	
 	// verification of constructed matrices according to the course
 	
 	// dumping may make sense for "bin/helmholtz -mesh data/mesh/square_9.msh"
 	
+	/*
 	bool verify = true;
 	bool dump = false;
 	
@@ -381,7 +413,7 @@ int main(int argc, char* argv[])
 	
 	if (verify)
 	{
-	}
+	}*/
 	
 	// ----------
 
@@ -405,6 +437,7 @@ int main(int argc, char* argv[])
 
 	Vector uh = AMB.conjGradient(rhs);
 	//Vector uh = AMB.jacobi(rhs);
+	//Vector uh = LU.jacobi(rhs);
 	
 	CLOCK(tSolve);
 	
@@ -426,18 +459,16 @@ int main(int argc, char* argv[])
 	
 	// ----------
 	
-	// Plot problem functions and results
+	// boundary conditions
 	
 	//PlotMesh plotF("f", mesh, helmholtz::f);
 	//plotF.generate(true);
 	
-	// TODO: check the impact of g to the solution
-	PlotMesh plotG("g", mesh, helmholtz::g);
-	plotG.generate(true);
+	//PlotMesh plotG("g", mesh, helmholtz::g);
+	//plotG.generate(true);
 	
-	// stjepan: this is your function
-	PlotMesh plotG2("g2", mesh, helmholtz::g);
-	plotG2.generate(true);
+	//PlotMesh plotG("g", mesh, helmholtz::g);
+	//plotG.generate(true);
 
 	// our solution
 
@@ -455,6 +486,7 @@ int main(int argc, char* argv[])
 	plotErr.generate(true);
 	
 	// save the linear system (with our solution for debugging)
+	
 	{
 		ofstream f("data/linsys/helmholtz.linsys");
 		f << AMB << rhs << uh;
@@ -464,7 +496,7 @@ int main(int argc, char* argv[])
 	
 	// display computation time
 
-	clock_t tCombinedAssembly = tMatA + tMatM + tAssB + tRhsF + tRhsG;
+	clock_t tCombinedAssembly = tMatA + tMatM + tMatB + tRhsF + tRhsG;
 	clock_t tCombined = tLoadMesh + tSolve + tCombinedAssembly;
 	
 	// ---
@@ -477,7 +509,7 @@ int main(int argc, char* argv[])
 	
 	LOGPARTTIME("A Assembly", tMatA, tCombined);
 	LOGPARTTIME("M Assembly", tMatM, tCombined);
-	LOGPARTTIME("B Assembly", tAssB, tCombined);
+	LOGPARTTIME("B Assembly", tMatB, tCombined);
 	
 	LOGPARTTIME("F Assembly", tRhsF, tCombined);
 	LOGPARTTIME("G Assembly", tRhsG, tCombined);

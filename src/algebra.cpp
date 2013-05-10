@@ -785,10 +785,16 @@ Vector Sparse::conjGradient(Vector const& b) const
 		y = (*this) * p;
 		alpha = gamma / dot(y, p);
 		x = x + alpha * p;
+		//x(0) += alpha * p(0);
+		//x(1) += alpha * p(1);
 		r = r - alpha * y;
+		//r(0) -= alpha * y(0);
+		//r(1) -= alpha * y(1);
 		beta = dot(r, r) / gamma;
 		gamma = dot(r, r);
 		p = r + beta * p;
+		//p(0) = r(0) + beta * p(0);
+		//p(1) = r(1) + beta * p(1);
 	}
 	
 	return x;
@@ -812,12 +818,15 @@ Vector Sparse::jacobi(Vector const& b, bool& convergence) const
     Vector y(dim);
 	Vector r = b - (*this) * x;	/** residual */
 	
-	double limit = JACOBI_TOLERANCE * b.norm2();
+	// use square to save some "sqrt" calls, especially in the header of "while"
+	//double limit = JACOBI_TOLERANCE * b.norm2();
+	double limit = pow(JACOBI_TOLERANCE, 2) * dot(b, b);
 	
 	uint it;
 	uint itMax = pow(dim, 2);
 	
-	while (r.norm2() > limit && it < itMax)
+	//while (r.norm2() > limit && it < itMax)
+	while (dot(r, r) > limit && it < itMax)
 	{
 		for (uint i = 0; i < dim; i++)
 		{
@@ -861,28 +870,12 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 	
 	for (uint k = 0; k < n - 1; k++)
 	{
-		//cout << "-" << k << " " << A(p[k], p[k]) << endl;
-	
-		/*cout << "--- STEP ---" << endl;
-		for (uint i = 0; i < n; i++)
-		{
-			for (uint j = 0; j < n; j++)
-			{
-				cout << A(p[i], j) << " ";
-			}
-			cout << endl;
-		}*/
-		
 		if (fabs(A(p[k], k)) < EQ_TOL)
 		{
-			//cout << "ZERO " << A(p[k], k) << endl;
-			// TODO: perform permutation
 			for (uint k0 = k+1; k0 < n; k0++)
 			{
-				//cout << k0 << " " << A(p[k0], k) << endl;
 				if (fabs(A(p[k0], k)) >= EQ_TOL)
 				{
-					//cout << p[k] << " <-> " << p[k0] << endl;
 					uint swap = p[k];
 					p[k] = k0;
 					p[k0] = swap;
@@ -890,16 +883,6 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 				}
 			}
 		}
-
-		/*cout << "--- SWAPPED ---" << endl;
-		for (uint i = 0; i < n; i++)
-		{
-			for (uint j = 0; j < n; j++)
-			{
-				cout << A(p[i], j) << " ";
-			}
-			cout << endl;
-		}*/
 		
 		for (uint i = k+1; i < n; i++)
 		{
@@ -925,7 +908,9 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 	Vector x(n);
 	Vector y(n);
 
-	y(p[0]) = b(p[0]);	// do this outside of the loop as we want to go over uint, -1 not uint
+	// do this outside of the loop as we want to go over uint, -1 not uint
+	y(p[0]) = b(p[0]);
+	
 	for (uint k = 1; k < n; k++)
 	{
 		y(p[k]) = b(p[k]);
@@ -935,30 +920,24 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 		}
 	}
 	
-	//cout << "y: " << y << endl;
-	
 	for (uint k = n-1; k >= 1; k--)
 	{
-		//cout << k << " " << k+1 << " " << n-1 << endl;
 		x(k) = y(p[k]);
 		for (uint j = n-1; j >= k+1; j--)
 		{
-			//cout << "GO" << endl;
 			x(k) -= A(p[k], j) * x(j);
 		}
 		x(k) /= A(p[k], k);
 	}
+	
 	// do this outside of the loop since we're using uint
-	//cout << 0 << " " << 0+1 << " " << n-1 << endl;
 	x(0) = y(p[0]);
+	
 	for (uint j = n-1; j >= 1; j--)
 	{
-		//cout << "GO" << endl;
 		x(0) -= A(p[0], j) * x(j);
 	}
 	x(0) /= A(p[0], 0);
-	
-	//cout << "x: " << x << endl;
 	
 	// ----------
 	

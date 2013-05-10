@@ -34,13 +34,14 @@ using namespace std;
 struct SGenerationParams
 {
 	bool regenerate;	/** whether example linear systems should be regenerated */
-	uint count;			/** how many example systems we have */
+	uint count;				/** how many example systems we have */
 	double density;		/** nnz / (rows * columns), ratio the same for all matrices, plus diagonal nnz */
 	double minEntry;	/** minimal entry of randomly generated values */
 	double maxEntry;	/** maximal entry of randomly generated values */
 	uint* dimensions;	/** dynamic array of test matrix dimensions */
 	double* times;		/** dynamic array of computation times, 3 * count: conjGradient, jacobi, LU */
 	double* errors;		/** dynamic array of computation errors, 3 * count: conjGradient, jacobi, LU */
+	bool noLU;				/** as the LU solver needs much longer than the others, it's possible to turn it off */
 };
 
 /** global parameters */
@@ -71,13 +72,18 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/solvertest [-r] -density " << gParams.density << " dim1,...,dim[count]" << endl;
+			cout << "Usage: bin/solvertest [-r] [-nlu] -density " << gParams.density << " dim1,...,dim[count]" << endl;
 			cout << "       -r = regenerate existing files" << endl;
+			cout << "       -nlu = no LU tests will be performed" << endl;
 			return 0;
 		}
 		else if (strcmp(argv[iArg], "-r") == 0)
 		{
 			gParams.regenerate = true;
+		}
+		else if (strcmp(argv[iArg], "-nlu") == 0)
+		{
+			gParams.noLU = true;
 		}
 		else if (strcmp(argv[iArg], "-density") == 0)
 		{
@@ -90,17 +96,6 @@ int main(int argc, char* argv[])
 				buf >> gParams.density;
 			}
 		}
-		/*else if (strcmp(argv[iArg], "-count") == 0)
-		{
-			iArg++;
-			
-			if (iArg < argc)
-			{
-				stringstream buf;
-				buf << argv[iArg];
-				buf >> gParams.count;
-			}
-		}*/
 		else
 		{
 			// dim1,...,dim[count]
@@ -192,6 +187,7 @@ int main(int argc, char* argv[])
 		
 			// generate positive definite matrices over the product of a lower triangular matrix
 			// and its transpose, fill the diagonal with positive values to assure that its invertible
+			// NOTE: this is NOT sufficient for the jacobi solver to converge!
 			
 			SparseLIL m(dim, dim);
 
@@ -261,29 +257,43 @@ int main(int argc, char* argv[])
 		
 		// Jacobi
 		
+		bool convergence = false;
+		
 		RESETCLOCK();
 		
-		solution = A.jacobi(rhs);
+		solution = A.jacobi(rhs, convergence);
 		
 		CLOCK(tSolve);
 		
-		gParams.times[k * 3 + 1] = ((double)tSolve) / CLOCKS_PER_SEC;
-		gParams.errors[k * 3 + 1] = (solution - exact_solution).norm2();
+		if (convergence)
+		{
+			gParams.times[k * 3 + 1] = ((double)tSolve) / CLOCKS_PER_SEC;
+			gParams.errors[k * 3 + 1] = (solution - exact_solution).norm2();
+		}
+		else
+		{
+			// the solver did not converge, we're setting the values to 0
+			gParams.times[k * 3 + 1] = 0.;
+			gParams.errors[k * 3 + 1] = 0.;
+		}
 		
 		cout << dim << " Jacobi: " << gParams.times[k * 3 + 1] << "s " << gParams.errors[k * 3 + 1] << endl;
 		
 		// LU
 		
-		RESETCLOCK();
-		
-		//solution = A.LU(rhs);
-		
-		CLOCK(tSolve);
-		
-		gParams.times[k * 3 + 2] = ((double)tSolve) / CLOCKS_PER_SEC;
-		gParams.errors[k * 3 + 2] = (solution - exact_solution).norm2();
-		
-		cout << dim << " LU: " << gParams.times[k * 3 + 2] << "s " << gParams.errors[k * 3 + 2] << endl;
+		if (!gParams.noLU)
+		{
+			RESETCLOCK();
+			
+			solution = A.LU(rhs);
+			
+			CLOCK(tSolve);
+			
+			gParams.times[k * 3 + 2] = ((double)tSolve) / CLOCKS_PER_SEC;
+			gParams.errors[k * 3 + 2] = (solution - exact_solution).norm2();
+			
+			cout << dim << " LU: " << gParams.times[k * 3 + 2] << "s " << gParams.errors[k * 3 + 2] << endl;
+		}
 	}
 	
 	// ----------
@@ -318,6 +328,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	
+	if (!gParams.noLU);
 	{
 		ofstream fileClock("data/linsys/times_lu.log");
 		for (uint k = 0; k < gParams.count; k++)
@@ -370,11 +381,14 @@ int main(int argc, char* argv[])
 	Plot eJacobi("errors_jacobi", vN, vErrors[1], "Errors Jacobi");
 	eJacobi.generate(true);
 	
-	Plot tLU("times_lu", vN, vTimes[2], "Times LU");
-	tLU.generate(true);
-	
-	Plot eLU("errors_lu", vN, vErrors[2], "Errors LU");
-	eLU.generate(true);
+	if (!gParams.noLU)
+	{
+		Plot tLU("times_lu", vN, vTimes[2], "Times LU");
+		tLU.generate(true);
+		
+		Plot eLU("errors_lu", vN, vErrors[2], "Errors LU");
+		eLU.generate(true);
+	}
 	
 	// ----------
 	

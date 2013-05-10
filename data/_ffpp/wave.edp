@@ -67,7 +67,7 @@ varf funcUmatV(u,v) = - int2d(Th)(dt/2 * (dx(u)*dx(v) + dy(u)*dy(v)))
 matrix uMatV = funcUmatV(Vh, Vh);
 
 varf funcM(u,v) = int2d(Th)(u*v);
-varf vMatV = funcM(Vh, Vh);
+matrix vMatV = funcM(Vh, Vh);
 
 // ---
 
@@ -83,9 +83,12 @@ plot(v,wait=debug);
 
 // iterate according to Newmark
 
+// TODO: How do we basic vector addition in FreeFem++?
+
 for (int i = 0; i < nSteps; i++)
 {
-	cout << i << endl;
+	cout << "t: " << (1+i)*dt << "s" << endl;
+	u[] = uMatU * u0[] ;//+ uMatV * v0[];
 }
 
 /*

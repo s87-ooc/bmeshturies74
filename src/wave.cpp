@@ -101,8 +101,8 @@ int main(int argc, char* argv[])
 	// default values
 
 	gParams.T = 2.25;
-	//gParams.n = 43;
-	gParams.n = 4;
+	gParams.n = 43;
+	//gParams.n = 4;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
 	//gParams.fileMesh = "data/mesh/cercle2.msh";
 	//gParams.fileMesh = "data/mesh/square_9.msh";
