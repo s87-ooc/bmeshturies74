@@ -34,7 +34,11 @@ T(0)
 }
 
 Vertex::Vertex(double x, double y, uint label, uint id): 
-    x(x), y(y), label(label), id(id), T(0)
+x(x),
+y(y),
+label(label),
+id(id),
+T(0)
 {
 }
 
@@ -49,13 +53,17 @@ Vertex::Vertex(const Vertex& v)
 
 // ----------------------------------------------------------------------------
 
-Triangle::Triangle(): label(-1), id(-1), V(0)
+Triangle::Triangle():
+label(-1),
+id(-1),
+V(0)
 {
     // don't use this constructor
 }
 
 Triangle::Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id):
-    label(label), id(id)
+label(label),
+id(id)
 {
     V.push_back(a);
     V.push_back(b);
@@ -73,7 +81,7 @@ double Triangle::calculate_area()
 
 Vertex& Triangle::operator() (uint vertex) const
 {
-    assert( vertex >=0 && vertex <=2);
+    assert(vertex >=0 && vertex <=2);
     return *V[vertex];
 }
 
@@ -148,13 +156,12 @@ istream& operator>>(istream &is, Mesh &M)
 
     // lecture du nombre de sommets, aretes et triangles
     is >> M.Nv >> M.Nt >> M.Ne;
-    
+
+	// initialiser tableau pour stocker les sommets, aretes et triangles
     M.V = new Vertex[M.Nv];
     M.T = new Triangle[M.Nt];
-    M.E = new BoundEdge[M.Ne];
+    M.E = new BoundEdge[M.Ne];	
 	
-    // initialiser tableau pour stocker les sommets, aretes et triangles
-    
     for(int k = 0; k < M.Nv; k++)
     {
         double x, y; int label;
@@ -174,13 +181,11 @@ istream& operator>>(istream &is, Mesh &M)
         is >> a >> b >> c >> label;
 
         Triangle t(&M.V[a-1], &M.V[b-1], &M.V[c-1], label, k);
-
         M.T[k] = t;
 
-        M.V[a-1].T.push_back(&M.T[k]);
+		M.V[a-1].T.push_back(&M.T[k]);
         M.V[b-1].T.push_back(&M.T[k]);
         M.V[c-1].T.push_back(&M.T[k]);
-
     }
 
     for(int k = 0; k < M.Ne; k++)
@@ -238,4 +243,28 @@ uint Mesh::countTriangles() const
 uint Mesh::countEdges() const
 {
     return Ne;
+}
+
+// TODO: implement this more elegant
+
+#define DIST(u,v) pow(u.x - v.x, 2) + pow(u.y - v.y, 2)
+
+double Mesh::maxDiameter() const
+{
+	double max2 = 0.;
+	double dia;
+	
+	for (uint i = 0; i < Nt; i++)
+	{
+		dia = DIST(T[i](2), T[i](0));
+		max2 = max2 < dia ? dia : max2;
+		
+		dia = DIST(T[i](1), T[i](0));
+		max2 = max2 < dia ? dia : max2;
+		
+		dia = DIST(T[i](2), T[i](1)); 
+		max2 = max2 < dia ? dia : max2;
+	}
+	
+	return sqrt(max2);
 }

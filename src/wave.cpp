@@ -31,6 +31,32 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+// @@@
+template<class T>
+void _writeMatrix(const char* fn, const T& m)
+{
+	ofstream os(fn);
+	for (uint i = 0; i < m.sizeRows(); i++)
+	{
+		for (uint j = 0; j < m.sizeColumns(); j++)
+		{
+			os << m(i, j) << endl;
+		}
+	}
+}
+
+template<class T>
+void _writeVector(const char* fn, const T& v)
+{
+	ofstream os(fn);
+	for (uint i = 0; i < v.size(); i++)
+	{
+		os << v(i) << endl;
+	}
+}
+
+// ----------------------------------------------------------------------------
+
 struct SWaveParams
 {
 	double T;			/** maximal time */
@@ -74,9 +100,11 @@ int main(int argc, char* argv[])
 	
 	// default values
 
-	gParams.T = 1.;
-	gParams.n = 3;
+	gParams.T = 2.25;
+	gParams.n = 43;
+	//gParams.n = 4;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
+	//gParams.fileMesh = "data/mesh/square_9.msh";
 	
 	// get filenames and parameters from cmdline arguments (if any)
 	
@@ -138,6 +166,8 @@ int main(int argc, char* argv[])
 	
 	CLOCK(tLoadMesh);
 
+	cout << "Max Diameter: " << mesh.maxDiameter() << endl;
+	
 	// ----------
 	
 	// Assemble the matrices and vectors
@@ -189,21 +219,36 @@ int main(int argc, char* argv[])
 		SparseMap ABmap = Amap;
 		ABmap += Bmap;
 		
+		// @@@@
+		//_writeMatrix("AB.dat", ABmap);
+		
 		uMatUmap = ABmap;
 		uMatUmap *= -pow(dt, 2) / 2.;
 		uMatUmap += Mmap;
 		uMatU = uMatUmap;
 		
+		// @@@@
+		//_writeMatrix("uMatU.dat", uMatU);
+		
 		vMatUmap = Mmap;
 		vMatUmap *= dt;
 		vMatU = vMatUmap;
+		
+		// @@@@
+		//_writeMatrix("vMatU.dat", vMatU);
 		
 		uMatVmap = ABmap;
 		uMatVmap *= -dt / 2.;
 		uMatV = uMatVmap;
 		
+		// @@@@
+		//_writeMatrix("uMatV.dat", uMatV);
+		
 		// vMatV = M
 		M = Mmap;
+		
+		// @@@@
+		//_writeMatrix("M.dat", M);
 		
 		// @@@
 		DUMP(-pow(dt, 2) / 2.);
@@ -241,6 +286,10 @@ int main(int argc, char* argv[])
 	PlotMesh plot0("x", mesh, xLast);
 	plot0.generate(true);
 	
+	// @@@
+	//_writeVector("x0.dat", xLast);
+	//_writeVector("y0.dat", yLast);
+	
 	for (uint i = 0; i < gParams.n; i++)
 	{
 		cout << "Solving t = " << (i+1) * dt << "s" << endl;
@@ -255,6 +304,14 @@ int main(int argc, char* argv[])
 		DUMP(y.norm2());
 		DUMP(yLast.norm2());
 		
+		// @@@
+		stringstream buf;
+		buf << i+1 << ".dat";
+		string fn;
+		buf >> fn;
+		//_writeVector((string("x")+fn).c_str(), x);
+		//_writeVector((string("y")+fn).c_str(), y);
+		
 		xLast = x;
 		yLast = y;
 		
@@ -263,8 +320,8 @@ int main(int argc, char* argv[])
 		//tSteps[i] = ((double)tSolve) / CLOCKS_PER_SEC;
 		
 		// @@@
-		PlotMesh plotD("x", mesh, x);
-		plotD.generate(true);
+		//PlotMesh plotD("x", mesh, x);
+		//plotD.generate(true);
 	}
 	
 	// ----------
@@ -274,17 +331,15 @@ int main(int argc, char* argv[])
 	// stop measuring time, display of graphs is optional
 	tEnd = clock();
 
-	return 0;
-	
 	// ----------
 
 	// Plot initial data
 	
 	PlotMesh plotU0("u0", mesh, wave::u0);
-	plotU0.generate(true);
+	//plotU0.generate(true);
 	
 	PlotMesh plotU1("u1", mesh, wave::u1);
-	plotU1.generate(true);
+	//plotU1.generate(true);
 	
 	// Plot last step
 	PlotMesh plotX("x", mesh, x);

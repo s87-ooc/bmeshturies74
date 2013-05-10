@@ -27,12 +27,72 @@ using namespace std;
 
 #define TESTTITLE(T) cout << endl << "= " << T << " =" << endl << endl
 
+template<class T>
+void _writeMatrix(const char* fn, const T& m)
+{
+	ofstream os(fn);
+	for (uint i = 0; i < m.sizeRows(); i++)
+	{
+		for (uint j = 0; j < m.sizeColumns(); j++)
+		{
+			os << m(i, j) << endl;
+		}
+	}
+}
+
 // ----------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
 	cout << "== Unittest ==" << endl;
 
+
+	{
+		TESTTITLE("Matrix assembly");
+        
+        Mesh mesh("data/mesh/square_9.msh");
+		
+		for (uint i = 0; i < mesh.countVertices(); i++)
+		{
+			cout << i+1 << " V) " 
+				<< mesh.V[i].x << " " << mesh.V[i].y << " " /*<< mesh.V[i].id + 1*/ << endl;
+		}
+		
+		for (uint i = 0; i < mesh.countTriangles(); i++)
+		{
+			cout << i+1 << " T) " 
+				<< mesh.T[i](0).id+1 << "-" << mesh.T[i](1).id+1 << "-" << mesh.T[i](2).id+1
+				<< " " << mesh.T[i].area << endl;
+		}
+		
+		for (uint i = 0; i < mesh.countEdges(); i++)
+		{
+			cout << i+1 << " E) " 
+				<< mesh.E[i](0).id+1 << "-" << mesh.E[i](1).id+1
+				<< " " << mesh.E[i].length << endl;
+		}
+		
+		uint dim = mesh.countVertices();
+		
+		SparseMap Amap(dim, dim), Bmap(dim, dim), Mmap(dim, dim);
+		
+		Amap.constructA(mesh);
+		DUMP_MAT(Amap);
+		
+		Bmap.constructB(mesh);
+		DUMP_MAT(Bmap);
+		
+		Mmap.constructM(mesh);
+		DUMP_MAT(Mmap);
+		
+		// we can load this in Scilab with "A = read('A.dat',9,9)"
+		//_writeMatrix("A.dat", Amap);
+		//_writeMatrix("B.dat", Bmap);
+		//_writeMatrix("M.dat", Mmap);
+    }
+	
+	return 0;
+	
 	{
 		TESTTITLE("Vector");
 		
@@ -590,6 +650,6 @@ int main(int argc, char* argv[])
 		//PlotMesh p("plot01", "data/_gnuplot/surface.ptpl", &M);
 		//p.generate(true);
     }
-
+	
 	return 0;
 }

@@ -121,6 +121,9 @@ public:
 	uint countTriangles() const;
 	uint countEdges() const;
 	
+	/** return the maximal diameter of a triangle in this mesh */
+	double maxDiameter() const;
+	
 	Vertex* V;
     Triangle* T;
     BoundEdge* E;

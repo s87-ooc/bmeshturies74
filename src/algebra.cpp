@@ -1040,19 +1040,34 @@ void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& 
 	vNew = conjGradient(rhsV);
 
 	// @@@
+	cout << "---" << endl;
+	DUMP((uMatU * u).norm2());
+	DUMP((vMatU * v).norm2());
+	DUMP(rhsU.norm2());
+	//DUMP(jacobi(rhsU).norm2());
+	//DUMP(conjGradient(rhsU).norm2());
+	// USE ONLY FOR SMALL MATRICES
+	//DUMP(LU(rhsU).norm2());
+	DUMP(uNew.norm2());
+	DUMP(u.norm2());
+	cout << "-" << endl;
 	DUMP((u + uNew).norm2());
 	DUMP((uMatV * (u + uNew)).norm2());
 	DUMP(((*this) * v).norm2());
 	DUMP(rhsV.norm2());
-	DUMP(jacobi(rhsV).norm2());
-	DUMP(conjGradient(rhsV).norm2());
+	//DUMP(jacobi(rhsV).norm2());
+	//DUMP(conjGradient(rhsV).norm2());
+	// USE ONLY FOR SMALL MATRICES
 	//DUMP(LU(rhsV).norm2());
-	Vector vOne(dim);
+	DUMP(vNew.norm2());
+	DUMP(v.norm2());
+	/*Vector vOne(dim);
 	for (uint i = 0; i < dim; i++)
 	{
 		vOne(i) = 1.;
 	}
-	DUMP(((*this) * vOne).norm2());
+	DUMP(((*this) * vOne).norm2());*/
+	cout << "---" << endl;
 }
 
 // ----------------------------------------------------------------------------

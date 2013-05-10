@@ -224,7 +224,7 @@ public:
 
 	/** values can only be read  */
     double operator() (uint row, uint col) const;
-
+	
 	// ---
 
 	/** solve Ax = b with conjugate Gradient
