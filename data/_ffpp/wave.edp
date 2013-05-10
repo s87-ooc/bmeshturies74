@@ -1,0 +1,197 @@
+/*************************************************************
+
+ Projet
+
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
+          Stjepan Stamenkovic (stjepan@stjepan.net)
+
+ ---
+
+     Fichier: wave.edp
+
+ Description: vérification de la implémentation en utilisant FreeFem++
+
+**************************************************************/
+
+bool debug=true;
+
+// ---
+
+// problem parameters
+
+real kappa = 10.;
+real kx = 1. / sqrt(2.);
+real ky = 1. / sqrt(2.);
+
+real T = 2.25;
+real dt = 0.05;
+real nSteps = T / dt;
+
+// ---
+
+// defining the boundary
+border C(t=0, 2*pi) {x=cos(t); y=sin(t);}
+
+// ---
+
+int grid = 50;
+
+// domain is on the left side when following the boundary according to parametrization
+mesh Th = buildmesh(C(grid));
+savemesh(Th, "cercle_ffpp.msh");
+
+plot(Th,wait=debug);
+
+// space over Th with P1 elements
+fespace Vh(Th, P1);
+
+// initial values
+Vh u0 = exp(-1. * ((x - 0.1)^2 + (y - 0.1)^2) / 0.01);
+Vh u1 = 0.;
+
+// ---
+
+// TODO: assemble these matrices more efficiently
+
+// uMatU = (M - (A + B)dt^2/2)
+varf funcUmatU(u,v) = int2d(Th)(u*v)
+						- int2d(Th)(dt^2/2 * (dx(u)*dx(v) + dy(u)*dy(v)))
+						- int1d(Th, 1)(dt^2/2 * u*v);
+matrix uMatU = funcUmatU(Vh, Vh);
+
+varf funcVmatU(u,v) = int2d(Th)(dt * u*v);
+matrix vMatU = funcVmatU(Vh, Vh);
+
+varf funcUmatV(u,v) = - int2d(Th)(dt/2 * (dx(u)*dx(v) + dy(u)*dy(v)))
+						- int1d(Th, 1)(dt/2 * u*v);;
+matrix uMatV = funcUmatV(Vh, Vh);
+
+varf funcM(u,v) = int2d(Th)(u*v);
+varf vMatV = funcM(Vh, Vh);
+
+// ---
+
+// setup initial values
+
+Vh u, v;
+
+u[] = u0[];
+plot(u,wait=debug);
+
+v[] = u1[];
+plot(v,wait=debug);
+
+// iterate according to Newmark
+
+for (int i = 0; i < nSteps; i++)
+{
+	cout << i << endl;
+}
+
+/*
+// piecewise-P1 continuous function vectors
+Vh u, v;
+
+// f is just zero
+func f = 0;
+
+// g using the N.x and N.y functions to figure out edge normals
+func g = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * (N.x * kx + N.y * ky);
+
+// ---
+
+real cpu = clock();
+
+solve Helmholtz(u,v,solver=LU) =
+	int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))		// A
+	- int2d(Th) (kappa^2 * u*v)					// -kappa^2 * M
+	+ int1d(Th, 1) (u*v)						// B
+	- int2d(Th) (f*v)							// - F (rhs)
+	- int1d(Th, 1) (g*v)						// - G (rhs)
+;
+
+cout << "CPU time = " << clock()-cpu << endl;
+
+// ---
+
+plot(u,wait=debug);
+
+// save the solution for Gnuplot
+{
+	ofstream ff("graph.txt");
+	for (int i=0;i<Th.nt;i++)
+	{
+		for (int j=0; j <3; j++)
+		{
+			ff<<Th[i][j].x << " "<< Th[i][j].y<< " "<<u[][Vh(i,j)]<<endl;
+		}
+		ff<<Th[i][0].x << " "<< Th[i][0].y<< " "<<u[][Vh(i,0)]<<"\n\n\n";
+	}
+}
+
+// exact solution
+
+Vh uExact = sin(kappa * (x * kx + y * ky));
+plot(uExact,wait=debug);
+
+// ---
+
+// Matrix formulation
+
+// bilinear form
+varf a(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))
+				- int2d(Th) (kappa^2 * u*v)
+				+ int1d(Th, 1) (u*v);
+
+// rhs
+varf l(unused, v) = int2d(Th)(f*v) + int1d(Th, 1)(g*v);
+Vh F; F[] = l(0, Vh);
+
+Vh uVec;
+
+//matrix AMB = A - kappa^2 * M + B;
+matrix AMB = a(Vh, Vh);
+
+uVec[] = AMB^-1*(F[]);
+
+// should be the same as u
+plot(uVec,wait=debug);
+
+// ---
+
+// Construct matrices separately for debugging
+
+if (debug)
+{
+	// A
+	varf funcA(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v));
+	matrix A = funcA(Vh, Vh);
+	{
+		ofstream fout("A.txt");
+		fout << A;
+	}
+
+	// M
+	varf funcM(u,v) = int2d(Th)(u*v);
+	matrix M = funcM(Vh, Vh);
+	{
+		ofstream fout("M.txt");
+		fout << M;
+	}
+	
+	// B
+	varf funcB(u,v) = int1d(Th, 1)(u*v);
+	matrix B = funcB(Vh, Vh);
+	{
+		ofstream fout("B.txt");
+		fout << B;
+	}
+	
+	// rhsG
+	varf funcG(unused, v) = int1d(Th, 1)(g*v);
+	matrix rhsG = funcG(Vh, Vh);
+	{
+		ofstream fout("rhsG.txt");
+		fout << rhsG;
+	}
+}*/

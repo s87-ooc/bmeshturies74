@@ -53,10 +53,14 @@ int main(int argc, char* argv[])
 	// default values
 
 	gParams.regenerate = false;
-	gParams.count = 5;
+	gParams.count = 20;
 	gParams.density = 0.001;	// similar to problem matrices of carre2.msh/carre3.msh/carre4.msh
-	gParams.minEntry = -3.;
-	gParams.maxEntry = 8.;
+	
+	//gParams.minEntry = -3.;
+	//gParams.maxEntry = 8.;
+	gParams.minEntry = -1000.;
+	gParams.maxEntry = 1000.;
+	
 	gParams.dimensions = 0;
 	gParams.times = 0;
 	gParams.errors = 0;
@@ -136,8 +140,8 @@ int main(int argc, char* argv[])
 		gParams.dimensions = new uint[gParams.count];
 		for (uint i = 0; i < gParams.count; i++)
 		{
-			// default dimensions start with 10 going up in steps of 10
-			gParams.dimensions[i] = 10 * (i+1);
+			// default dimensions
+			gParams.dimensions[i] = 10 + 5*i;
 		}
 	}
 	
@@ -272,7 +276,7 @@ int main(int argc, char* argv[])
 		
 		RESETCLOCK();
 		
-		solution = A.LU(rhs);
+		//solution = A.LU(rhs);
 		
 		CLOCK(tSolve);
 		
@@ -332,7 +336,7 @@ int main(int argc, char* argv[])
 
 	// plot results
 	
-	Vector vDims(gParams.count);
+	Vector vN(gParams.count);	// input length = dim^2
 	Vector vTimes[3];
 	Vector vErrors[3];
 	
@@ -344,7 +348,9 @@ int main(int argc, char* argv[])
 	
 	for (uint i = 0; i < gParams.count; i++)
 	{
-		vDims(i) = gParams.dimensions[i];
+		//vN(i) = pow(gParams.dimensions[i], 2);
+		vN(i) = gParams.dimensions[i];
+		
 		for (uint j = 0; j < 3; j++)
 		{
 			vTimes[j](i) = gParams.times[i*3 + j];
@@ -352,22 +358,22 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	Plot tCG("times_cg", vDims, vTimes[0], "Times Conjugate Gradient");
+	Plot tCG("times_cg", vN, vTimes[0], "Times Conjugate Gradient");
 	tCG.generate(true);
 	
-	Plot eCG("errors_cg", vDims, vErrors[0], "Errors Conjugate Gradient");
+	Plot eCG("errors_cg", vN, vErrors[0], "Errors Conjugate Gradient");
 	eCG.generate(true);
 	
-	Plot tJacobi("times_jacobi", vDims, vTimes[1], "Times Jacobi");
+	Plot tJacobi("times_jacobi", vN, vTimes[1], "Times Jacobi");
 	tJacobi.generate(true);
 	
-	Plot eJacobi("errors_jacobi", vDims, vErrors[1], "Errors Jacobi");
+	Plot eJacobi("errors_jacobi", vN, vErrors[1], "Errors Jacobi");
 	eJacobi.generate(true);
 	
-	Plot tLU("times_lu", vDims, vTimes[2], "Times LU");
+	Plot tLU("times_lu", vN, vTimes[2], "Times LU");
 	tLU.generate(true);
 	
-	Plot eLU("errors_lu", vDims, vErrors[2], "Errors LU");
+	Plot eLU("errors_lu", vN, vErrors[2], "Errors LU");
 	eLU.generate(true);
 	
 	// ----------

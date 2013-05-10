@@ -234,8 +234,10 @@ public:
     Vector conjGradient(Vector const& b) const;
     
 	/** solve Ax = b with jacobi
-		Assumption: the matrix is strictly diagonally dominant */
+		Assumption: the matrix is strictly diagonally dominant AND 2D - A is too */
     Vector jacobi(Vector const& b) const;
+	/** solve Ax = b with jacobi and return whether the method converged */
+	Vector jacobi(Vector const& b, bool& convergence) const;
 
 	/** solve Ax = b with LU, optionally return the decomposed matrix */
     Vector LU(Vector const& b, Sparse* lu = 0) const;

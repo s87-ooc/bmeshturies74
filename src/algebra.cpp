@@ -808,47 +808,14 @@ Vector Sparse::conjGradient(Vector const& b) const
 
 Vector Sparse::jacobi(Vector const& b) const
 {
+	bool _unused;
+	return jacobi(b, _unused);
+}
+
+Vector Sparse::jacobi(Vector const& b, bool& convergence) const
+{
 	assert(this->sizeColumns() == b.size() && this->sizeRows() == b.size());
 
-    /*Vector x1(sizeColumns());
-    Vector x2(sizeColumns());
-    Vector& xcur = x1;
-    Vector& xnew = x2;
-    
-    unsigned int k = 0;
-    double diag;
-    bool convergence = false;
-    
-    while (!convergence)
-    {
-        for(uint i = 0; i < sizeRows(); i++)
-        {
-            // iterate over the ith row of the matrix
-
-			xnew(i) = b(i);
-            diag = 0;
-
-            for (k = mRowPtr[i]; k < mRowPtr[i+1]; k++)
-            {
-                if(mColInd[k] != i)
-					xnew(i) -= mVals[k] * xcur(mColInd[k]);
-
-                else
-                    diag = mVals[k];
-            }
-
-            xnew(i) /= diag;
-        }
-
-		convergence = (xnew - xcur).norm2() < JACOBI_TOLERANCE;
-
-		Vector& xtmp = xcur;
-        xcur = xnew;
-		xnew = xtmp;
-    }
-	
-	return xnew;*/
-   
 	// Stjepan: naive implementation according to G. Allaire, S.M. Kaber "Numerical Linear Algebra"
 	
 	uint dim = sizeColumns();
@@ -874,9 +841,16 @@ Vector Sparse::jacobi(Vector const& b) const
 		it++;
 	}
 	
-	string s = it < itMax ? "" : " (TIMEOUT!)";
-	cout << "Jacobi a fini après " << it << " itération(s)" << s << endl;
-   
+	if (it > itMax)
+	{
+		cout << "Jacobi abandonné après " << it << " itérations!" << endl;
+		convergence = false;
+	}
+	else
+	{
+		convergence = true;
+	}
+	
     return x;
 }
 
