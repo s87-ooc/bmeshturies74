@@ -346,37 +346,6 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 	mSizeRows = Nv;
 	mSizeColumns = Nv;
 
-	/*double a,b,c,d, A, B, C, D, l11, l22, l33, l12, l13, l23;
-	// iterate over the triangles of the mesh
-	for( uint t = 0; t < Nt; t++)
-	{
-		a = T[t](1).x - T[t](0).x;
-		b = T[t](2).x - T[t](0).x;
-		c = T[t](1).y - T[t](0).y;
-		d = T[t](2).y - T[t](0).y;
-		A = pow(a,2) + pow(c,2);
-		B = pow(b,2) + pow(d,2);
-		C = a*b + c*d;
-		D = fabs(a*d - b*c);
-
-		l11 = (A + B - 2*C) / D;
-		l22 = B / D;
-		l33 = A / D;
-		l23 = - (C / D);
-		l13 = (C - A) / D;
-		l12 = (C - B) / D;
-
-		this->addAt(T[t](0).id, T[t](0).id, l11);
-		this->addAt(T[t](1).id, T[t](1).id, l22);
-		this->addAt(T[t](2).id, T[t](2).id, l33);
-		this->addAt(T[t](0).id, T[t](1).id, l12);
-		this->addAt(T[t](1).id, T[t](0).id, l12);
-		this->addAt(T[t](0).id, T[t](2).id, l13);
-		this->addAt(T[t](2).id, T[t](0).id, l13);
-		this->addAt(T[t](1).id, T[t](2).id, l23);
-		this->addAt(T[t](2).id, T[t](1).id, l23);
-	}
-	*/
 	double x21, x31, y21, y31, a, b, d, D, l11, l22, l33, l12, l13, l23;
 	// iterate over the triangles of the mesh
 	for( uint t = 0; t < Nt; t++)
@@ -401,15 +370,27 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 		l13 = -b - d;
 		l23 = b;
 		
-		addAt(T[t](0).id, T[t](0).id, l11);
-		addAt(T[t](1).id, T[t](1).id, l22);
-		addAt(T[t](2).id, T[t](2).id, l33);
-		addAt(T[t](0).id, T[t](1).id, l12);
-		addAt(T[t](1).id, T[t](0).id, l12);
-		addAt(T[t](0).id, T[t](2).id, l13);
-		addAt(T[t](2).id, T[t](0).id, l13);
-		addAt(T[t](1).id, T[t](2).id, l23);
-		addAt(T[t](2).id, T[t](1).id, l23);
+		if(T[t](0).label == 0)
+			addAt(T[t](0).id, T[t](0).id, l11);
+		if(T[t](1).label == 0)
+			addAt(T[t](1).id, T[t](1).id, l22);
+		if(T[t](2).label == 0)
+			addAt(T[t](2).id, T[t](2).id, l33);
+		if(T[t](0).label == 0 || T[t](1).label == 0)
+		{
+			addAt(T[t](0).id, T[t](1).id, l12);
+			addAt(T[t](1).id, T[t](0).id, l12);
+		}
+		if(T[t](0).label == 0 || T[t](2).label == 0)
+		{
+			addAt(T[t](0).id, T[t](2).id, l13);
+			addAt(T[t](2).id, T[t](0).id, l13);
+		}
+		if(T[t](1).label == 0 || T[t](2).label == 0)
+		{
+			addAt(T[t](1).id, T[t](2).id, l23);
+			addAt(T[t](2).id, T[t](1).id, l23);
+		}
 	}
 
 	return (*this);
@@ -464,10 +445,6 @@ SparseMap& SparseMap::constructB(const Mesh& mesh)
 	for( uint e = 0; e < Ne; e++)
 	{
 		value = E[e].length / 6.0;
-		/*this->addAt(E[e](0).id, E[e](0).id, value);
-		this->addAt(E[e](1).id, E[e](1).id, value);
-		this->addAt(E[e](0).id, E[e](1).id, value);
-		this->addAt(E[e](1).id, E[e](0).id, value);*/
 		// stjepan: integral for i = j gives E[e].length / 3.0
 		addAt(E[e](0).id, E[e](0).id, value * 2.);
 		addAt(E[e](1).id, E[e](1).id, value * 2.);
@@ -476,6 +453,19 @@ SparseMap& SparseMap::constructB(const Mesh& mesh)
 	}
 
 	return (*this);
+}
+
+std::ostream& operator <<(std::ostream& os, SparseMap& M)
+{
+	int row, col;
+	for(TValsMap::iterator iter = M.mVals.begin(); iter != M.mVals.end(); iter++)
+	{
+		row = iter->first / M.sizeColumns();
+		col = iter->first % M.sizeColumns();
+		
+		cout << row+1 << " " << col+1 << " " << iter->second << endl;
+	}
+	return os;
 }
 
 

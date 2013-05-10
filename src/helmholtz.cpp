@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
 	
 	// dumping may make sense for "bin/helmholtz -mesh data/mesh/square_9.msh"
 	
-	bool verify = false;
+	bool verify = true;
 	bool dump = false;
 	
 	// A
@@ -394,6 +394,9 @@ int main(int argc, char* argv[])
 	// AMB = A - kappa^2 * M + B
 	// convert the matrix to Sparse so we can apply a solver
 	Sparse AMB(Amap);
+
+	cout << Amap;
+	return 0;
 
 	Vector rhs = rhsF + rhsG;
 	

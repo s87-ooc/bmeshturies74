@@ -110,6 +110,8 @@ private:
 	uint mSizeColumns;
 
 	friend class Sparse;
+	friend std::ostream& operator <<(std::ostream&, SparseMap& m);
+
 
 public:
 	SparseMap(uint rows, uint columns);
