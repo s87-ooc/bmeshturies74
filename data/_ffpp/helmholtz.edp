@@ -33,7 +33,7 @@ border bTop(t=0, 1) { x=1-t; y=1; label=1;}
 
 // ---
 
-int grid = 100;
+int grid = 15;
 
 // domain is on the left side when following the boundary according to parametrization
 mesh Th = buildmesh(bLeft(grid) + bBottom(grid) + bRight(grid) + bTop(grid));
@@ -55,18 +55,21 @@ func f = 0;
 // g using the N.x and N.y functions to figure out edge normals
 func g = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * (N.x * kx + N.y * ky);
 
-// measure time
-real cpu = clock();
-
 // ---
+
+real cpu = clock();
 
 solve Helmholtz(u,v,solver=LU) =
 	int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))		// A
 	- int2d(Th) (kappa^2 * u*v)					// -kappa^2 * M
-	+ int1d(Th, 1) (u*v)								// B
-	- int2d(Th) (f*v)										// - F (rhs)
-	- int1d(Th, 1) (g*v)								// - G (rhs)
+	+ int1d(Th, 1) (u*v)						// B
+	- int2d(Th) (f*v)							// - F (rhs)
+	- int1d(Th, 1) (g*v)						// - G (rhs)
 ;
+
+cout << "CPU time = " << clock()-cpu << endl;
+
+// ---
 
 plot(u,wait=debug);
 
@@ -90,34 +93,62 @@ plot(uExact,wait=debug);
 
 // ---
 
-// TODO: Matrix formulation
+// Matrix formulation
 
-/*
-varf a(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v));
-matrix A=a(Vh, Vh);
+// bilinear form
+varf a(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))
+				- int2d(Th) (kappa^2 * u*v)
+				+ int1d(Th, 1) (u*v);
 
-//varf m(u,v) =  int2d(Th) (u*v);
-varf m(u,v) =  int2d(Th) (-kappa^2 * u*v);
-matrix M=m(Vh, Vh);
+// rhs
+varf l(unused, v) = int2d(Th)(f*v) + int1d(Th, 1)(g*v);
+Vh F; F[] = l(0, Vh);
 
-varf b(u,v) =  int1d(Th, bLeft + bBottom + bRight + bTop) (u*v);
-matrix B=b(Vh, Vh);
-
-// RHS
-//varf l(unused, v) = int2d(Th) (f*v) + on(C, unused=0);
-varf l(unused, v) = int2d(Th) (f*v)
-						+ int1d(Th, bLeft)(gLeft*v)
-						+ int1d(Th, bBottom)(gBottom*v)
-						+ int1d(Th, bRight)(gRight*v)
-						+ int1d(Th, bTop)(gTop*v);
-
-Vh F; F[] = l(0, Vh);	// F[] is the vector associated to the function F
+Vh uVec;
 
 //matrix AMB = A - kappa^2 * M + B;
-matrix AMB = A + M + B;
-u[] = AMB^-1*F[];
+matrix AMB = a(Vh, Vh);
 
-plot(F,wait=debug);
-plot(u,wait=debug);*/
+uVec[] = AMB^-1*(F[]);
 
-cout << "CPU time = " << clock()-cpu << endl;
+// should be the same as u
+plot(uVec,wait=debug);
+
+// ---
+
+// Construct matrices separately for debugging
+
+if (debug)
+{
+	// A
+	varf funcA(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v));
+	matrix A = funcA(Vh, Vh);
+	{
+		ofstream fout("A.txt");
+		fout << A;
+	}
+
+	// M
+	varf funcM(u,v) = int2d(Th)(u*v);
+	matrix M = funcM(Vh, Vh);
+	{
+		ofstream fout("M.txt");
+		fout << M;
+	}
+	
+	// B
+	varf funcB(u,v) = int1d(Th, 1)(u*v);
+	matrix B = funcB(Vh, Vh);
+	{
+		ofstream fout("B.txt");
+		fout << B;
+	}
+	
+	// rhsG
+	varf funcG(unused, v) = int1d(Th, 1)(g*v);
+	matrix rhsG = funcG(Vh, Vh);
+	{
+		ofstream fout("rhsG.txt");
+		fout << rhsG;
+	}
+}
