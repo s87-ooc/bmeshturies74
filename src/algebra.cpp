@@ -370,27 +370,15 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 		l13 = -b - d;
 		l23 = b;
 		
-		if(T[t](0).label == 0)
-			addAt(T[t](0).id, T[t](0).id, l11);
-		if(T[t](1).label == 0)
-			addAt(T[t](1).id, T[t](1).id, l22);
-		if(T[t](2).label == 0)
-			addAt(T[t](2).id, T[t](2).id, l33);
-		if(T[t](0).label == 0 || T[t](1).label == 0)
-		{
-			addAt(T[t](0).id, T[t](1).id, l12);
-			addAt(T[t](1).id, T[t](0).id, l12);
-		}
-		if(T[t](0).label == 0 || T[t](2).label == 0)
-		{
-			addAt(T[t](0).id, T[t](2).id, l13);
-			addAt(T[t](2).id, T[t](0).id, l13);
-		}
-		if(T[t](1).label == 0 || T[t](2).label == 0)
-		{
-			addAt(T[t](1).id, T[t](2).id, l23);
-			addAt(T[t](2).id, T[t](1).id, l23);
-		}
+			addAt(T[t](0).id, T[t](0).id, l11/2);
+			addAt(T[t](1).id, T[t](1).id, l22/2);
+			addAt(T[t](2).id, T[t](2).id, l33/2);
+			addAt(T[t](0).id, T[t](1).id, l12/2);
+			addAt(T[t](1).id, T[t](0).id, l12/2);
+			addAt(T[t](0).id, T[t](2).id, l13/2);
+			addAt(T[t](2).id, T[t](0).id, l13/2);
+			addAt(T[t](1).id, T[t](2).id, l23/2);
+			addAt(T[t](2).id, T[t](1).id, l23/2);
 	}
 
 	return (*this);

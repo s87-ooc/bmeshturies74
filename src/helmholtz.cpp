@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
 	// ----------
 
 	// construct the linear system
-	
+
 	Mmap *= -pow(gParams.kappa, 2);	
 	Amap += Mmap;
 	Amap += Bmap;
@@ -394,9 +394,6 @@ int main(int argc, char* argv[])
 	// AMB = A - kappa^2 * M + B
 	// convert the matrix to Sparse so we can apply a solver
 	Sparse AMB(Amap);
-
-	cout << Amap;
-	return 0;
 
 	Vector rhs = rhsF + rhsG;
 	
