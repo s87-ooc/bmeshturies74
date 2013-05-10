@@ -428,12 +428,16 @@ int main(int argc, char* argv[])
 	
 	// Plot problem functions and results
 	
-	PlotMesh plotF("f", mesh, helmholtz::f);
-	plotF.generate(true);
+	//PlotMesh plotF("f", mesh, helmholtz::f);
+	//plotF.generate(true);
 	
 	// TODO: check the impact of g to the solution
 	PlotMesh plotG("g", mesh, helmholtz::g);
 	plotG.generate(true);
+	
+	// stjepan: this is your function
+	PlotMesh plotG2("g2", mesh, helmholtz::g);
+	plotG2.generate(true);
 
 	// our solution
 
