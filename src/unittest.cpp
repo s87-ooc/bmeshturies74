@@ -595,7 +595,7 @@ int main(int argc, char* argv[])
 
 		cout << "Ak: " << Ak.norm2() << endl;
 		
-		return 0;
+		//return 0;
 		
 		// ---
 		
@@ -650,6 +650,62 @@ int main(int argc, char* argv[])
 		//PlotMesh p("plot01", "data/_gnuplot/surface.ptpl", &M);
 		//p.generate(true);
     }
-	
+
+    {
+    	cout << " = Basic triangle testing = " << endl;
+
+    	// construct mesh with 3 vertices, 1 triangle and one edge
+    	Mesh M(3,1,3); 
+
+    	Vertex A(0, 0, 0, 0);
+    	Vertex B(0, 1, 0, 1);
+    	Vertex C(1, 0, 0, 2);
+
+    	M.V[0] = A;
+    	M.V[1] = B;
+    	M.V[2] = C;
+
+    	Triangle T(&M.V[0], &M.V[1], &M.V[2], 0, 0);
+
+    	M.T[0] = T;
+
+
+    	M.V[0].T.push_back(&M.T[0]);
+    	M.V[1].T.push_back(&M.T[0]);
+    	M.V[2].T.push_back(&M.T[0]);
+
+    	cout << *M.V[0].T[0];
+
+    	BoundEdge AB(&M.V[0], &M.V[1], 0, 0);
+    	BoundEdge AC(&M.V[0], &M.V[2], 0, 1);
+    	BoundEdge BC(&M.V[1], &M.V[2], 0, 2);
+
+
+        M.E[0] = AB;
+        M.E[1] = AC;
+        M.E[2] = BC;
+
+    	Vector nAB(2);
+    	nAB.constructNormal(M.E[0]);
+
+    	Vector nAC(2);
+    	nAC.constructNormal(M.E[1]);
+
+    	Vector nBC(2);
+    	nBC.constructNormal(M.E[2]);
+
+
+    	cout << M.E[0];
+    	cout << " Normal: " << nAB(0) << " " << nAB(1) << endl;
+
+    	cout << M.E[1];
+    	cout << " Normal: " << nAC(0) << " " << nAC(1) << endl;
+
+    	cout << M.E[2];
+    	cout << " Normal: " << nBC(0) << " " << nBC(1) << endl;
+
+
+    }
+
 	return 0;
 }

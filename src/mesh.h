@@ -59,6 +59,9 @@ public:
 	Vertex();
 	Vertex(const Vertex& v);    
 	Vertex(double x, double y, uint label, uint id);
+
+    friend ostream& operator<<(ostream& os, const Vertex& v);
+
 };
 
 // ----------------------------------------------------------------------------
@@ -76,6 +79,9 @@ public:
     Triangle(Vertex* a, Vertex* b, Vertex* c, int label, int id);
     
     Vertex& operator() (uint vertex) const;
+
+    friend ostream& operator<<(ostream& os, const Triangle& t);
+
 };
 
 // ----------------------------------------------------------------------------
@@ -98,6 +104,9 @@ public:
     Vertex& operator() (uint vertex) const;
     bool inEdge(const Vertex* v) const;
 
+    friend ostream& operator<<(ostream& os, const BoundEdge& e);
+
+
 };
 
 // ----------------------------------------------------------------------------
@@ -115,6 +124,7 @@ private:
 	
 public:
     Mesh(const char* filename);
+    Mesh(uint Nv, uint Nt, uint Ne);
 	~Mesh();
 	
     uint countVertices() const;

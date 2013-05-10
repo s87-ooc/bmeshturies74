@@ -51,6 +51,13 @@ Vertex::Vertex(const Vertex& v)
     T = v.T;
 }
 
+ostream& operator<<(ostream& os, const Vertex& v)
+{
+    os << "Vertex: ID:" << v.id << " x:" << v.x << " y:" << v.y << endl;
+    return os;
+}
+
+
 // ----------------------------------------------------------------------------
 
 Triangle::Triangle():
@@ -85,6 +92,15 @@ Vertex& Triangle::operator() (uint vertex) const
     return *V[vertex];
 }
 
+ostream& operator<<(ostream& os, const Triangle& t)
+{
+    os  << "Triangle: ID:" << t.id << endl
+        << "|-" << *t.V[0]
+        << "|-" << *t.V[1]
+        << "|-" << *t.V[2];
+    return os;
+}
+
 
 BoundEdge::BoundEdge():
 V(0), label(-1), id(-1)
@@ -108,14 +124,12 @@ double BoundEdge::calculate_length()
 
 Triangle* BoundEdge::findTriangle() const
 {
-
     for( uint k = 0; k < V[0]->T.size(); k++)
     {
         for( uint l = 0; l < V[1]->T.size(); l++)
         {
             if( V[0]->T[k]->id == V[1]->T[l]->id)
             {
-                cout << V[0]->T[k]->id << endl;
                 return V[0]->T[k];
             }
         }
@@ -145,6 +159,14 @@ Vertex& BoundEdge::operator() (uint vertex) const
 {
     assert( vertex >=0 && vertex <=2);
     return *V[vertex];
+}
+
+ostream& operator<<(ostream& os, const BoundEdge& e)
+{
+    os  << "BoundEdge: ID:" << e.id << endl
+        << "|-" << *e.V[0]
+        << "|-" << *e.V[1];
+    return os;
 }
 
 istream& operator>>(istream &is, Mesh &M)
@@ -223,6 +245,14 @@ E(0)
     meshfile.open(filename, ifstream::in);
     
     meshfile >> (*this);
+}
+
+Mesh::Mesh(uint Nv, uint Nt, uint Ne):
+Nv(Nv), Nt(Nt), Ne(Ne)
+{
+    V = new Vertex[Nv];
+    T = new Triangle[Nt];
+    E = new BoundEdge[Ne];
 }
 
 Mesh::~Mesh()

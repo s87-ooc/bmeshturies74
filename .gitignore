@@ -5,3 +5,4 @@ bin/*
 *.pdat
 data/linsys/*.log
 data/linsys/*.linsys
+*.dat

@@ -168,8 +168,8 @@ Vector& Vector::constructNormal(const BoundEdge& edge)
 
     Vertex& opp = edge.findOppositeVertex();
     // calculate normal to edge
-    mVals[0] = edge.V[1]->x - edge.V[0]->x;
-    mVals[1] = edge.V[1]->y - edge.V[0]->y;
+    mVals[1] = edge.V[1]->x - edge.V[0]->x;
+    mVals[0] = -( edge.V[1]->y - edge.V[0]->y );
 
     // check orientation as we want a normal pointing outwards
     double D = mVals[0]*( opp.x - edge.V[0]->x ) + mVals[1]*( opp.y - edge.V[0]->y);
