@@ -101,9 +101,10 @@ int main(int argc, char* argv[])
 	// default values
 
 	gParams.T = 2.25;
-	gParams.n = 43;
-	//gParams.n = 4;
+	//gParams.n = 43;
+	gParams.n = 4;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
+	//gParams.fileMesh = "data/mesh/cercle2.msh";
 	//gParams.fileMesh = "data/mesh/square_9.msh";
 	
 	// get filenames and parameters from cmdline arguments (if any)
@@ -283,7 +284,7 @@ int main(int argc, char* argv[])
 	DUMP(xLast.norm2());
 	DUMP(y.norm2());
 	DUMP(yLast.norm2());
-	PlotMesh plot0("x", mesh, xLast);
+	PlotMesh plot0("x", mesh, xLast, "Initial x");
 	plot0.generate(true);
 	
 	// @@@
@@ -335,14 +336,14 @@ int main(int argc, char* argv[])
 
 	// Plot initial data
 	
-	PlotMesh plotU0("u0", mesh, wave::u0);
-	//plotU0.generate(true);
+	PlotMesh plotU0("u0", mesh, wave::u0, "Initial distribution");
+	plotU0.generate(true);
 	
-	PlotMesh plotU1("u1", mesh, wave::u1);
-	//plotU1.generate(true);
+	PlotMesh plotU1("u1", mesh, wave::u1, "Initial velocity");
+	plotU1.generate(true);
 	
 	// Plot last step
-	PlotMesh plotX("x", mesh, x);
+	PlotMesh plotX("x", mesh, x, "Final step");
 	plotX.generate(true);
 	
 	/*

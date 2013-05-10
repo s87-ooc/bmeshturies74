@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	// default values
 
 	gParams.regenerate = false;
-	gParams.count = 2;
+	gParams.count = 5;
 	gParams.density = 0.001;	// similar to problem matrices of carre2.msh/carre3.msh/carre4.msh
 	gParams.minEntry = -3.;
 	gParams.maxEntry = 8.;
@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
 		gParams.dimensions = new uint[gParams.count];
 		for (uint i = 0; i < gParams.count; i++)
 		{
-			// default dimensions are 10^i
-			gParams.dimensions[i] = ceil(pow(10, i+1));
+			// default dimensions start with 10 going up in steps of 10
+			gParams.dimensions[i] = 10 * (i+1);
 		}
 	}
 	
@@ -331,6 +331,44 @@ int main(int argc, char* argv[])
 	// ----------
 
 	// plot results
+	
+	Vector vDims(gParams.count);
+	Vector vTimes[3];
+	Vector vErrors[3];
+	
+	for (uint i = 0; i < 3; i++)
+	{
+		vTimes[i] = Vector(gParams.count);
+		vErrors[i] = Vector(gParams.count);
+	}
+	
+	for (uint i = 0; i < gParams.count; i++)
+	{
+		vDims(i) = gParams.dimensions[i];
+		for (uint j = 0; j < 3; j++)
+		{
+			vTimes[j](i) = gParams.times[i*3 + j];
+			vErrors[j](i) = gParams.errors[i*3 + j];
+		}
+	}
+	
+	Plot tCG("times_cg", vDims, vTimes[0], "Times Conjugate Gradient");
+	tCG.generate(true);
+	
+	Plot eCG("errors_cg", vDims, vErrors[0], "Errors Conjugate Gradient");
+	eCG.generate(true);
+	
+	Plot tJacobi("times_jacobi", vDims, vTimes[1], "Times Jacobi");
+	tJacobi.generate(true);
+	
+	Plot eJacobi("errors_jacobi", vDims, vErrors[1], "Errors Jacobi");
+	eJacobi.generate(true);
+	
+	Plot tLU("times_lu", vDims, vTimes[2], "Times LU");
+	tLU.generate(true);
+	
+	Plot eLU("errors_lu", vDims, vErrors[2], "Errors LU");
+	eLU.generate(true);
 	
 	// ----------
 	
