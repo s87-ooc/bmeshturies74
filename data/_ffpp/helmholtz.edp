@@ -1,0 +1,126 @@
+/*************************************************************
+
+ Projet
+
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
+          Stjepan Stamenkovic (stjepan@stjepan.net)
+
+ ---
+
+     Fichier: helmholtz.edp
+
+ Description: vérification de la implémentation en utilisant FreeFem++
+
+**************************************************************/
+
+bool debug=true;
+
+// ---
+
+// problem parameters
+
+real kappa = 10.;
+real kx = 1. / sqrt(2.);
+real ky = 1. / sqrt(2.);
+
+// ---
+
+// defining the boundary 
+border bLeft(t=0, 1) { x=0; y=1-t; label=1;}
+border bBottom(t=0, 1) { x=t; y=0; label=1;}
+border bRight(t=0, 1) { x=1; y=t; label=1;}
+border bTop(t=0, 1) { x=1-t; y=1; label=1;}
+
+// ---
+
+// domain is on the left side when following the boundary according to parametrization
+mesh Th = buildmesh(bLeft(10) + bBottom(10) + bRight(10) + bTop(10));
+savemesh(Th, "carre_ffpp.msh");
+
+plot(Th,wait=debug);
+
+// space over Th with P1 elements
+fespace Vh(Th, P1);
+
+// ---
+
+// piecewise-P1 continuous function vectors
+Vh u, v;
+
+// f is just zero
+func f = 0;
+
+// we're splitting g up according to the normal
+func gLeft = sin(kappa * (x * kx + y * ky)) - kappa * cos(kappa * (x * kx + y * ky)) * kx;
+func gBottom = sin(kappa * (x * kx + y * ky)) - kappa * cos(kappa * (x * kx + y * ky)) * ky;
+func gRight = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * kx;
+func gTop = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * ky;
+
+// measure time
+real cpu = clock();
+
+// ---
+
+solve Helmholtz(u,v,solver=LU) =
+	int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))		// A
+	+ int2d(Th) (-kappa^2 * u*v)					// M
+	+ int1d(Th, bLeft + bBottom + bRight + bTop) (u*v)	// B
+	- int2d(Th) (f*v)										// rhs start
+	- int1d(Th, bLeft)(gLeft*v)
+	- int1d(Th, bBottom)(gBottom*v)
+	- int1d(Th, bRight)(gRight*v)
+	- int1d(Th, bTop)(gTop*v);						// rhs end
+
+plot(u,wait=debug);
+
+// save the solution for Gnuplot
+{
+	ofstream ff("graph.txt");
+	for (int i=0;i<Th.nt;i++)
+	{
+		for (int j=0; j <3; j++)
+		{
+			ff<<Th[i][j].x << " "<< Th[i][j].y<< " "<<u[][Vh(i,j)]<<endl;
+		}
+		ff<<Th[i][0].x << " "<< Th[i][0].y<< " "<<u[][Vh(i,0)]<<"\n\n\n";
+	}
+}
+
+// exact solution
+
+Vh uExact = sin(kappa * (x * kx + y * ky));
+plot(uExact,wait=debug);
+
+// ---
+
+// TODO: Matrix formulation as soon as the problem above works properly
+
+/*
+varf a(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v));
+matrix A=a(Vh, Vh);
+
+//varf m(u,v) =  int2d(Th) (u*v);
+varf m(u,v) =  int2d(Th) (-kappa^2 * u*v);
+matrix M=m(Vh, Vh);
+
+varf b(u,v) =  int1d(Th, bLeft + bBottom + bRight + bTop) (u*v);
+matrix B=b(Vh, Vh);
+
+// RHS
+//varf l(unused, v) = int2d(Th) (f*v) + on(C, unused=0);
+varf l(unused, v) = int2d(Th) (f*v)
+						+ int1d(Th, bLeft)(gLeft*v)
+						+ int1d(Th, bBottom)(gBottom*v)
+						+ int1d(Th, bRight)(gRight*v)
+						+ int1d(Th, bTop)(gTop*v);
+
+Vh F; F[] = l(0, Vh);	// F[] is the vector associated to the function F
+
+//matrix AMB = A - kappa^2 * M + B;
+matrix AMB = A + M + B;
+u[] = AMB^-1*F[];
+
+plot(F,wait=debug);
+plot(u,wait=debug);*/
+
+cout << "CPU time = " << clock()-cpu << endl;
