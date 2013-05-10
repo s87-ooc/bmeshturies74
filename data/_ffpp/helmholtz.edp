@@ -25,7 +25,7 @@ real ky = 1. / sqrt(2.);
 
 // ---
 
-// defining the boundary 
+// defining the boundary
 border bLeft(t=0, 1) { x=0; y=1-t; label=1;}
 border bBottom(t=0, 1) { x=t; y=0; label=1;}
 border bRight(t=0, 1) { x=1; y=t; label=1;}
@@ -33,8 +33,10 @@ border bTop(t=0, 1) { x=1-t; y=1; label=1;}
 
 // ---
 
+int grid = 100;
+
 // domain is on the left side when following the boundary according to parametrization
-mesh Th = buildmesh(bLeft(10) + bBottom(10) + bRight(10) + bTop(10));
+mesh Th = buildmesh(bLeft(grid) + bBottom(grid) + bRight(grid) + bTop(grid));
 savemesh(Th, "carre_ffpp.msh");
 
 plot(Th,wait=debug);
@@ -50,11 +52,8 @@ Vh u, v;
 // f is just zero
 func f = 0;
 
-// we're splitting g up according to the normal
-func gLeft = sin(kappa * (x * kx + y * ky)) - kappa * cos(kappa * (x * kx + y * ky)) * kx;
-func gBottom = sin(kappa * (x * kx + y * ky)) - kappa * cos(kappa * (x * kx + y * ky)) * ky;
-func gRight = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * kx;
-func gTop = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * ky;
+// g using the N.x and N.y functions to figure out edge normals
+func g = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * (N.x * kx + N.y * ky);
 
 // measure time
 real cpu = clock();
@@ -63,13 +62,11 @@ real cpu = clock();
 
 solve Helmholtz(u,v,solver=LU) =
 	int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))		// A
-	+ int2d(Th) (-kappa^2 * u*v)					// M
-	+ int1d(Th, bLeft + bBottom + bRight + bTop) (u*v)	// B
-	- int2d(Th) (f*v)										// rhs start
-	- int1d(Th, bLeft)(gLeft*v)
-	- int1d(Th, bBottom)(gBottom*v)
-	- int1d(Th, bRight)(gRight*v)
-	- int1d(Th, bTop)(gTop*v);						// rhs end
+	- int2d(Th) (kappa^2 * u*v)					// -kappa^2 * M
+	+ int1d(Th, 1) (u*v)								// B
+	- int2d(Th) (f*v)										// - F (rhs)
+	- int1d(Th, 1) (g*v)								// - G (rhs)
+;
 
 plot(u,wait=debug);
 
@@ -93,7 +90,7 @@ plot(uExact,wait=debug);
 
 // ---
 
-// TODO: Matrix formulation as soon as the problem above works properly
+// TODO: Matrix formulation
 
 /*
 varf a(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v));
