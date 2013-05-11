@@ -9,3 +9,4 @@ data/linsys/*.linsys
 data/_ffpp/*.txt
 data/_ffpp/*.msh
 data/_ffpp/*.log
+docs/html/

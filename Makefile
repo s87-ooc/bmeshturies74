@@ -27,7 +27,10 @@ CXXFLAGS=
 
 all: bin/helmholtz bin/wave bin/solvertest bin/unittest
 
-# solutions of the two parts
+# -----------------------------------------------------------------------------
+
+# programs solving the assignment
+
 helmholtz: bin/helmholtz
 	bin/helmholtz
 	
@@ -46,7 +49,10 @@ bin/wave: src/algebra.o src/mesh.o src/visualization.o src/wave.cpp
 bin/solvertest: src/algebra.o src/mesh.o src/visualization.o src/solvertest.cpp
 	g++ $(CXXFLAGS) -o bin/solvertest src/algebra.o src/mesh.o src/visualization.o src/solvertest.cpp
 
+# -----------------------------------------------------------------------------
+	
 # data structures and methods for solving the problem and visualization	
+
 src/algebra.o: src/algebra.cpp src/types.h
 	g++ $(CXXFLAGS) -c -o src/algebra.o src/algebra.cpp
 
@@ -56,12 +62,26 @@ src/mesh.o: src/mesh.cpp src/types.h
 src/visualization.o: src/visualization.cpp src/types.h
 	g++ $(CXXFLAGS) -c -o src/visualization.o src/visualization.cpp
 
-# tests the implementation of the classes
+# -----------------------------------------------------------------------------
+	
+# unittest
+
 bin/unittest: src/algebra.o src/mesh.o src/visualization.o src/unittest.cpp
 	g++ $(CXXFLAGS) -o bin/unittest src/algebra.o src/mesh.o src/visualization.o src/unittest.cpp
 
 test: bin/unittest
 	bin/unittest
+
+# -----------------------------------------------------------------------------
+
+# documentation
+
+docs: docs/_doxygen/projet.doxygen
+	doxygen docs/_doxygen/projet.doxygen
+
+# -----------------------------------------------------------------------------
+
+# Cleanup targets
 	
 clean:
 	rm -Rf src/*.o bin/*
@@ -70,4 +90,7 @@ cleandata:
 	rm -Rf data/linsys/test_* data/linsys/times_* data/linsys/errors_*
 	rm -Rf data/plots/*.p data/plots/*.pdat
 	
-cleanall: clean cleandata
+cleandocs:
+	rm -Rf docs/html
+	
+cleanall: clean cleandata cleandocs
