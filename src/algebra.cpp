@@ -58,6 +58,12 @@ double& Vector::operator() (unsigned int pos)
 	return mVals[pos];
 }
 
+double Vector::operator() (Vertex* v) const
+{
+	// TODO: verify if id is in range
+	return mVals[ v->id ];
+}
+
 Vector Vector::operator+ (Vector const& v) const
 {
 	assert(v.size() == mVals.size());
@@ -247,6 +253,27 @@ double dot(const Vector& v1, const Vector& v2)
 		res += v1(i) * v2(i);
 
 	return res;
+}
+
+double globalL2Error(const Mesh& mesh, const Vector& exact, const Vector& approx)
+{
+	double error = 0, localSum;
+	int id;
+	double area;
+
+	for(uint i = 0; i < mesh.countTriangles(); i++)
+	{
+		localSum = 0;
+		// calculate the local error for the ith triangle
+		// using quadrature: area * (g(s1) + g(s2) + g(s3)) /3
+		for(uint k = 0; k < 3; k++)
+		{
+			localSum += pow(exact(mesh.T[i].V[k]) - approx(mesh.T[i].V[k]), 2);
+		}
+		error += localSum * mesh.T[i].area / 3.0;
+	}
+
+	return sqrt(error);
 }
 
 // ----------------------------------------------------------------------------

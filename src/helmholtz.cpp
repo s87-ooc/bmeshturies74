@@ -354,6 +354,7 @@ int main(int argc, char* argv[])
 	
 	cout << "Error: " << err.norm2() << endl;
 	
+	cout << "L2 error: " << globalL2Error(mesh, u, uh) << endl;
 	// ----------
 	
 	// boundary conditions

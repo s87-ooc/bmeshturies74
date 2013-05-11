@@ -61,6 +61,8 @@ public:
 
 	double operator() (uint pos) const;
 	double& operator() (uint pos);
+
+	double operator() (Vertex* v) const;
 	
 	Vector operator+ (Vector const& v) const;
 	Vector operator- (Vector const& v) const;
@@ -82,6 +84,7 @@ public:
 
 	/** construct normal vector to edge */
 	Vector& constructNormal(const BoundEdge& edge);
+
 };
 
 Vector operator* (const Vector& v, const double s);
@@ -89,6 +92,9 @@ Vector operator* (const double s, const Vector& v);
 
 /// dot product v1 * v2
 double dot(const Vector& v1, const Vector& v2);
+
+double globalL2Error(const Mesh& mesh, const Vector& exact, const Vector& approx);
+
 
 // ----------------------------------------------------------------------------
 
