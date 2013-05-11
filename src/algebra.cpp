@@ -149,14 +149,15 @@ Vector& Vector::constructFuncSurf(const Mesh& mesh, double (*f)(const Vertex&, c
 {
 	assert(size() == mesh.countVertices());
 
+	double factor;
+
 	for (uint e = 0; e < mesh.countEdges(); e++)
 	{	
-		double factor = (mesh.E[e]).length * 0.5;
+		factor = (mesh.E[e]).length * 0.5;
 
 		mVals[mesh.E[e](0).id] += factor * f(mesh.E[e](0), mesh.E[e]);
 		mVals[mesh.E[e](1).id] += factor * f(mesh.E[e](1), mesh.E[e]);
 
-		//cout << "e: " << e << " " << mesh.E[e](0).id << " " << mesh.E[e](1).id << " " << factor * f(mesh.E[e](0)) << " " << mesh.E[e].length << endl;
 	}
 	
 	return *this;
@@ -338,19 +339,14 @@ uint SparseMap::sizeNNZ() const
 
 SparseMap& SparseMap::constructA(const Mesh& mesh)
 {
-	uint Nv = mesh.countVertices();
 	uint Nt = mesh.countTriangles();
 
 	Triangle* const& T = mesh.T;
-
-	mSizeRows = Nv;
-	mSizeColumns = Nv;
 
 	double x21, x31, y21, y31, a, b, d, D, l11, l22, l33, l12, l13, l23;
 	// iterate over the triangles of the mesh
 	for( uint t = 0; t < Nt; t++)
 	{
-		//cout << t << endl;
 	
 		x21 = T[t](1).x - T[t](0).x;
 		x31 = T[t](2).x - T[t](0).x;
@@ -370,15 +366,15 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 		l13 = -b - d;
 		l23 = b;
 		
-			addAt(T[t](0).id, T[t](0).id, l11/2);
-			addAt(T[t](1).id, T[t](1).id, l22/2);
-			addAt(T[t](2).id, T[t](2).id, l33/2);
-			addAt(T[t](0).id, T[t](1).id, l12/2);
-			addAt(T[t](1).id, T[t](0).id, l12/2);
-			addAt(T[t](0).id, T[t](2).id, l13/2);
-			addAt(T[t](2).id, T[t](0).id, l13/2);
-			addAt(T[t](1).id, T[t](2).id, l23/2);
-			addAt(T[t](2).id, T[t](1).id, l23/2);
+		addAt(T[t](0).id, T[t](0).id, l11/2);
+		addAt(T[t](0).id, T[t](1).id, l12/2);
+		addAt(T[t](0).id, T[t](2).id, l13/2);
+		addAt(T[t](1).id, T[t](0).id, l12/2);
+		addAt(T[t](1).id, T[t](1).id, l22/2);
+		addAt(T[t](1).id, T[t](2).id, l23/2);
+		addAt(T[t](2).id, T[t](0).id, l13/2);
+		addAt(T[t](2).id, T[t](1).id, l23/2);
+		addAt(T[t](2).id, T[t](2).id, l33/2);
 	}
 
 	return (*this);
@@ -386,13 +382,9 @@ SparseMap& SparseMap::constructA(const Mesh& mesh)
 
 SparseMap& SparseMap::constructM(const Mesh& mesh)
 {
-	uint Nv = mesh.countVertices();
 	uint Nt = mesh.countTriangles();
 
 	Triangle* const& T = mesh.T;
-
-	mSizeRows = Nv;
-	mSizeColumns = Nv;
 
 	double mel = 1/12.0; // since det = 2 * area we have 2/24 = 1/12
 	double value;
@@ -401,7 +393,6 @@ SparseMap& SparseMap::constructM(const Mesh& mesh)
 	// iterate over the triangles of the mesh
 	for( uint t = 0; t < Nt; t++)
 	{
-
 		// iterate over vertices of the current triangle
 		for(uint i=0; i < 3; i++)
 		{
@@ -420,13 +411,10 @@ SparseMap& SparseMap::constructM(const Mesh& mesh)
 
 SparseMap& SparseMap::constructB(const Mesh& mesh)
 {
-	uint Nv = mesh.countVertices();
+	// uint Nv = mesh.countVertices();
 	uint Ne = mesh.countEdges();
 
 	BoundEdge* const& E = mesh.E;
-
-	mSizeRows = Nv;
-	mSizeColumns = Nv;
 
 	double value;
 
