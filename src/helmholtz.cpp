@@ -44,6 +44,7 @@ struct SHelmholtzParams
 	double k1;
 	double k2;
 	string fileMesh;
+	bool lumping;
 };
 
 /** global parameters */
@@ -97,6 +98,7 @@ int main(int argc, char* argv[])
 	gParams.k1 = 1./sqrt(2.);
 	gParams.k2 = 1./sqrt(2.);
 	gParams.fileMesh = "data/mesh/carre1.msh";
+	gParams.lumping = false;
 	
 	// get filenames and parameters from cmdline arguments (if any)
 	
@@ -104,8 +106,13 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/helmholtz -kappa " << gParams.kappa << " -k " << gParams.k1 << "," << gParams.k2  << " " << gParams.fileMesh << endl;
+			cout << "Usage: bin/helmholtz [-lump] -kappa " << gParams.kappa << " -k " << gParams.k1 << "," << gParams.k2  << " " << gParams.fileMesh << endl;
+			cout << "       -lump = use mass lumping for the assembly of M" << endl;
 			return 0;
+		}
+		else if (strcmp(argv[iArg], "-lump") == 0)
+		{
+			gParams.lumping = true;
 		}
 		else if (strcmp(argv[iArg], "-kappa") == 0)
 		{
@@ -190,7 +197,14 @@ int main(int argc, char* argv[])
 	
 	RESETCLOCK();
 	
-	Mmap.constructM(mesh);
+	if (gParams.lumping)
+	{
+		Mmap.constructMlump(mesh);
+	}
+	else
+	{
+		Mmap.constructM(mesh);
+	}
 	
 	CLOCK(tMatM);
 	

@@ -62,6 +62,7 @@ struct SWaveParams
 	double T;			/** maximal time */
 	uint n;				/** number of partitions of T without 0 */
 	string fileMesh;
+	bool lumping;
 };
 
 /** global parameters */
@@ -106,6 +107,7 @@ int main(int argc, char* argv[])
 	gParams.fileMesh = "data/mesh/cercle1.msh";
 	//gParams.fileMesh = "data/mesh/cercle2.msh";
 	//gParams.fileMesh = "data/mesh/square_9.msh";
+	gParams.lumping = false;
 	
 	// get filenames and parameters from cmdline arguments (if any)
 	
@@ -113,17 +115,13 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/wave -mesh " << gParams.fileMesh << " -T " << gParams.T << " -n " << gParams.n << endl;
+			cout << "Usage: bin/wave [-lump] -T " << gParams.T << " -n " << gParams.n << " " << gParams.fileMesh << endl;
+			cout << "       -lump = use mass lumping for the assembly of M" << endl;
 			return 0;
 		}
-		else if (strcmp(argv[iArg], "-mesh") == 0)
+		else if (strcmp(argv[iArg], "-lump") == 0)
 		{
-			iArg++;
-			
-			if (iArg < argc)
-			{
-				gParams.fileMesh = argv[iArg];
-			}
+			gParams.lumping = true;
 		}
 		else if (strcmp(argv[iArg], "-T") == 0)
 		{
@@ -145,6 +143,15 @@ int main(int argc, char* argv[])
 				stringstream buf;
 				buf << argv[iArg];
 				buf >> gParams.n;
+			}
+		}
+		else
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				gParams.fileMesh = argv[iArg];
 			}
 		}
 	}
@@ -201,7 +208,14 @@ int main(int argc, char* argv[])
 		
 		RESETCLOCK();
 		
-		Mmap.constructM(mesh);
+		if (gParams.lumping)
+		{
+			Mmap.constructMlump(mesh);
+		}
+		else
+		{
+			Mmap.constructM(mesh);
+		}
 		
 		CLOCK(tMatM);
 		
@@ -252,7 +266,7 @@ int main(int argc, char* argv[])
 		//_writeMatrix("M.dat", M);
 		
 		// @@@
-		DUMP(-pow(dt, 2) / 2.);
+		/*DUMP(-pow(dt, 2) / 2.);
 		DUMP(dt);
 		DUMP(-dt / 2.);
 		Vector vOne(dim);
@@ -263,7 +277,30 @@ int main(int argc, char* argv[])
 		DUMP((uMatU * vOne).norm2());
 		DUMP((vMatU * vOne).norm2());
 		DUMP((uMatV * vOne).norm2());
-		DUMP((M * vOne).norm2());
+		DUMP((M * vOne).norm2());*/
+		
+		/*
+		{
+			ofstream f("uU.txt");
+			f << uMatUmap;
+		}
+		
+		{
+			ofstream f("vU.txt");
+			f << vMatUmap;
+		}
+		
+		{
+			ofstream f("uV.txt");
+			f << uMatVmap;
+		}
+		
+		{
+			ofstream f("vV.txt");
+			f << Mmap;
+		}
+		*/
+		return 0;
 	}
 
 	// ----------

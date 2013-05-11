@@ -138,6 +138,9 @@ public:
 	SparseMap& constructA(const Mesh& mesh);
 	SparseMap& constructM(const Mesh& mesh);
 	SparseMap& constructB(const Mesh& mesh);
+	
+	/** construct the mass matrix using mass lumping */
+	SparseMap& constructMlump(const Mesh& mesh);
 };
 
 class SparseLIL

@@ -466,11 +466,38 @@ std::ostream& operator <<(std::ostream& os, SparseMap& M)
 		row = iter->first / M.sizeColumns();
 		col = iter->first % M.sizeColumns();
 		
-		cout << row+1 << " " << col+1 << " " << iter->second << endl;
+		os << row+1 << " " << col+1 << " " << iter->second << endl;
 	}
 	return os;
 }
 
+SparseMap& SparseMap::constructMlump(const Mesh& mesh)
+{
+	uint Nt = mesh.countTriangles();
+
+	Triangle* const& T = mesh.T;
+
+	double mel = 1/12.0; // since det = 2 * area we have 2/24 = 1/12
+	double value;
+	double coef;
+
+	// iterate over the triangles of the mesh
+	for( uint t = 0; t < Nt; t++)
+	{
+		// iterate over vertices of the current triangle
+		for(uint i=0; i < 3; i++)
+		{
+			for(uint j=0; j < 3; j++)
+			{
+				coef = (i == j) / 3.;
+				value = coef * T[t].area;
+				addAt(T[t](i).id, T[t](j).id, value);
+			}
+		}
+	}
+
+	return (*this);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -981,39 +1008,38 @@ void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& 
 	
 	// calculate values for new v
 	
-	rhsV = uMatV * (u + uNew) + (*this) * v;
-	
+	rhsV = uMatV * (u + uNew) + (*this) * v;	
 	vNew = conjGradient(rhsV);
 
 	// @@@
-	cout << "---" << endl;
-	DUMP((uMatU * u).norm2());
-	DUMP((vMatU * v).norm2());
-	DUMP(rhsU.norm2());
+	//cout << "---" << endl;
+	//DUMP((uMatU * u).norm2());
+	//DUMP((vMatU * v).norm2());
+	//DUMP(rhsU.norm2());
 	//DUMP(jacobi(rhsU).norm2());
 	//DUMP(conjGradient(rhsU).norm2());
 	// USE ONLY FOR SMALL MATRICES
 	//DUMP(LU(rhsU).norm2());
-	DUMP(uNew.norm2());
-	DUMP(u.norm2());
-	cout << "-" << endl;
-	DUMP((u + uNew).norm2());
-	DUMP((uMatV * (u + uNew)).norm2());
-	DUMP(((*this) * v).norm2());
-	DUMP(rhsV.norm2());
+	//DUMP(uNew.norm2());
+	//DUMP(u.norm2());
+	//cout << "-" << endl;
+	//DUMP((u + uNew).norm2());
+	//DUMP((uMatV * (u + uNew)).norm2());
+	//DUMP(((*this) * v).norm2());
+	//DUMP(rhsV.norm2());
 	//DUMP(jacobi(rhsV).norm2());
 	//DUMP(conjGradient(rhsV).norm2());
 	// USE ONLY FOR SMALL MATRICES
 	//DUMP(LU(rhsV).norm2());
-	DUMP(vNew.norm2());
-	DUMP(v.norm2());
+	//DUMP(vNew.norm2());
+	//DUMP(v.norm2());
 	/*Vector vOne(dim);
 	for (uint i = 0; i < dim; i++)
 	{
 		vOne(i) = 1.;
 	}
 	DUMP(((*this) * vOne).norm2());*/
-	cout << "---" << endl;
+	//cout << "---" << endl;
 }
 
 // ----------------------------------------------------------------------------
