@@ -25,30 +25,18 @@
 // ----------------------------------------------------------------------------
 
 Vertex::Vertex() :
-x(0.),
-y(0.),
-label(0),
-id(0),
-T(0)
+x(0.), y(0.), label(0), id(0), T(0)
 {
 }
 
 Vertex::Vertex(double x, double y, uint label, uint id): 
-x(x),
-y(y),
-label(label),
-id(id),
-T(0)
+x(x), y(y), label(label), id(id), T(0)
 {
 }
 
-Vertex::Vertex(const Vertex& v)
+Vertex::Vertex(const Vertex& v) :
+x(v.x), y(v.y), label(v.label), id(v.id), T(v.T)
 {
-	x = v.x;
-	y = v.y;
-	label = v.label;
-	id = v.id;
-    T = v.T;
 }
 
 ostream& operator<<(ostream& os, const Vertex& v)
