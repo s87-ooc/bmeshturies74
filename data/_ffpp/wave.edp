@@ -40,17 +40,12 @@ int grid = 50;
 mesh Th = buildmesh(C(grid));
 savemesh(Th, "cercle_ffpp.msh");
 
-plot(Th,wait=debug);
-
 // space over Th with P1 elements
 fespace Vh(Th, P1);
 
 // initial values
 Vh u0 = exp(-1. * ((x - 0.1)^2 + (y - 0.1)^2) / 0.01);
 Vh u1 = 0.;
-
-//func f = 0;
-//func g = 0;
 
 // ---
 
@@ -115,37 +110,62 @@ if (debug)
 
 // setup initial values
 
-Vh u, v;
-
-u[] = u0[];
-plot(u,wait=debug);
-
-v[] = u1[];
-plot(v,wait=debug);
+real[int] u = u0[];
+real[int] v = u1[];
 
 // iterate according to Newmark
 
-// TODO: How do we basic vector addition in FreeFem++?
-
 real cpu = clock();
+
+real[int] uLast = u;
+real[int] vLast = v;
+
+Vh visU;
+visU[] = u;
+// save the solution for Gnuplot
+	{
+		ofstream ff("graph.txt");
+		for (int i=0;i<Th.nt;i++)
+		{
+			for (int j=0; j <3; j++)
+			{
+				ff<<Th[i][j].x << " "<< Th[i][j].y<< " "<<visU[][Vh(i,j)]<<endl;
+			}
+			ff<<Th[i][0].x << " "<< Th[i][0].y<< " "<<visU[][Vh(i,0)]<<"\n\n\n";
+		}
+	}
 
 for (int i = 0; i < nSteps; i++)
 {
+	exec("gnuplot -p -e \"splot 'graph.txt'\"");
+
 	cout << "t: " << (1+i)*dt << "s" << endl;
-	u[] = uMatU * u0[] ;//+ uMatV * v0[];
+
+	u = uMatU * uLast;
+	u += vMatU * v;
+
+	v = uMatV * u;
+	v += uMatV * uLast;
+	v += vMatV * vLast;
+	
+	visU[] = u;
+	//plot(visU,wait=debug);	
+
+	uLast = u;
+	vLast = v;
+
+	// save the solution for Gnuplot
+	{
+		ofstream ff("graph.txt");
+		for (int i=0;i<Th.nt;i++)
+		{
+			for (int j=0; j <3; j++)
+			{
+				ff<<Th[i][j].x << " "<< Th[i][j].y<< " "<<visU[][Vh(i,j)]<<endl;
+			}
+			ff<<Th[i][0].x << " "<< Th[i][0].y<< " "<<visU[][Vh(i,0)]<<"\n\n\n";
+		}
+	}
 }
 
 cout << "CPU time = " << clock()-cpu << endl;
-
-// save the solution for Gnuplot
-/*{
-	ofstream ff("graph.txt");
-	for (int i=0;i<Th.nt;i++)
-	{
-		for (int j=0; j <3; j++)
-		{
-			ff<<Th[i][j].x << " "<< Th[i][j].y<< " "<<u[][Vh(i,j)]<<endl;
-		}
-		ff<<Th[i][0].x << " "<< Th[i][0].y<< " "<<u[][Vh(i,0)]<<"\n\n\n";
-	}
-}*/
