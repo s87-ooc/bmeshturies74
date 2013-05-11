@@ -49,6 +49,9 @@ fespace Vh(Th, P1);
 Vh u0 = exp(-1. * ((x - 0.1)^2 + (y - 0.1)^2) / 0.01);
 Vh u1 = 0.;
 
+//func f = 0;
+//func g = 0;
+
 // ---
 
 // TODO: assemble these matrices more efficiently
@@ -69,6 +72,29 @@ matrix uMatV = funcUmatV(Vh, Vh);
 varf funcM(u,v) = int2d(Th)(u*v);
 matrix vMatV = funcM(Vh, Vh);
 
+if (debug)
+{
+	{
+		ofstream fout("uMatU.txt");
+		fout << uMatU;
+	}
+	
+	{
+		ofstream fout("vMatU.txt");
+		fout << vMatU;
+	}
+	
+	{
+		ofstream fout("uMatV.txt");
+		fout << uMatV;
+	}
+	
+	{
+		ofstream fout("vMatV.txt");
+		fout << vMatV;
+	}
+}
+
 // ---
 
 // setup initial values
@@ -85,39 +111,17 @@ plot(v,wait=debug);
 
 // TODO: How do we basic vector addition in FreeFem++?
 
+real cpu = clock();
+
 for (int i = 0; i < nSteps; i++)
 {
 	cout << "t: " << (1+i)*dt << "s" << endl;
 	u[] = uMatU * u0[] ;//+ uMatV * v0[];
 }
 
-/*
-// piecewise-P1 continuous function vectors
-Vh u, v;
-
-// f is just zero
-func f = 0;
-
-// g using the N.x and N.y functions to figure out edge normals
-func g = sin(kappa * (x * kx + y * ky)) + kappa * cos(kappa * (x * kx + y * ky)) * (N.x * kx + N.y * ky);
-
-// ---
-
-real cpu = clock();
-
-solve Helmholtz(u,v,solver=LU) =
-	int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))		// A
-	- int2d(Th) (kappa^2 * u*v)					// -kappa^2 * M
-	+ int1d(Th, 1) (u*v)						// B
-	- int2d(Th) (f*v)							// - F (rhs)
-	- int1d(Th, 1) (g*v)						// - G (rhs)
-;
-
 cout << "CPU time = " << clock()-cpu << endl;
 
-// ---
-
-plot(u,wait=debug);
+/*
 
 // save the solution for Gnuplot
 {
@@ -132,69 +136,4 @@ plot(u,wait=debug);
 	}
 }
 
-// exact solution
-
-Vh uExact = sin(kappa * (x * kx + y * ky));
-plot(uExact,wait=debug);
-
-// ---
-
-// Matrix formulation
-
-// bilinear form
-varf a(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v))
-				- int2d(Th) (kappa^2 * u*v)
-				+ int1d(Th, 1) (u*v);
-
-// rhs
-varf l(unused, v) = int2d(Th)(f*v) + int1d(Th, 1)(g*v);
-Vh F; F[] = l(0, Vh);
-
-Vh uVec;
-
-//matrix AMB = A - kappa^2 * M + B;
-matrix AMB = a(Vh, Vh);
-
-uVec[] = AMB^-1*(F[]);
-
-// should be the same as u
-plot(uVec,wait=debug);
-
-// ---
-
-// Construct matrices separately for debugging
-
-if (debug)
-{
-	// A
-	varf funcA(u,v) = int2d(Th) (dx(u)*dx(v) + dy(u)*dy(v));
-	matrix A = funcA(Vh, Vh);
-	{
-		ofstream fout("A.txt");
-		fout << A;
-	}
-
-	// M
-	varf funcM(u,v) = int2d(Th)(u*v);
-	matrix M = funcM(Vh, Vh);
-	{
-		ofstream fout("M.txt");
-		fout << M;
-	}
-	
-	// B
-	varf funcB(u,v) = int1d(Th, 1)(u*v);
-	matrix B = funcB(Vh, Vh);
-	{
-		ofstream fout("B.txt");
-		fout << B;
-	}
-	
-	// rhsG
-	varf funcG(unused, v) = int1d(Th, 1)(g*v);
-	matrix rhsG = funcG(Vh, Vh);
-	{
-		ofstream fout("rhsG.txt");
-		fout << rhsG;
-	}
 }*/
