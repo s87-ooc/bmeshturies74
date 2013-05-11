@@ -151,7 +151,9 @@ void Plot::generate(bool run)
 // ----------------------------------------------------------------------------
 
 PlotMesh::PlotMesh() :
-mMeshPtr(0)
+mMeshPtr(0),
+mFuncPtr(0),
+mVectorPtr(0)
 {
 }
 
@@ -159,11 +161,10 @@ PlotMesh::~PlotMesh()
 {
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh& msh, const char* title, EPlotType type, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, const char* title, const char* templ, const char* args) :
 mName(name),
 mMeshPtr(&msh),
-mDataType(ePD_MESH),
-mType(type)
+mDataType(ePD_MESH)
 {
 	if (title)
 	{
@@ -181,12 +182,11 @@ mType(type)
 	}
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh& msh, Vector& vals, const char* title, EPlotType type, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, Vector& vals, const char* title, const char* templ, const char* args) :
 mName(name),
 mMeshPtr(&msh),
 mVectorPtr(&vals),
-mDataType(ePD_VECTOR),
-mType(type)
+mDataType(ePD_VECTOR)
 {
 	if (title)
 	{
@@ -204,12 +204,11 @@ mType(type)
 	}
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title, EPlotType type, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title, const char* templ, const char* args) :
 mName(name),
 mMeshPtr(&msh),
 mFuncPtr(&func),
-mDataType(ePD_FUNCTION),
-mType(type)
+mDataType(ePD_FUNCTION)
 {
 	if (title)
 	{
@@ -227,13 +226,13 @@ mType(type)
 	}
 }
 
-void PlotMesh::generate(bool run)
+void PlotMesh::generate(EPlotType type, bool run)
 {
 	assert(mMeshPtr);
 	
 	string fileName = "data/plots/" + mName;
 	
-	if (mType == ePT_GNUPLOT)
+	if (type == ePT_GNUPLOT)
 	{
 		// data file
 		{
@@ -291,6 +290,79 @@ void PlotMesh::generate(bool run)
 		if (run)
 		{
 			string cmd = "gnuplot -persist " + fileName + ".p";
+			system(cmd.c_str());
+		}
+	}
+	else if (type == ePT_MEDIT)
+	{
+		// mesh data file
+		{
+			ofstream fout((fileName + ".mesh").c_str());
+			
+			fout << "MeshVersionFormatted 1" << endl;
+			fout << endl;
+			fout << "Dimension 2" << endl;
+
+			fout << endl;
+			fout << "Vertices" << endl;	
+			fout << mMeshPtr->countVertices() << endl;
+			
+			for (uint v = 0; v < mMeshPtr->countVertices(); v++)
+			{
+				fout << mMeshPtr->V[v].x << " " << mMeshPtr->V[v].y << " 1" << endl;
+			}
+			
+			fout << endl;
+			fout << "Triangles" << endl;
+			fout << mMeshPtr->countTriangles() << endl;
+			
+			for (uint t = 0; t < mMeshPtr->countTriangles(); t++)
+			{
+				fout << mMeshPtr->T[t](0).id + 1 << " " << mMeshPtr->T[t](1).id + 1 << " " << mMeshPtr->T[t](2).id + 1 << " 1" << endl;
+			}
+			
+			fout << endl;
+			fout << "Edges" << endl;
+			fout << mMeshPtr->countEdges() << endl;
+			
+			for (uint e = 0; e < mMeshPtr->countEdges(); e++)
+			{
+				fout << mMeshPtr->E[e](0).id + 1 << " " << mMeshPtr->E[e](1).id + 1 << " 1" << endl;
+			}
+			
+			fout << endl;
+			fout << "End" << endl;
+			fout << endl;
+		}
+
+		// solution file if necessary
+		if (mDataType == ePD_FUNCTION || mDataType == ePD_VECTOR)
+		{
+			ofstream fout((fileName + ".bb").c_str());
+			
+			fout << "2 1 " << mMeshPtr->countVertices() << " 2" << endl;
+
+			if (mDataType == ePD_FUNCTION)
+			{
+				for (uint t = 0; t < mMeshPtr->countTriangles(); t++)
+				{
+					fout << mFuncPtr(mMeshPtr->V[t]) << " ";
+				}
+			}
+			else
+			{
+				for (uint t = 0; t < mMeshPtr->countTriangles(); t++)
+				{
+					fout << (*mVectorPtr)(t) << " ";
+				}
+			}
+			
+			fout << endl;
+		}
+		
+		if (run)
+		{
+			string cmd = "medit " + fileName;
 			system(cmd.c_str());
 		}
 	}

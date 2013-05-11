@@ -374,35 +374,41 @@ int main(int argc, char* argv[])
 	// boundary conditions
 	
 	//PlotMesh plotF("f", mesh, helmholtz::f);
-	//plotF.generate(true);
+	//plotF.generate(ePT_GNUPLOT, true);
 	
 	//PlotMesh plotG("g", mesh, helmholtz::g);
-	//plotG.generate(true);
+	//plotG.generate(ePT_GNUPLOT, true);
 	
 	//PlotMesh plotG("g", mesh, helmholtz::g);
-	//plotG.generate(true);
+	//plotG.generate(ePT_GNUPLOT, true);
 
 	// our solution
 
-	PlotMesh plotUh("uh", mesh, uh);
-	plotUh.generate(true);
+	PlotMesh plotUh("helmholtz_uh", mesh, uh, "Solution FEM");
+	plotUh.generate(ePT_GNUPLOT, true);
+	plotUh.generate(ePT_MEDIT);
 	
 	// exact solution
 	
-	PlotMesh plotU("u", mesh, u);
-	plotU.generate(true);
+	PlotMesh plotU("helmholtz_u", mesh, u, "Solution Exacte");
+	plotU.generate(ePT_GNUPLOT, true);
+	plotU.generate(ePT_MEDIT);
 	
 	// error
 	
-	PlotMesh plotErr("err", mesh, err);
-	plotErr.generate(true);
+	PlotMesh plotErr("helmholtz_err", mesh, err, "Erreur");
+	plotErr.generate(ePT_GNUPLOT, true);
+	plotErr.generate(ePT_MEDIT);
 	
+	// ---
+
 	// save the linear system (with our solution for debugging)
 	
-	{
+	// TODO: add "-save" option to control this
+	/*{
 		ofstream f("data/linsys/helmholtz.linsys");
 		f << AMB << rhs << uh;
-	}
+	}*/
 	
 	// ---
 	

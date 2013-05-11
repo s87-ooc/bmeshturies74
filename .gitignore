@@ -1,8 +1,10 @@
 bin/*
 *.o
 .DS_Store
-*.p
-*.pdat
+data/plots/*.p
+data/plots/*.pdat
+data/plots/*.bb
+data/plots/*.mesh
 *.dat
 data/linsys/*.log
 data/linsys/*.linsys

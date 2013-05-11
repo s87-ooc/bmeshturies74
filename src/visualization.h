@@ -106,10 +106,7 @@ private:
 	
 	/** mesh the values should be plotted on */
 	Mesh* mMeshPtr;
-	
-	/** type of the plot */
-	EPlotType mType;
-	
+
 	// ---
 	
 	/** type of the data to plot over a mesh */
@@ -126,16 +123,16 @@ public:
 	~PlotMesh();
 	
 	/** set up plot based on a mesh only */
-	PlotMesh(const char* name, Mesh& msh, const char* title = 0, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
+	PlotMesh(const char* name, Mesh& msh, const char* title = 0, const char* templ = 0, const char* args = 0);
 	
 	/** set up plot based on a value vector */
-	PlotMesh(const char* name, Mesh& msh, Vector& vals, const char* title = 0, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
+	PlotMesh(const char* name, Mesh& msh, Vector& vals, const char* title = 0, const char* templ = 0, const char* args = 0);
 	
 	/** set up plot based on a function */
-	PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title = 0, EPlotType type = ePT_GNUPLOT, const char* templ = 0, const char* args = 0);
+	PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title = 0, const char* templ = 0, const char* args = 0);
 	
-	/** generate the plot out of the mesh and data */
-	void generate(bool run = false);
+	/** generate the plot out of the mesh and data in one of the various formats */
+	void generate(EPlotType type = ePT_GNUPLOT, bool run = false);
 };
 
 #endif // __VISUALIZATION_H__

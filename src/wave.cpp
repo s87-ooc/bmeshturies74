@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
 	DUMP(y.norm2());
 	DUMP(yLast.norm2());
 	PlotMesh plot0("x", mesh, xLast, "Initial x");
-	plot0.generate(true);
+	plot0.generate(ePT_GNUPLOT, true);
 	
 	// @@@
 	//_writeVector("x0.dat", xLast);
@@ -359,7 +359,7 @@ int main(int argc, char* argv[])
 		
 		// @@@
 		//PlotMesh plotD("x", mesh, x);
-		//plotD.generate(true);
+		//plotD.generate(ePT_GNUPLOT, true);
 	}
 	
 	// ----------
@@ -374,14 +374,14 @@ int main(int argc, char* argv[])
 	// Plot initial data
 	
 	PlotMesh plotU0("u0", mesh, wave::u0, "Initial distribution");
-	plotU0.generate(true);
+	plotU0.generate(ePT_GNUPLOT, true);
 	
 	PlotMesh plotU1("u1", mesh, wave::u1, "Initial velocity");
-	plotU1.generate(true);
+	plotU1.generate(ePT_GNUPLOT, true);
 	
 	// Plot last step
 	PlotMesh plotX("x", mesh, x, "Final step");
-	plotX.generate(true);
+	plotX.generate(ePT_GNUPLOT, true);
 	
 	/*
 	// save the linear system (with our solution for debugging)
