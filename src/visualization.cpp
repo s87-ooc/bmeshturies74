@@ -226,20 +226,19 @@ mDataType(ePD_FUNCTION)
 	}
 }
 
-void PlotMesh::generate(EPlotType type, bool run)
+void PlotMesh::generate(EPlotType type, bool run, uint grid)
 {
 	assert(mMeshPtr);
 	
 	string fileName = "data/plots/" + mName;
 	
-	if (type == ePT_GNUPLOT)
+	if (type == ePT_GNUPLOT || type == ePT_GNUPLOT_SURF)
 	{
 		// data file
 		{
 			ofstream fout((fileName + ".pdat").c_str());
 			
 			//TVertices::iterator it = mMeshPtr->V.begin();
-			
 			if (mDataType == ePD_MESH)
 			{
 				for (uint t = 0; t < mMeshPtr->countVertices(); t++)
@@ -259,11 +258,25 @@ void PlotMesh::generate(EPlotType type, bool run)
 			}
 			else if (mDataType == ePD_VECTOR)
 			{
-				for (uint t = 0; t < mMeshPtr->countVertices(); t++)
+				if (type == ePT_GNUPLOT_SURF)
 				{
-					fout << mMeshPtr->V[t].x << " " << mMeshPtr->V[t].y << " ";
-					fout << (*mVectorPtr)(t);
-					fout << endl;
+					double d = 1. / (double)grid;
+					for (uint i = 0; i <= grid; i++)
+					{
+						for (uint j = 0; j <= grid; j++)
+						{
+							fout << i * d << " " << j * d << " " << mMeshPtr->eval(i * d, j * d, *mVectorPtr) << endl;
+						}
+					}
+				}
+				else
+				{
+					for (uint t = 0; t < mMeshPtr->countVertices(); t++)
+					{
+						fout << mMeshPtr->V[t].x << " " << mMeshPtr->V[t].y << " ";
+						fout << (*mVectorPtr)(t);
+						fout << endl;
+					}
 				}
 			}
 		}

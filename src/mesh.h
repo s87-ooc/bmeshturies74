@@ -112,6 +112,7 @@ public:
 // ----------------------------------------------------------------------------
 
 class Plot;
+class Vector;
 
 class Mesh {
 private:
@@ -133,6 +134,9 @@ public:
 	
 	/** return the maximal diameter of a triangle in this mesh */
 	double maxDiameter() const;
+	
+	/** evaluate a function associated to the discrete space of the mesh with coefficients from uh */
+	double eval(double x, double y, const Vector& uh); 
 	
 	Vertex* V;
     Triangle* T;

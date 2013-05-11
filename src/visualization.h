@@ -21,9 +21,11 @@
 /** which application is used for plotting */
 enum EPlotType
 {
-	ePT_GNUPLOT = 0,	/** Gnuplot: (v.x, v.y) for 2d, (v.x, v.y, value in v) for 3d */
-	ePT_MEDIT,				/** Medit: */
-	ePT_OCTAVE,			/** Octave: */
+	ePT_GNUPLOT = 0,	/** Gnuplot: plot values over the mesh (3D) or a vector (2D) */
+	ePT_GNUPLOT_SURF,	/** Gnuplot: plot linear combinations of base functions over a grid on the mesh */
+	ePT_MEDIT,				/** Medit: generate a file defining the mesh and the solution (optional) */
+	ePT_MATLAB,			/** Matlab: plot values over the mesh (3D) or a vector (2D) */
+	ePT_MATLAB_SURF	/** Matlab: plot linear combinations of base functions over a grid on the mesh */
 };
 
 enum EPlotData
@@ -131,8 +133,8 @@ public:
 	/** set up plot based on a function */
 	PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title = 0, const char* templ = 0, const char* args = 0);
 	
-	/** generate the plot out of the mesh and data in one of the various formats */
-	void generate(EPlotType type = ePT_GNUPLOT, bool run = false);
+	/** generate the plot out of the mesh and data in one of the various formats, specify the grid density for surface plots */
+	void generate(EPlotType type = ePT_GNUPLOT, bool run = false, uint grid = 10);
 };
 
 #endif // __VISUALIZATION_H__

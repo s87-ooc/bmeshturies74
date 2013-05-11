@@ -20,6 +20,7 @@
 #include <map>
 
 #include "mesh.h"
+#include "algebra.h"
 
 
 // ----------------------------------------------------------------------------
@@ -285,4 +286,39 @@ double Mesh::maxDiameter() const
 	}
 	
 	return sqrt(max2);
+}
+
+// TODO: optimize this
+
+double Mesh::eval(double x, double y, const Vector& uh)
+{
+	assert(uh.size() == countVertices());
+	
+	Triangle* TPtr = 0;
+	
+	double c0, c1, c2;
+	
+	// find the triangle this point is in
+	for (uint t = 0; t < countTriangles(); t++)
+	{
+		c0 = ((T[t](1).y - T[t](2).y) * (x - T[t](2).x) + (T[t](2).x - T[t](1).x) * (y - T[t](2).y)) / (2 * T[t].area);
+		c1 = ((T[t](2).y - T[t](0).y) * (x - T[t](2).x) + (T[t](0).x - T[t](2).x) * (y - T[t](2).y)) / (2 * T[t].area);
+		if (c0 <= 1 && c0 >= 0 && c1 <= 1 && c1 >= 0)
+		{
+			c2 = 1 - c0 - c1;
+			if (c2 <= 1 && c2 >= 0)
+			{
+				TPtr = &T[t];
+				break;
+			}
+		}
+	}
+	
+	if (!TPtr)
+	{
+		cout << "Point (" << x << ", " << y << ") is not in the mesh!" << endl;
+		return 0.;
+	}
+	
+	return c0 * uh((*TPtr)(0).id) + c1 * uh((*TPtr)(1).id) + c2 * uh((*TPtr)(2).id);
 }

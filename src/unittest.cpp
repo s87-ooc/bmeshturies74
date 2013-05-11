@@ -91,8 +91,6 @@ int main(int argc, char* argv[])
 		//_writeMatrix("M.dat", Mmap);
     }
 	
-	return 0;
-	
 	{
 		TESTTITLE("Vector");
 		
@@ -641,18 +639,9 @@ int main(int argc, char* argv[])
 
   		resultFile.close();
     }
-	
-	{
-		TESTTITLE("Plot Mesh");
-		
-        Mesh M("data/mesh/square_9.msh");
-		
-		//PlotMesh p("plot01", "data/_gnuplot/surface.ptpl", &M);
-		//p.generate(true);
-    }
 
     {
-    	cout << " = Basic triangle testing = " << endl;
+    	TESTTITLE("Basic triangle testing = ");
 
     	// construct mesh with 3 vertices, 1 triangle and one edge
     	Mesh M(3,1,3); 
@@ -703,9 +692,44 @@ int main(int argc, char* argv[])
 
     	cout << M.E[2];
     	cout << " Normal: " << nBC(0) << " " << nBC(1) << endl;
-
-
+    }
+	
+	{
+		TESTTITLE("Linear combinaton of base functions");
+		
+        Mesh mesh("data/mesh/square_9.msh");
+		
+		Vector uh(mesh.countVertices());
+		
+		for (uint i = 0; i < uh.size(); i++)
+		{
+			uh(i) = i;
+		}
+		
+		cout << "(0.3, 0.3): " << mesh.eval(0.3, 0.3, uh);
+		cout << "(0.5, 0.3): " << mesh.eval(0.5, 0.3, uh);
+		cout << "(0.1, 0.7): " << mesh.eval(0.1, 0.7, uh);
+		
+		// points outside of the mesh
+		mesh.eval(1.5, 0.3, uh);
+		mesh.eval(0.3, 1.5, uh);
     }
 
+	{
+		TESTTITLE("Plot linear combination of  base functions");
+		
+        Mesh mesh("data/mesh/square_9.msh");
+		
+		Vector uh(mesh.countVertices());
+		
+		for (uint i = 0; i < uh.size(); i++)
+		{
+			uh(i) = i;
+		}
+		
+		PlotMesh plot("test_eval", mesh, uh, "Combination of base functions");
+		plot.generate(ePT_GNUPLOT_SURF, true);
+	}
+	
 	return 0;
 }
