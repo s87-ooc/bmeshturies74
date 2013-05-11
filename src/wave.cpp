@@ -60,7 +60,7 @@ void _writeVector(const char* fn, const T& v)
 struct SWaveParams
 {
 	double T;			/** maximal time */
-	uint n;				/** number of partitions of T without 0 */
+	double dt;			/** time step */
 	string fileMesh;
 	bool lumping;
 };
@@ -102,8 +102,7 @@ int main(int argc, char* argv[])
 	// default values
 
 	gParams.T = 2.25;
-	gParams.n = 43;
-	//gParams.n = 4;
+	gParams.dt = -1;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
 	//gParams.fileMesh = "data/mesh/cercle2.msh";
 	//gParams.fileMesh = "data/mesh/square_9.msh";
@@ -115,7 +114,7 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/wave [-lump] -T " << gParams.T << " -n " << gParams.n << " " << gParams.fileMesh << endl;
+			cout << "Usage: bin/wave [-lump] -T " << gParams.T << " -dt 0.2 " << gParams.fileMesh << endl;
 			cout << "       -lump = use mass lumping for the assembly of M" << endl;
 			return 0;
 		}
@@ -134,7 +133,7 @@ int main(int argc, char* argv[])
 				buf >> gParams.T;
 			}
 		}
-		else if (strcmp(argv[iArg], "-n") == 0)
+		else if (strcmp(argv[iArg], "-dt") == 0)
 		{
 			iArg++;
 			
@@ -142,27 +141,16 @@ int main(int argc, char* argv[])
 			{
 				stringstream buf;
 				buf << argv[iArg];
-				buf >> gParams.n;
+				buf >> gParams.dt;
 			}
 		}
 		else
 		{
-			iArg++;
-			
-			if (iArg < argc)
-			{
 				gParams.fileMesh = argv[iArg];
-			}
 		}
 	}
 
 	cout << "== Partie II: Wave ==" << endl;
-	
-	// ----------
-	
-	// Prepare time steps
-	double dt = gParams.T / (double)gParams.n;
-	tSteps = new double(gParams.n);
 	
 	// ----------
 	
@@ -174,7 +162,20 @@ int main(int argc, char* argv[])
 	
 	CLOCK(tLoadMesh);
 
-	cout << "Max Diameter: " << mesh.maxDiameter() << endl;
+	double maxDiameter = mesh.maxDiameter();
+	cout << "Max Diameter: " << maxDiameter << endl;
+	
+	// ----------
+	
+	// Prepare time steps
+	
+	if (gParams.dt <= 0.) 
+	{
+		gParams.dt = mesh.maxDiameter();
+	}
+	
+	uint nSteps = ceil(gParams.T / gParams.dt);
+	tSteps = new double(nSteps);
 	
 	// ----------
 	
@@ -184,14 +185,14 @@ int main(int argc, char* argv[])
 
 	// @@@
 	DUMP(gParams.T);
-	DUMP(gParams.n);
-	DUMP(dt);
+	DUMP(nSteps);
+	DUMP(gParams.dt);
 	DUMP(dim);
 	
 	// vMatV = M
 	Sparse uMatU, vMatU, uMatV, M;
 	
-	{
+	//{
 		// Assemble simple matrices
 	
 		SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
@@ -234,53 +235,54 @@ int main(int argc, char* argv[])
 		SparseMap ABmap = Amap;
 		ABmap += Bmap;
 		
-		// @@@@
-		//_writeMatrix("AB.dat", ABmap);
-		
-		uMatUmap = ABmap;
-		uMatUmap *= -pow(dt, 2) / 2.;
-		uMatUmap += Mmap;
-		uMatU = uMatUmap;
-		
-		// @@@@
-		//_writeMatrix("uMatU.dat", uMatU);
-		
-		vMatUmap = Mmap;
-		vMatUmap *= dt;
-		vMatU = vMatUmap;
-		
-		// @@@@
-		//_writeMatrix("vMatU.dat", vMatU);
-		
-		uMatVmap = ABmap;
-		uMatVmap *= -dt / 2.;
-		uMatV = uMatVmap;
-		
-		// @@@@
-		//_writeMatrix("uMatV.dat", uMatV);
-		
-		// vMatV = M
-		M = Mmap;
-		
-		// @@@@
-		//_writeMatrix("M.dat", M);
-		
-		// @@@
-		/*DUMP(-pow(dt, 2) / 2.);
-		DUMP(dt);
-		DUMP(-dt / 2.);
-		Vector vOne(dim);
-		for (uint i = 0; i < dim; i++)
-		{
-			vOne(i) = 1.;
-		}
-		DUMP((uMatU * vOne).norm2());
-		DUMP((vMatU * vOne).norm2());
-		DUMP((uMatV * vOne).norm2());
-		DUMP((M * vOne).norm2());*/
-		
 		/*
 		{
+			ofstream f("A.txt");
+			f << Amap;
+		}
+		
+		{
+			ofstream f("B.txt");
+			f << Bmap;
+		}
+		
+		{
+			ofstream f("AB.txt");
+			f << ABmap;
+		}*/
+		
+		uMatUmap = ABmap;
+		uMatUmap *= -pow(gParams.dt, 2) / 2.;
+		uMatUmap += Mmap;
+		uMatU = uMatUmap;
+		//Sparse uMatU(uMatUmap);
+		
+		vMatUmap = Mmap;
+		vMatUmap *= gParams.dt;
+		vMatU = vMatUmap;
+		//Sparse vMatU(vMatUmap);
+		
+		uMatVmap = ABmap;
+		uMatVmap *= -gParams.dt / 2.;
+		uMatV = uMatVmap;
+		//Sparse uMatV(uMatVmap);
+		
+		// vMatV = M
+		
+		/*{
+			ofstream f("pre.txt");
+			f << M;
+		}*/
+		
+		M = Mmap;
+		//Sparse M(Mmap);
+
+		{
+			ofstream f("post.txt");
+			f << M;
+		}
+		
+		/*{
 			ofstream f("uU.txt");
 			f << uMatUmap;
 		}
@@ -298,10 +300,9 @@ int main(int argc, char* argv[])
 		{
 			ofstream f("vV.txt");
 			f << Mmap;
-		}
-		*/
-		return 0;
-	}
+		}*/
+
+	//}
 
 	// ----------
 
@@ -316,39 +317,19 @@ int main(int argc, char* argv[])
 	xLast.constructFunc(mesh, wave::u0);
 	yLast.constructFunc(mesh, wave::u1);
 	
-	// @@@
-	DUMP(x.norm2());
-	DUMP(xLast.norm2());
-	DUMP(y.norm2());
-	DUMP(yLast.norm2());
 	PlotMesh plot0("x", mesh, xLast, "Initial x");
 	plot0.generate(ePT_GNUPLOT, true);
 	
-	// @@@
-	//_writeVector("x0.dat", xLast);
-	//_writeVector("y0.dat", yLast);
-	
-	for (uint i = 0; i < gParams.n; i++)
+	for (uint i = 0; i < nSteps; i++)
 	{
-		cout << "Solving t = " << (i+1) * dt << "s" << endl;
+		cout << "Solving t = " << (i+1) * gParams.dt << "s" << endl;
 	
 		RESETCLOCK();
 
 		M.newmark(x, y, xLast, yLast, uMatU, vMatU, uMatV);
 		
-		// @@@
 		DUMP(x.norm2());
-		DUMP(xLast.norm2());
 		DUMP(y.norm2());
-		DUMP(yLast.norm2());
-		
-		// @@@
-		stringstream buf;
-		buf << i+1 << ".dat";
-		string fn;
-		buf >> fn;
-		//_writeVector((string("x")+fn).c_str(), x);
-		//_writeVector((string("y")+fn).c_str(), y);
 		
 		xLast = x;
 		yLast = y;
@@ -357,9 +338,8 @@ int main(int argc, char* argv[])
 		
 		//tSteps[i] = ((double)tSolve) / CLOCKS_PER_SEC;
 		
-		// @@@
-		//PlotMesh plotD("x", mesh, x);
-		//plotD.generate(ePT_GNUPLOT, true);
+		PlotMesh plotD("x", mesh, x);
+		plotD.generate(ePT_GNUPLOT, true);
 	}
 	
 	// ----------

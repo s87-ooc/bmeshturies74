@@ -56,6 +56,12 @@ Vh u1 = 0.;
 
 // TODO: assemble these matrices more efficiently
 
+varf funcA(u,v) = int2d(Th)(dx(u)*dx(v) + dy(u)*dy(v));
+matrix A = funcA(Vh, Vh);
+
+varf funcB(u, v) = int1d(Th, 1)(u*v);
+matrix B = funcB(Vh, Vh);
+
 // uMatU = (M - (A + B)dt^2/2)
 varf funcUmatU(u,v) = int2d(Th)(u*v)
 						- int2d(Th)(dt^2/2 * (dx(u)*dx(v) + dy(u)*dy(v)))
@@ -66,7 +72,7 @@ varf funcVmatU(u,v) = int2d(Th)(dt * u*v);
 matrix vMatU = funcVmatU(Vh, Vh);
 
 varf funcUmatV(u,v) = - int2d(Th)(dt/2 * (dx(u)*dx(v) + dy(u)*dy(v)))
-						- int1d(Th, 1)(dt/2 * u*v);;
+						- int1d(Th, 1)(dt/2 * u*v);
 matrix uMatV = funcUmatV(Vh, Vh);
 
 varf funcM(u,v) = int2d(Th)(u*v);
@@ -74,6 +80,16 @@ matrix vMatV = funcM(Vh, Vh);
 
 if (debug)
 {
+	{
+		ofstream fout("ffppA.txt");
+		fout << A;
+	}
+	
+	{
+		ofstream fout("ffppB.txt");
+		fout << B;
+	}
+
 	{
 		ofstream fout("uMatU.txt");
 		fout << uMatU;
@@ -121,10 +137,8 @@ for (int i = 0; i < nSteps; i++)
 
 cout << "CPU time = " << clock()-cpu << endl;
 
-/*
-
 // save the solution for Gnuplot
-{
+/*{
 	ofstream ff("graph.txt");
 	for (int i=0;i<Th.nt;i++)
 	{
@@ -134,6 +148,4 @@ cout << "CPU time = " << clock()-cpu << endl;
 		}
 		ff<<Th[i][0].x << " "<< Th[i][0].y<< " "<<u[][Vh(i,0)]<<"\n\n\n";
 	}
-}
-
 }*/

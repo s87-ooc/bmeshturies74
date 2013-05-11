@@ -327,10 +327,10 @@ SparseMap& SparseMap::operator+=(const SparseMap& rhs)
 	{
 		this->mVals[iter->first] += iter->second;
 
-		if( fabs(this->mVals[iter->first]) < EQ_TOL)
+		/*if( fabs(this->mVals[iter->first]) < EQ_TOL)
 		{
 			this->mVals.erase(iter->first);
-		}
+		}*/
 	}
 	return (*this);
 }
@@ -341,10 +341,10 @@ SparseMap& SparseMap::operator*=(const double& val)
 	{
 		iter->second *= val;
 
-		if( fabs(iter->second) < EQ_TOL)
+		/*if( fabs(iter->second) < EQ_TOL)
 		{
 			mVals.erase(iter->first);
-		}
+		}*/
 	}
 	return (*this);
 }
@@ -1003,43 +1003,19 @@ void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& 
 	
 	// calculate value for new u
 	
+	DUMP((uMatU * u).norm2());
+	DUMP((vMatU * v).norm2());
+	
 	rhsU = uMatU * u + vMatU * v;
 	uNew = conjGradient(rhsU);
 	
 	// calculate values for new v
 	
-	rhsV = uMatV * (u + uNew) + (*this) * v;	
+	DUMP((uMatV * (u + uNew)).norm2());
+	DUMP(((*this) * v).norm2());
+	
+	rhsV = uMatV * (u + uNew) + (*this) * v;
 	vNew = conjGradient(rhsV);
-
-	// @@@
-	//cout << "---" << endl;
-	//DUMP((uMatU * u).norm2());
-	//DUMP((vMatU * v).norm2());
-	//DUMP(rhsU.norm2());
-	//DUMP(jacobi(rhsU).norm2());
-	//DUMP(conjGradient(rhsU).norm2());
-	// USE ONLY FOR SMALL MATRICES
-	//DUMP(LU(rhsU).norm2());
-	//DUMP(uNew.norm2());
-	//DUMP(u.norm2());
-	//cout << "-" << endl;
-	//DUMP((u + uNew).norm2());
-	//DUMP((uMatV * (u + uNew)).norm2());
-	//DUMP(((*this) * v).norm2());
-	//DUMP(rhsV.norm2());
-	//DUMP(jacobi(rhsV).norm2());
-	//DUMP(conjGradient(rhsV).norm2());
-	// USE ONLY FOR SMALL MATRICES
-	//DUMP(LU(rhsV).norm2());
-	//DUMP(vNew.norm2());
-	//DUMP(v.norm2());
-	/*Vector vOne(dim);
-	for (uint i = 0; i < dim; i++)
-	{
-		vOne(i) = 1.;
-	}
-	DUMP(((*this) * vOne).norm2());*/
-	//cout << "---" << endl;
 }
 
 // ----------------------------------------------------------------------------
