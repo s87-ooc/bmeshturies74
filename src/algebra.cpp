@@ -327,10 +327,11 @@ SparseMap& SparseMap::operator+=(const SparseMap& rhs)
 	{
 		this->mVals[iter->first] += iter->second;
 
-		/*if( fabs(this->mVals[iter->first]) < EQ_TOL)
+		// TODO: check this
+		if( fabs(this->mVals[iter->first]) < EQ_TOL)
 		{
 			this->mVals.erase(iter->first);
-		}*/
+		}
 	}
 	return (*this);
 }
@@ -341,10 +342,11 @@ SparseMap& SparseMap::operator*=(const double& val)
 	{
 		iter->second *= val;
 
-		/*if( fabs(iter->second) < EQ_TOL)
+		// TODO: check this
+		if( fabs(iter->second) < EQ_TOL)
 		{
 			mVals.erase(iter->first);
-		}*/
+		}
 	}
 	return (*this);
 }

@@ -298,6 +298,27 @@ double Mesh::eval(double x, double y, const Vector& uh)
 	
 	double c0, c1, c2;
 	
+	// WORKAROUND: points near the border should be "pushed back" inside ?
+	/*{
+		if (fabs(x) < EQ_TOL)
+		{
+			x = x < 0 ? x + EQ_TOL : x;
+		}
+		else if (fabs(1 - x) < EQ_TOL)
+		{
+			x = x > 1 ? x - EQ_TOL : x;
+		}
+		
+		if (fabs(y) < EQ_TOL)
+		{
+			y = y < 0 ? x + EQ_TOL : y;
+		}
+		else if (fabs(1 - y) < EQ_TOL)
+		{
+			y = y > 1 ? y - EQ_TOL : y;
+		}
+	}*/
+	
 	// find the triangle this point is in
 	for (uint t = 0; t < countTriangles(); t++)
 	{

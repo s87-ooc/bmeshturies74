@@ -728,7 +728,7 @@ int main(int argc, char* argv[])
 		}
 		
 		PlotMesh plot("test_eval", mesh, uh, "Combination of base functions");
-		plot.generate(ePT_GNUPLOT_SURF, true);
+		plot.generate(ePT_GNUPLOT_SURF, true, 20);
 	}
 	
 	return 0;

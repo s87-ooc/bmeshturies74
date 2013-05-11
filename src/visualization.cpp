@@ -267,6 +267,10 @@ void PlotMesh::generate(EPlotType type, bool run, uint grid)
 						{
 							fout << i * d << " " << j * d << " " << mMeshPtr->eval(i * d, j * d, *mVectorPtr) << endl;
 						}
+						if (i < grid)
+						{
+							fout << endl;
+						}
 					}
 				}
 				else
@@ -298,6 +302,13 @@ void PlotMesh::generate(EPlotType type, bool run, uint grid)
 			}
 			
 			fout << "splot '" << fileName << ".pdat'";
+			
+			if (type == ePT_GNUPLOT_SURF)
+			{
+				fout << " with lines";
+			}
+			
+			fout << endl;
 		}
 		
 		if (run)
