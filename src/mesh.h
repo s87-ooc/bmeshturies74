@@ -73,6 +73,7 @@ private:
     double calculate_area();
 public:
     double circumcircleDiameter() const;
+    double incircleDiameter() const;
 	// Vertex& V[3];
     TVerticesP V;
     int label;
@@ -136,7 +137,9 @@ public:
 	uint countEdges() const;
 	
 	/** return the maximal diameter of a triangle in this mesh */
-	double maxDiameter() const;
+	double maxCircumcircleDiameter() const;
+    double maxIncircleDiameter() const;
+
 	
 	/** evaluate a function associated to the discrete space of the mesh with coefficients from uh */
 	double eval(double x, double y, const Vector& uh); 

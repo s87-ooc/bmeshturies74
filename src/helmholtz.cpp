@@ -370,8 +370,8 @@ int main(int argc, char* argv[])
 	
 	cout << "L2 error: " << globalL2Error(mesh, u, uh) << endl;
 	cout << "L2 grad error: " << globalL2GradError(mesh, u, uh) << endl;
-	cout << "Max circumscribed circle diameter: " << mesh.maxDiameter() << endl;
-
+	cout << "Max circumscribed circle diameter: " << mesh.maxCircumcircleDiameter() << endl;
+	cout << "Max inscribed circle diameter: " << mesh.maxIncircleDiameter() << endl;
 	// ----------
 	
 	// boundary conditions

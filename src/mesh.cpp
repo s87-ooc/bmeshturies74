@@ -88,6 +88,15 @@ double Triangle::circumcircleDiameter() const
     return A*B*C / (2.0 * area);
 }
 
+double Triangle::incircleDiameter() const
+{
+    double A = distance(V[0], V[1]);
+    double B = distance(V[1], V[2]);
+    double C = distance(V[2], V[0]);
+
+    return 4.0 * area / (A+B+C);
+}
+
 Vertex& Triangle::operator() (uint vertex) const
 {
     assert(vertex >=0 && vertex <=2);
@@ -281,7 +290,7 @@ uint Mesh::countEdges() const
 
 #define DIST(u,v) pow(u.x - v.x, 2) + pow(u.y - v.y, 2)
 
-double Mesh::maxDiameter() const
+double Mesh::maxCircumcircleDiameter() const
 {
 	double maxDiam = 0.0;
 	
@@ -291,6 +300,18 @@ double Mesh::maxDiameter() const
 	}
 	
 	return maxDiam;
+}
+
+double Mesh::maxIncircleDiameter() const
+{
+    double maxDiam = 0.0;
+    
+    for (uint i = 0; i < Nt; i++)
+    {
+        maxDiam = max(maxDiam, T[i].incircleDiameter() );
+    }
+    
+    return maxDiam;
 }
 
 // TODO: optimize this
