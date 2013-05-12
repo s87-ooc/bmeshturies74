@@ -259,7 +259,6 @@ double globalL2Error(const Mesh& mesh, const Vector& exact, const Vector& approx
 {
 	double error = 0, localSum;
 	int id;
-	double area;
 
 	for(uint i = 0; i < mesh.countTriangles(); i++)
 	{
@@ -276,6 +275,43 @@ double globalL2Error(const Mesh& mesh, const Vector& exact, const Vector& approx
 	return sqrt(error);
 }
 
+double globalL2GradError(const Mesh& mesh, const Vector& exact, const Vector& approx)
+{
+	double error = 0, localSum;
+	int id;
+	double d12, d23, d31, grad12ex, grad23ex, grad31ex, grad12app, grad23app, grad31app;
+
+	for(uint i = 0; i < mesh.countTriangles(); i++)
+	{
+		localSum = 0;
+		// calculate the local error for the ith triangle
+		// using quadrature: area * (g((s1+s2)/2) + g((s2+s3)/2 + g((s3+s1))/2) / 3
+		
+		TVerticesP& V = mesh.T[i].V;
+
+		d12 = sqrt( pow( V[0]->x - V[1]->x, 2) + pow( V[0]->y - V[1]->y, 2));
+		d23 = sqrt( pow( V[1]->x - V[2]->x, 2) + pow( V[1]->y - V[2]->y, 2));
+		d31 = sqrt( pow( V[2]->x - V[0]->x, 2) + pow( V[2]->y - V[0]->y, 2));
+
+		grad12ex = ( exact(V[0]) - exact(V[1]) ) / d12;
+		grad23ex = ( exact(V[1]) - exact(V[2]) ) / d23;
+		grad31ex = ( exact(V[2]) - exact(V[0]) ) / d31;
+
+		grad12app = ( approx(V[0]) - approx(V[1]) ) / d12;
+		grad23app = ( approx(V[1]) - approx(V[2]) ) / d23;
+		grad31app = ( approx(V[2]) - approx(V[0]) ) / d31;
+
+		localSum += pow(grad12ex - grad12app, 2);
+		localSum += pow(grad23ex - grad23app, 2);
+		localSum += pow(grad31ex - grad31app, 2);
+
+		error += localSum * mesh.T[i].area / 3.0;
+	}
+
+	return sqrt(error);
+
+
+}
 // ----------------------------------------------------------------------------
 
 SparseMap::SparseMap(uint rows, uint columns) :

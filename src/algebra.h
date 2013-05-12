@@ -94,7 +94,7 @@ Vector operator* (const double s, const Vector& v);
 double dot(const Vector& v1, const Vector& v2);
 
 double globalL2Error(const Mesh& mesh, const Vector& exact, const Vector& approx);
-
+double globalL2GradError(const Mesh& mesh, const Vector& exact, const Vector& approx);
 
 // ----------------------------------------------------------------------------
 
