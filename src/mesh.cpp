@@ -314,8 +314,6 @@ double Mesh::maxIncircleDiameter() const
     return maxDiam;
 }
 
-// TODO: optimize this
-
 double Mesh::eval(double x, double y, const Vector& uh)
 {
 	assert(uh.size() == countVertices());
@@ -323,37 +321,17 @@ double Mesh::eval(double x, double y, const Vector& uh)
 	Triangle* TPtr = 0;
 	
 	double c0, c1, c2;
-	
-	// WORKAROUND: points near the border should be "pushed back" inside ?
-	/*{
-		if (fabs(x) < EQ_TOL)
-		{
-			x = x < 0 ? x + EQ_TOL : x;
-		}
-		else if (fabs(1 - x) < EQ_TOL)
-		{
-			x = x > 1 ? x - EQ_TOL : x;
-		}
 		
-		if (fabs(y) < EQ_TOL)
-		{
-			y = y < 0 ? x + EQ_TOL : y;
-		}
-		else if (fabs(1 - y) < EQ_TOL)
-		{
-			y = y > 1 ? y - EQ_TOL : y;
-		}
-	}*/
-	
-	// find the triangle this point is in
+	// find the triangle the point is in, then coordinates are in [0, 1]
+	// we're tolerating deviations of EQ_TOL to evaluate especially corners of triangles correctly
 	for (uint t = 0; t < countTriangles(); t++)
 	{
 		c0 = ((T[t](1).y - T[t](2).y) * (x - T[t](2).x) + (T[t](2).x - T[t](1).x) * (y - T[t](2).y)) / (2 * T[t].area);
 		c1 = ((T[t](2).y - T[t](0).y) * (x - T[t](2).x) + (T[t](0).x - T[t](2).x) * (y - T[t](2).y)) / (2 * T[t].area);
-		if (c0 <= 1 && c0 >= 0 && c1 <= 1 && c1 >= 0)
+		if (c0 <= 1 + EQ_TOL && c0 >= 0 - EQ_TOL && c1 <= 1 + EQ_TOL && c1 >= 0 - EQ_TOL)
 		{
 			c2 = 1 - c0 - c1;
-			if (c2 <= 1 && c2 >= 0)
+			if (c2 <= 1 + EQ_TOL && c2 >= 0 - EQ_TOL)
 			{
 				TPtr = &T[t];
 				break;

@@ -182,8 +182,8 @@ int main(int argc, char* argv[])
 	
 	// Assemble the matrices and vectors
 	
-	uint Nv = mesh.countVertices();
-	SparseMap Amap(Nv, Nv), Mmap(Nv, Nv), Bmap(Nv, Nv);
+	uint dim = mesh.countVertices();
+	SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
 	
 	// A
 	
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
 	
 	// F (rhs)
 	
-	Vector rhsF(Nv), rhsG(Nv);
+	Vector rhsF(dim), rhsG(dim);
 	
 	RESETCLOCK();
 	
@@ -233,98 +233,6 @@ int main(int argc, char* argv[])
 	rhsG.constructFuncSurf(mesh, helmholtz::g);
 	
 	CLOCK(tRhsG);
-	
-	// ----------
-	
-	// TODO: the whole verification part should go into unittest, only leave stuff here that's needed
-	
-	// verification of constructed matrices according to the course
-	
-	// dumping may make sense for "bin/helmholtz -mesh data/mesh/square_9.msh"
-	
-	/*
-	bool verify = true;
-	bool dump = false;
-	
-	// A
-
-	if (verify || dump)
-		cout << endl << "A" << endl << endl;
-		
-	if (dump)
-	{
-		DUMPNZ(Amap);
-		cout << endl;
-		DUMPVAL(Amap);
-		cout << endl;
-	}
-	
-	if (verify)
-	{
-		// TEST: A * (1, ..., 1) = 0
-		
-		Vector k(Amap.sizeRows());
-		for (uint i = 0; i < k.size(); i++)
-		{
-			k(i) = 1.;
-		}
-		Sparse _A(Amap);
-		Vector Ak = _A*k;
-		cout << "Ak: " << Ak.norm2() << endl;
-	}
-	
-	// M
-
-	if (verify || dump)
-		cout << endl << "M" << endl << endl;
-		
-	if (dump)
-	{
-		DUMPNZ(Mmap);
-		cout << endl;
-		DUMPVAL(Mmap);
-		cout << endl;
-	}
-	
-	if (verify)
-	{
-		// TEST: Sum Mij = area of mesh		
-
-		double area = 0.;
-		for (uint t = 0; t < mesh.countTriangles(); t++)
-		{
-			area += mesh.T[t].area;
-		}
-		cout << "Area: " << area << endl;
-		
-		cout << "Sum over Mij: ";
-		double areaM = 0.;
-		for (uint i = 0; i < Mmap.sizeRows(); i++)
-		{
-			for (uint j = 0; j < Mmap.sizeColumns(); j++)
-			{
-				areaM += Mmap(i,j);
-			}
-		}
-		cout << areaM << endl;
-	}
-	
-	// B
-	
-	if (verify || dump)
-		cout << endl << "B" << endl << endl;
-		
-	if (dump)
-	{
-		DUMPNZ(Bmap);
-		cout << endl;
-		DUMPVAL(Bmap);
-		cout << endl;
-	}
-	
-	if (verify)
-	{
-	}*/
 	
 	// ----------
 
@@ -357,7 +265,7 @@ int main(int argc, char* argv[])
 	// Evaluate stuff
 	
 	// calculate exact solution
-	Vector u(Nv);
+	Vector u(dim);
 	u.constructFunc(mesh, helmholtz::u);
 	
 	// calculate error
@@ -388,31 +296,20 @@ int main(int argc, char* argv[])
 	// our solution
 
 	PlotMesh plotUh("helmholtz_uh", mesh, uh, "Solution FEM");
-	plotUh.generate(ePT_GNUPLOT, true);
 	plotUh.generate(ePT_MEDIT);
 	plotUh.generate(ePT_GNUPLOT_SURF, true, false, 20);
 	
 	// exact solution
 	
 	PlotMesh plotU("helmholtz_u", mesh, u, "Solution Exacte");
-	plotU.generate(ePT_GNUPLOT, true);
 	plotU.generate(ePT_MEDIT);
+	plotU.generate(ePT_GNUPLOT_SURF, true, false, 20);
 	
 	// error
 	
 	PlotMesh plotErr("helmholtz_err", mesh, err, "Erreur");
-	plotErr.generate(ePT_GNUPLOT, true);
 	plotErr.generate(ePT_MEDIT);
-	
-	// ---
-
-	// save the linear system (with our solution for debugging)
-	
-	// TODO: add "-save" option to control this
-	/*{
-		ofstream f("data/linsys/helmholtz.linsys");
-		f << AMB << rhs << uh;
-	}*/
+	plotErr.generate(ePT_GNUPLOT_SURF, true, false, 20);
 	
 	// ---
 	
