@@ -134,4 +134,18 @@ public:
 	void generate(EPlotType type = ePT_GNUPLOT, bool run = false, bool savePNG = false, const char* templ = 0, const char* args = 0, uint grid = 10);
 };
 
+// ----------------------------------------------------------------------------
+
+/** video generation from plotted frames */
+enum EPlotVideo
+{
+	ePV_RAW = 0		/** uncompressed video */
+};
+
+namespace PlotVideo
+{
+	void renderVideo(const char* file, const char* framePrefix, double framerate = 24., const char* title = 0,
+		uint width = 640, uint height = 480, EPlotVideo codec = ePV_RAW);
+};
+
 #endif // __VISUALIZATION_H__

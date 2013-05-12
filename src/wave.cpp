@@ -62,7 +62,9 @@ struct SWaveParams
 	double T;			/** maximal time */
 	double dt;			/** time step */
 	string fileMesh;
-	bool lumping;
+	bool lumping;		/** enable mass lumping */
+	bool render;		/** render a video of the time development */
+	double framerate;	/** framerate of the video */
 };
 
 /** global parameters */
@@ -104,9 +106,9 @@ int main(int argc, char* argv[])
 	gParams.T = 2.25;
 	gParams.dt = -1;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
-	//gParams.fileMesh = "data/mesh/cercle2.msh";
-	//gParams.fileMesh = "data/mesh/square_9.msh";
 	gParams.lumping = false;
+	gParams.render = false;
+	gParams.framerate = 25.;
 	
 	// get filenames and parameters from cmdline arguments (if any)
 	
@@ -114,13 +116,26 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/wave [-lump] -T " << gParams.T << " -dt 0.2 " << gParams.fileMesh << endl;
+			cout << "Usage: bin/wave [-lump] [-r fps] -T " << gParams.T << " -dt 0.2 " << gParams.fileMesh << endl;
 			cout << "       -lump = use mass lumping for the assembly of M" << endl;
+			cout << "       -r fps = render a video of the time development (fps=25 if empty)" << endl;
 			return 0;
 		}
 		else if (strcmp(argv[iArg], "-lump") == 0)
 		{
 			gParams.lumping = true;
+		}
+		else if (strcmp(argv[iArg], "-r") == 0)
+		{
+			gParams.render = true;
+			
+			if (iArg < argc - 1 && !strstr(argv[iArg+1], "-"))
+			{
+				iArg++;
+				stringstream buf;
+				buf << argv[iArg];
+				buf >> gParams.framerate;
+			}
 		}
 		else if (strcmp(argv[iArg], "-T") == 0)
 		{
@@ -153,6 +168,16 @@ int main(int argc, char* argv[])
 	cout << "== Partie II: Wave ==" << endl;
 	
 	// ----------
+	
+	{
+		ifstream fileTest(gParams.fileMesh.c_str());
+		
+		if (!fileTest)
+		{
+			cout << "No valid mesh " << gParams.fileMesh << endl;
+			return 0;
+		}
+	}
 	
 	// Load the mesh
 
@@ -263,12 +288,17 @@ int main(int argc, char* argv[])
 
 	Vector originPos(nSteps+1);
 	Vector timeVals(nSteps+1);
-
 	
 	// initial values
 	xLast.constructFunc(mesh, wave::u0);
 	yLast.constructFunc(mesh, wave::u1);
 
+	if (gParams.render)
+	{
+		PlotMesh plotD("wave_gnuplot_000", mesh, xLast);
+		plotD.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
+	}
+	
 	originPos(0) = mesh.eval(0.0, 0.0, xLast);
 	timeVals(0) = 0;
 	
@@ -279,9 +309,6 @@ int main(int argc, char* argv[])
 		RESETCLOCK();
 
 		M.newmark(x, y, xLast, yLast, uMatU, vMatU, uMatV);
-		
-		//DUMP(x.norm2());
-		//DUMP(y.norm2());
 		
 		xLast = x;
 		yLast = y;
@@ -294,13 +321,26 @@ int main(int argc, char* argv[])
 		
 		//tSteps[i] = ((double)tSolve) / CLOCKS_PER_SEC;
 		
-		stringstream buf;
-		buf << "helmholtz_" << (i+1) * gParams.dt;
-		string plotFile;
-		buf >> plotFile;
-		
-		PlotMesh plotD(plotFile.c_str(), mesh, x);
-		plotD.generate(ePT_GNUPLOT, true, true);
+		if (gParams.render)
+		{
+			stringstream buf;
+			buf << "wave_gnuplot_";
+			if (i+1 < 100)
+			{
+				if (i+1 < 10)
+				{
+					buf << "0";
+				}
+				buf << "0";
+			}
+			buf << i+1;
+			
+			string plotFile;
+			buf >> plotFile;
+			
+			PlotMesh plotD(plotFile.c_str(), mesh, x);
+			plotD.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
+		}
 	}
 	
 	// ----------
@@ -322,12 +362,20 @@ int main(int argc, char* argv[])
 	
 	// Plot last step
 	PlotMesh plotX("x", mesh, x, "Final step");
-	plotX.generate(ePT_GNUPLOT, true);
+	plotX.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
 
 	// Plot position of origin over time
 	Plot plotOrigin("", timeVals, originPos, "Position of origin over time", "", " w linespoints");
 	plotOrigin.generate(ePT_GNUPLOT, true);
 	
+	// ---
+	
+	// render the time development as video if desired
+	
+	if (gParams.render)
+	{
+		PlotVideo::renderVideo("wave_gnuplot.avi", "wave_gnuplot_", gParams.framerate);
+	}
 	/*
 	// save the linear system (with our solution for debugging)
 	{

@@ -15,7 +15,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cstdlib>
+#include <cstring>
 
 #include <assert.h>
 #include <math.h>
@@ -263,7 +265,7 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 			string sTemplate;
 			
 			ofstream fout((fileName + ".p").c_str());
-			if (!templ)
+			if (!templ || strcmp(templ, "") == 0)
 			{
 				sTemplate = "data/_gnuplot/default.ptpl";
 			}
@@ -294,19 +296,22 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 			}
 			
 			fout << endl;
+			
+			if (savePNG)
+			{
+				fout << "exit gnuplot" << endl;
+			}
 		}
 
 		if (run)
 		{
-			string cmd;
+			string cmd = "gnuplot -persist " + fileName + ".p";
+			
 			if (savePNG)
 			{
-				string cmd = "gnuplot " + fileName + ".p";
+				cout << " ### rendering " << fileName + ".png" << endl;
 			}
-			else
-			{
-				cmd = "gnuplot -persist " + fileName + ".p";
-			}
+
 			system(cmd.c_str());
 		}
 	}
@@ -387,4 +392,44 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 	{
 		// TODO: define/implement other plot types
 	}
+}
+
+// ----------------------------------------------------------------------------
+
+void PlotVideo::renderVideo(const char* file, const char* framePrefix, double framerate, const char* title,
+		uint width, uint height, EPlotVideo codec)
+{
+	string cmd = "mencoder mf://";
+	cmd += framePrefix;
+	cmd += "*.png -mf w=";
+	{
+		stringstream buf;
+		buf << width;
+		string sbuf;
+		buf >> sbuf;
+		cmd += sbuf;
+	}
+	cmd += ":h=";
+	{
+		stringstream buf;
+		buf << height;
+		string sbuf;
+		buf >> sbuf;
+		cmd += sbuf;
+	}
+	cmd += ":fps=";
+	{
+		stringstream buf;
+		buf << framerate;
+		string sbuf;
+		buf >> sbuf;
+		cmd += sbuf;
+	}
+	cmd += ":type=png -ovc copy -oac copy -o ";
+	cmd += file;
+	
+	cout << endl << "### Change into data/plots/ and run" << endl;
+	cout << cmd << endl;
+	
+	//system(cmd.c_str());
 }

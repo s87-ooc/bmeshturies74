@@ -88,7 +88,7 @@ clean:
 	
 cleandata:
 	rm -Rf data/linsys/test_* data/linsys/times_* data/linsys/errors_*
-	rm -Rf data/plots/*.p data/plots/*.pdat data/plots/*.mesh data/plots/*.bb
+	rm -Rf data/plots/*.p data/plots/*.pdat data/plots/*.mesh data/plots/*.bb data/plots/*.png data/plots/*.avi
 	
 cleandocs:
 	rm -Rf docs/html
