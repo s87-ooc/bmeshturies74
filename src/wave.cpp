@@ -312,22 +312,17 @@ int main(int argc, char* argv[])
 	Vector xLast(dim);
 	Vector y(dim);
 	Vector yLast(dim);
-	Vector originPos(nSteps);
 
-	// find origin ID
-	int oID = 0;
-	for (uint i = 0; i < mesh.Nv; i++)
-	{
-		if( mesh.V[i].x == 0 && mesh.V[i].y == 0)
-		{
-			oID = mesh.V[i].id;
-			break;
-		}
-	}
+	Vector originPos(nSteps+1);
+	Vector timeVals(nSteps+1);
+
 	
 	// initial values
 	xLast.constructFunc(mesh, wave::u0);
 	yLast.constructFunc(mesh, wave::u1);
+
+	originPos(0) = mesh.eval(0.0, 0.0, xLast);
+	timeVals(0) = 0;
 	
 	for (uint i = 0; i < nSteps; i++)
 	{
@@ -344,6 +339,10 @@ int main(int argc, char* argv[])
 		yLast = y;
 		
 		CLOCK(tSolve);
+
+		// track initial position
+		originPos(i+1) = mesh.eval(0.0, 0.0, xLast);
+		timeVals(i+1) = (i+1) * gParams.dt;
 		
 		//tSteps[i] = ((double)tSolve) / CLOCKS_PER_SEC;
 		
@@ -376,6 +375,10 @@ int main(int argc, char* argv[])
 	// Plot last step
 	PlotMesh plotX("x", mesh, x, "Final step");
 	plotX.generate(ePT_GNUPLOT, true);
+
+	// Plot position of origin over time
+	Plot plotOrigin("", timeVals, originPos, "Position of origin over time");
+	plotOrigin.generate(true);
 	
 	/*
 	// save the linear system (with our solution for debugging)
