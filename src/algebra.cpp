@@ -18,6 +18,7 @@
 #include <cstring>
 #include <assert.h>
 #include <math.h>
+#include <iostream>
 
 using namespace std;
 
@@ -902,31 +903,54 @@ Vector Sparse::jacobi(Vector const& b, bool& convergence) const
 	//double limit = JACOBI_TOLERANCE * b.norm2();
 	double limit = pow(JACOBI_TOLERANCE, 2) * dot(b, b);
 	
-	uint it;
+	uint it=0;
 	uint itMax = pow(dim, 2);
 	
 	//while (r.norm2() > limit && it < itMax)
-	while (dot(r, r) > limit && it < itMax)
-	{
-		for (uint i = 0; i < dim; i++)
-		{
-			y(i) = r(i) / (*this)(i, i);
-		}
-		x += y;
-		r = r - (*this) * y;
+	// while (dot(r, r) > limit && it < itMax)
+	// {
+	// 	for (uint i = 0; i < dim; i++)
+	// 	{
+	// 		y(i) = r(i) / (*this)(i, i);
+	// 	}
+	// 	x += y;
+	// 	r = r - (*this) * y;
 		
+	// 	it++;
+	// }
+
+	double alpha = 1.0/3.0;
+	double sigma = 0;
+	while( dot(r, r) > limit)
+	{
+		for( uint i = 0; i < dim; i++)
+		{
+			sigma = 0;
+			for(unsigned int j = mRowPtr[i]; j < mRowPtr[i+1]; j++)
+			{
+				if( mColInd[j]!=i )
+				{
+					sigma += mVals[j]*x(mColInd[j]);
+				}
+			}
+			y(i) = (1-alpha)*x(i) + alpha*(b(i) - sigma) / (*this)(i,i);
+		}
+		swap(x,y);
+		r = b - (*this) * x;
+		cout << dot(r,r) << " " << limit << endl;
 		it++;
 	}
+
 	
-	if (it > itMax)
-	{
-		cout << "Jacobi abandonné après " << it << " itérations!" << endl;
-		convergence = false;
-	}
-	else
-	{
-		convergence = true;
-	}
+	// if (it > itMax)
+	// {
+	// 	cout << "Jacobi abandonné après " << it << " itérations!" << endl;
+	// 	convergence = false;
+	// }
+	// else
+	// {
+	// 	convergence = true;
+	// }
 	
     return x;
 }
