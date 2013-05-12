@@ -39,12 +39,11 @@ Plot::~Plot()
 {
 }
 
-Plot::Plot(const char* name, Vector& x, Vector& y, const char* title, EPlotType type, const char* templ, const char* args) :
+Plot::Plot(const char* name, Vector& x, Vector& y, const char* title, const char* templ, const char* args) :
 mName(name),
 mXPtr(&x),
 mYPtr(&y),
-mDataType(ePD_VECTOR),
-mType(type)
+mDataType(ePD_VECTOR)
 {
 	if (title)
 	{
@@ -62,12 +61,11 @@ mType(type)
 	}
 }
 	
-Plot::Plot(const char* name, Vector& x, double (&func)(double), const char* title, EPlotType type, const char* templ, const char* args) :
+Plot::Plot(const char* name, Vector& x, double (&func)(double), const char* title, const char* templ, const char* args) :
 mName(name),
 mXPtr(&x),
 mFuncPtr(&func),
-mDataType(ePD_FUNCTION),
-mType(type)
+mDataType(ePD_FUNCTION)
 {
 	if (title)
 	{
@@ -85,13 +83,13 @@ mType(type)
 	}
 }
 
-void Plot::generate(bool run)
+void Plot::generate(EPlotType type, bool run, bool savePNG)
 {
 	assert(mXPtr);
 	
 	string fileName = "data/plots/" + mName;
 	
-	if (mType == ePT_GNUPLOT)
+	if (type == ePT_GNUPLOT)
 	{
 		// data file
 		{
@@ -134,6 +132,11 @@ void Plot::generate(bool run)
 			}
 			
 			fout << "plot '" << fileName << ".pdat'";
+			
+			if (!mArgs.empty())
+			{
+				fout << mArgs;
+			}
 		}
 		
 		if (run)
@@ -161,7 +164,7 @@ PlotMesh::~PlotMesh()
 {
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh& msh, const char* title, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, const char* title) :
 mName(name),
 mMeshPtr(&msh),
 mDataType(ePD_MESH)
@@ -170,19 +173,9 @@ mDataType(ePD_MESH)
 	{
 		mTitle = title;
 	}
-	
-	if (templ)
-	{
-		mTemplate = templ;
-	}
-	
-	if (args)
-	{
-		mArgs = args;
-	}
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh& msh, Vector& vals, const char* title, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, Vector& vals, const char* title) :
 mName(name),
 mMeshPtr(&msh),
 mVectorPtr(&vals),
@@ -192,19 +185,9 @@ mDataType(ePD_VECTOR)
 	{
 		mTitle = title;
 	}
-
-	if (templ)
-	{
-		mTemplate = templ;
-	}
-	
-	if (args)
-	{
-		mArgs = args;
-	}
 }
 
-PlotMesh::PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title, const char* templ, const char* args) :
+PlotMesh::PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title) :
 mName(name),
 mMeshPtr(&msh),
 mFuncPtr(&func),
@@ -214,19 +197,9 @@ mDataType(ePD_FUNCTION)
 	{
 		mTitle = title;
 	}
-
-	if (templ)
-	{
-		mTemplate = templ;
-	}
-	
-	if (args)
-	{
-		mArgs = args;
-	}
 }
 
-void PlotMesh::generate(EPlotType type, bool run, bool savePNG, uint grid)
+void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* templ, const char* args, uint grid)
 {
 	assert(mMeshPtr);
 	
@@ -287,13 +260,19 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, uint grid)
 		
 		// script file
 		{
+			string sTemplate;
+			
 			ofstream fout((fileName + ".p").c_str());
-			if (mTemplate.empty())
+			if (!templ)
 			{
-				mTemplate = "data/_gnuplot/default.ptpl";
+				sTemplate = "data/_gnuplot/default.ptpl";
+			}
+			else
+			{
+				sTemplate = templ;
 			}
 
-			ifstream fin(mTemplate.c_str());
+			ifstream fin(sTemplate.c_str());
 			fout << fin.rdbuf() << endl;
 
 			if (savePNG)

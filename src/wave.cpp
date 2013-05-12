@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
 	// vMatV = M
 	Sparse uMatU, vMatU, uMatV, M;
 	
-	//{
+	{
 		// Assemble simple matrices
 	
 		SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
@@ -235,74 +235,22 @@ int main(int argc, char* argv[])
 		SparseMap ABmap = Amap;
 		ABmap += Bmap;
 		
-		/*
-		{
-			ofstream f("A.txt");
-			f << Amap;
-		}
-		
-		{
-			ofstream f("B.txt");
-			f << Bmap;
-		}
-		
-		{
-			ofstream f("AB.txt");
-			f << ABmap;
-		}*/
-		
 		uMatUmap = ABmap;
 		uMatUmap *= -pow(gParams.dt, 2) / 2.;
 		uMatUmap += Mmap;
 		uMatU = uMatUmap;
-		//Sparse uMatU(uMatUmap);
 		
 		vMatUmap = Mmap;
 		vMatUmap *= gParams.dt;
 		vMatU = vMatUmap;
-		//Sparse vMatU(vMatUmap);
 		
 		uMatVmap = ABmap;
 		uMatVmap *= -gParams.dt / 2.;
 		uMatV = uMatVmap;
-		//Sparse uMatV(uMatVmap);
 		
 		// vMatV = M
-		
-		/*{
-			ofstream f("pre.txt");
-			f << M;
-		}*/
-		
 		M = Mmap;
-		//Sparse M(Mmap);
-
-		{
-			ofstream f("post.txt");
-			f << M;
-		}
-		
-		/*{
-			ofstream f("uU.txt");
-			f << uMatUmap;
-		}
-		
-		{
-			ofstream f("vU.txt");
-			f << vMatUmap;
-		}
-		
-		{
-			ofstream f("uV.txt");
-			f << uMatVmap;
-		}
-		
-		{
-			ofstream f("vV.txt");
-			f << Mmap;
-		}*/
-
-	//}
+	}
 
 	// ----------
 
@@ -377,8 +325,8 @@ int main(int argc, char* argv[])
 	plotX.generate(ePT_GNUPLOT, true);
 
 	// Plot position of origin over time
-	Plot plotOrigin("", timeVals, originPos, "Position of origin over time");
-	plotOrigin.generate(true);
+	Plot plotOrigin("", timeVals, originPos, "Position of origin over time", "", " w linespoints");
+	plotOrigin.generate(ePT_GNUPLOT, true);
 	
 	/*
 	// save the linear system (with our solution for debugging)

@@ -297,19 +297,19 @@ int main(int argc, char* argv[])
 
 	PlotMesh plotUh("helmholtz_uh", mesh, uh, "Solution FEM");
 	plotUh.generate(ePT_MEDIT);
-	plotUh.generate(ePT_GNUPLOT_SURF, true, false, 20);
+	plotUh.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
 	
 	// exact solution
 	
 	PlotMesh plotU("helmholtz_u", mesh, u, "Solution Exacte");
 	plotU.generate(ePT_MEDIT);
-	plotU.generate(ePT_GNUPLOT_SURF, true, false, 20);
+	plotU.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
 	
 	// error
 	
 	PlotMesh plotErr("helmholtz_err", mesh, err, "Erreur");
 	plotErr.generate(ePT_MEDIT);
-	plotErr.generate(ePT_GNUPLOT_SURF, true, false, 20);
+	plotErr.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
 	
 	// ---
 	

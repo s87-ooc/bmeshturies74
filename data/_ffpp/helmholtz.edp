@@ -33,7 +33,7 @@ border bTop(t=0, 1) { x=1-t; y=1; label=1;}
 
 // ---
 
-int grid = 15;
+int grid = 60;
 
 // domain is on the left side when following the boundary according to parametrization
 mesh Th = buildmesh(bLeft(grid) + bBottom(grid) + bRight(grid) + bTop(grid));
@@ -91,7 +91,15 @@ plot(u,wait=debug);
 Vh uExact = sin(kappa * (x * kx + y * ky));
 plot(uExact,wait=debug);
 
-// ---
+// errors
+
+real L2error = sqrt(int2d(Th)((u-uExact)^2));
+real L2errorGrad = sqrt(int2d(Th)((dx(u) - dx(uExact) + dy(u) - dy(uExact))^2));
+
+cout << endl << endl << "L2 error: " << L2error << endl;
+cout << "L2 error Gradient: " << L2errorGrad << endl << endl << endl;
+
+// ----------------------------------------------------------------------------
 
 // Matrix formulation
 
@@ -113,6 +121,12 @@ uVec[] = AMB^-1*(F[]);
 
 // should be the same as u
 plot(uVec,wait=debug);
+
+L2error = sqrt(int2d(Th)((uVec-uExact)^2));
+L2errorGrad = sqrt(int2d(Th)((dx(uVec) - dx(uExact) + dy(uVec) - dy(uExact))^2));
+
+cout << endl << endl << "L2 error: " << L2error << endl;
+cout << "L2 error Gradient: " << L2errorGrad << endl << endl << endl;
 
 // ---
 

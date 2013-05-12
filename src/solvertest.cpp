@@ -370,24 +370,24 @@ int main(int argc, char* argv[])
 	}
 	
 	Plot tCG("times_cg", vN, vTimes[0], "Times Conjugate Gradient");
-	tCG.generate(true);
+	tCG.generate(ePT_GNUPLOT, true);
 	
 	Plot eCG("errors_cg", vN, vErrors[0], "Errors Conjugate Gradient");
-	eCG.generate(true);
+	eCG.generate(ePT_GNUPLOT, true);
 	
 	Plot tJacobi("times_jacobi", vN, vTimes[1], "Times Jacobi");
-	tJacobi.generate(true);
+	tJacobi.generate(ePT_GNUPLOT, true);
 	
 	Plot eJacobi("errors_jacobi", vN, vErrors[1], "Errors Jacobi");
-	eJacobi.generate(true);
+	eJacobi.generate(ePT_GNUPLOT, true);
 	
 	if (!gParams.noLU)
 	{
 		Plot tLU("times_lu", vN, vTimes[2], "Times LU");
-		tLU.generate(true);
+		tLU.generate(ePT_GNUPLOT, true);
 		
 		Plot eLU("errors_lu", vN, vErrors[2], "Errors LU");
-		eLU.generate(true);
+		eLU.generate(ePT_GNUPLOT, true);
 	}
 	
 	// ----------
