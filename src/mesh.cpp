@@ -46,6 +46,10 @@ ostream& operator<<(ostream& os, const Vertex& v)
     return os;
 }
 
+double distance(Vertex* v, Vertex* w)
+{
+    return sqrt( pow(v->x - w->x,2) + pow(v->y - w->y, 2));
+}
 
 // ----------------------------------------------------------------------------
 
@@ -73,6 +77,24 @@ double Triangle::calculate_area()
     a = (V[0]->x - V[2]->x)*(V[1]->y - V[0]->y);
     b = (V[0]->x - V[1]->x)*(V[2]->y - V[0]->y);
     return 0.5*fabs(a-b);
+}
+
+double Triangle::circumcircleDiameter() const
+{
+    double A = distance(V[0], V[1]);
+    double B = distance(V[1], V[2]);
+    double C = distance(V[2], V[0]);
+
+    return A*B*C / (2.0 * area);
+}
+
+double Triangle::incircleDiameter() const
+{
+    double A = distance(V[0], V[1]);
+    double B = distance(V[1], V[2]);
+    double C = distance(V[2], V[0]);
+
+    return 4.0 * area / (A+B+C);
 }
 
 Vertex& Triangle::operator() (uint vertex) const
@@ -268,24 +290,28 @@ uint Mesh::countEdges() const
 
 #define DIST(u,v) pow(u.x - v.x, 2) + pow(u.y - v.y, 2)
 
-double Mesh::maxDiameter() const
+double Mesh::maxCircumcircleDiameter() const
 {
-	double max2 = 0.;
-	double dia;
+	double maxDiam = 0.0;
 	
 	for (uint i = 0; i < Nt; i++)
 	{
-		dia = DIST(T[i](2), T[i](0));
-		max2 = max2 < dia ? dia : max2;
-		
-		dia = DIST(T[i](1), T[i](0));
-		max2 = max2 < dia ? dia : max2;
-		
-		dia = DIST(T[i](2), T[i](1)); 
-		max2 = max2 < dia ? dia : max2;
+		maxDiam = max(maxDiam, T[i].circumcircleDiameter() );
 	}
 	
-	return sqrt(max2);
+	return maxDiam;
+}
+
+double Mesh::maxIncircleDiameter() const
+{
+    double maxDiam = 0.0;
+    
+    for (uint i = 0; i < Nt; i++)
+    {
+        maxDiam = max(maxDiam, T[i].incircleDiameter() );
+    }
+    
+    return maxDiam;
 }
 
 // TODO: optimize this
