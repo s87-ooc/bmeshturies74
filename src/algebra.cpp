@@ -907,39 +907,41 @@ Vector Sparse::jacobi(Vector const& b, bool& convergence) const
 	uint itMax = pow(dim, 2);
 	
 	//while (r.norm2() > limit && it < itMax)
-	// while (dot(r, r) > limit && it < itMax)
-	// {
-	// 	for (uint i = 0; i < dim; i++)
-	// 	{
-	// 		y(i) = r(i) / (*this)(i, i);
-	// 	}
-	// 	x += y;
-	// 	r = r - (*this) * y;
-		
-	// 	it++;
-	// }
-
-	double alpha = 1.0/3.0;
-	double sigma = 0;
-	while( dot(r, r) > limit)
+	while (dot(r, r) > limit)
 	{
-		for( uint i = 0; i < dim; i++)
+		for (uint i = 0; i < dim; i++)
 		{
-			sigma = 0;
-			for(unsigned int j = mRowPtr[i]; j < mRowPtr[i+1]; j++)
-			{
-				if( mColInd[j]!=i )
-				{
-					sigma += mVals[j]*x(mColInd[j]);
-				}
-			}
-			y(i) = (1-alpha)*x(i) + alpha*(b(i) - sigma) / (*this)(i,i);
+			y(i) = r(i) / (*this)(i, i);
 		}
-		swap(x,y);
-		r = b - (*this) * x;
-		cout << dot(r,r) << " " << limit << endl;
+		x += y;
+		r = r - (*this) * y;
+		//cout << dot(r,r) << " " << limit << endl;
+
+		
 		it++;
 	}
+
+	// double alpha = 1.0/3.0;
+	// double sigma = 0;
+	// while( dot(r, r) > limit)
+	// {
+	// 	for( uint i = 0; i < dim; i++)
+	// 	{
+	// 		sigma = 0;
+	// 		for(unsigned int j = mRowPtr[i]; j < mRowPtr[i+1]; j++)
+	// 		{
+	// 			if( mColInd[j]!=i )
+	// 			{
+	// 				sigma += mVals[j]*x(mColInd[j]);
+	// 			}
+	// 		}
+	// 		y(i) = (1-alpha)*x(i) + alpha*(b(i) - sigma) / (*this)(i,i);
+	// 	}
+	// 	swap(x,y);
+	// 	r = b - (*this) * x;
+	// 	cout << dot(r,r) << " " << limit << endl;
+	// 	it++;
+	// }
 
 	
 	// if (it > itMax)
@@ -972,33 +974,56 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 
 	// decompose A = LU with partial pivoting
 	
+	// for (uint k = 0; k < n - 1; k++)
+	// {
+	// 	cout << "row " << k << endl; 
+	// 	if (fabs(A(p[k], k)) < EQ_TOL)
+	// 	{
+	// 		for (uint k0 = k+1; k0 < n; k0++)
+	// 		{
+	// 			if (fabs(A(p[k0], k)) >= EQ_TOL)
+	// 			{
+	// 				uint swap = p[k];
+	// 				p[k] = k0;
+	// 				p[k0] = swap;
+	// 				break;
+	// 			}
+	// 		}
+	// 	}
+
+	// 	for (uint i = k+1; i < n; i++)
+	// 	{
+	// 		A(p[i],k) = A(p[i],k) / A(p[k],k);
+			
+	// 		for (uint j = k+1; j < n; j++)
+	// 		{
+	// 			A(p[i],j) = A(p[i],j) - A(p[i],k)*A(p[k],j);
+	// 		}
+	// 	}
+	// }
+	
 	for (uint k = 0; k < n - 1; k++)
 	{
-		if (fabs(A(p[k], k)) < EQ_TOL)
-		{
-			for (uint k0 = k+1; k0 < n; k0++)
-			{
-				if (fabs(A(p[k0], k)) >= EQ_TOL)
-				{
-					uint swap = p[k];
-					p[k] = k0;
-					p[k0] = swap;
-					break;
-				}
-			}
-		}
-		
 		for (uint i = k+1; i < n; i++)
 		{
-			A(p[i],k) = A(p[i],k) / A(p[k],k);
+			if (i > k)
+			A(i,k) = A(i,k) / A(k,k);
 			
 			for (uint j = k+1; j < n; j++)
 			{
-				A(p[i],j) = A(p[i],j) - A(p[i],k)*A(p[k],j);
+				A(i,j) = A(i,j) - A(i,k)*A(k,j);
+				cout << A(i,j) << " " ;
 			}
 		}
+		cout << endl;
 	}
-	
+
+	// 		for(unsigned int j = mRowPtr[i]; j < mRowPtr[i+1]; j++)
+	// 		{
+	// 			if( mColInd[j]!=i )
+	// 			{
+	// 				sigma += mVals[j]*x(mColInd[j]);
+
 	// save the decomposition in m if the pointer was valid
 	if (lu)
 	{
