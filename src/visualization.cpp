@@ -299,7 +299,7 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, uint grid)
 			if (savePNG)
 			{
 				fout << "set term pngcairo" << endl;
-				fout << "set output " << fileName << ".png" << endl;
+				fout << "set output \"" << fileName << ".png\"" << endl;
 			}
 			
 			if (!mTitle.empty())
@@ -316,14 +316,18 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, uint grid)
 			
 			fout << endl;
 		}
-		
-		if (savePNG)
+
+		if (run)
 		{
-			string cmd = "gnuplot " + fileName + ".p";
-		}
-		else if (run)
-		{
-			string cmd = "gnuplot -persist " + fileName + ".p";
+			string cmd;
+			if (savePNG)
+			{
+				string cmd = "gnuplot " + fileName + ".p";
+			}
+			else
+			{
+				cmd = "gnuplot -persist " + fileName + ".p";
+			}
 			system(cmd.c_str());
 		}
 	}

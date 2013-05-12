@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 	
 	CLOCK(tLoadMesh);
 
-	double maxDiameter = mesh.maxDiameter();
+	double maxDiameter = mesh.maxIncircleDiameter();
 	cout << "Max Diameter: " << maxDiameter << endl;
 	
 	// ----------
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 	
 	if (gParams.dt <= 0.) 
 	{
-		gParams.dt = mesh.maxDiameter();
+		gParams.dt = maxDiameter / 3.;
 	}
 	
 	uint nSteps = ceil(gParams.T / gParams.dt);
@@ -338,10 +338,10 @@ int main(int argc, char* argv[])
 		stringstream buf;
 		buf << "helmholtz_" << (i+1) * gParams.dt;
 		string plotFile;
-		buf << plotFile;
+		buf >> plotFile;
 		
 		PlotMesh plotD(plotFile.c_str(), mesh, x);
-		plotD.generate(ePT_GNUPLOT, false, true);
+		plotD.generate(ePT_GNUPLOT, true, true);
 	}
 	
 	// ----------
