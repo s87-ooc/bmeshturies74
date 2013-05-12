@@ -64,12 +64,15 @@ public:
 
 };
 
+double distance(const Vertex* v, const Vertex* w);
+
 // ----------------------------------------------------------------------------
 
 class Triangle {
 private:
     double calculate_area();
 public:
+    double circumcircleDiameter() const;
 	// Vertex& V[3];
     TVerticesP V;
     int label;
