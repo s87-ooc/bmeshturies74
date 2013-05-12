@@ -128,6 +128,12 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			ifstream fin(mTemplate.c_str());
 			fout << fin.rdbuf() << endl;
 
+			if (savePNG)
+			{
+				fout << "set term pngcairo" << endl;
+				fout << "set output \"" << fileName << ".png\"" << endl;
+			}
+			
 			if (!mTitle.empty())
 			{
 				fout << "set title \"" << mTitle << "\"" << endl;
@@ -139,11 +145,24 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			{
 				fout << mArgs;
 			}
+			
+			fout << endl;
+			
+			if (savePNG)
+			{
+				fout << "exit gnuplot" << endl;
+			}
 		}
 		
 		if (run)
 		{
 			string cmd = "gnuplot -persist " + fileName + ".p";
+			
+			if (savePNG)
+			{
+				cout << " ### rendering " << fileName + ".png" << endl;
+			}
+			
 			system(cmd.c_str());
 		}
 	}

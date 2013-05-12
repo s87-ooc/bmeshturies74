@@ -40,13 +40,14 @@ using namespace std;
 
 struct SHelmholtzParams
 {
-	double kappa;			/** problem parameter */
-	double k1;				/** x-component of k */
-	double k2;
+	double kappa;				/** problem parameter */
+	double k1;					/** x-component of k */
+	double k2;					/** y-component of k */
 	string fileMesh;
 	bool lumping;
 	bool errorBenchmark;
 	uint errorCount;
+	bool save;					/** whether to save the plot */
 	// ---
 	uint* vertexCount;			/** count of vertices for error benchmark */
 	uint* triangleCount;		/** count of triangles for error benchmark */
@@ -54,7 +55,9 @@ struct SHelmholtzParams
 	double* hOuter;				/** max circumscribed diameter of the triangles */
 	double* errors;				/** absolute error on points of the mesh */
 	double* errorsL2;			/** L2 error of uh and the projection of the exact solution */
-	double* errorsGradientL2;		/** L2 error of the gradient of uh and the projection of the exact solution */
+	double* errorsGradientL2;	/** L2 error of the gradient of uh and the projection of the exact solution */
+	double* solveTime;			/** time needed for solving the system */
+	double* solveAssTime;		/** time needed for assembling and solving the system */
 };
 
 /** global parameters */
@@ -111,6 +114,7 @@ int main(int argc, char* argv[])
 	gParams.lumping = false;
 	gParams.errorBenchmark = false;
 	gParams.errorCount = 1;
+	gParams.save = false;
 	// ---
 	gParams.vertexCount = 0;
 	gParams.triangleCount = 0;
@@ -119,6 +123,8 @@ int main(int argc, char* argv[])
 	gParams.errors = 0;
 	gParams.errorsL2 = 0;
 	gParams.errorsGradientL2 = 0;
+	gParams.solveTime = 0;
+	gParams.solveAssTime = 0;
 	
 	// get filenames and parameters from cmdline arguments (if any)
 	
@@ -129,11 +135,16 @@ int main(int argc, char* argv[])
 			cout << "Usage: bin/helmholtz [-lump] [-error n] -kappa " << gParams.kappa << " -k " << gParams.k1 << "," << gParams.k2  << " " << gParams.fileMesh << endl;
 			cout << "       -lump = use mass lumping for the assembly of M" << endl;
 			cout << "       -error n = do an error benchmark from 0 to n-1 on square and circle meshes" << endl;
+			cout << "       -save = generate PNGs of the plots" << endl;
 			return 0;
 		}
 		else if (strcmp(argv[iArg], "-lump") == 0)
 		{
 			gParams.lumping = true;
+		}
+		else if (strcmp(argv[iArg], "-save") == 0)
+		{
+			gParams.save = true;
 		}
 		else if (strcmp(argv[iArg], "-error") == 0)
 		{
@@ -182,7 +193,13 @@ int main(int argc, char* argv[])
 				}
 			}
 			
-			cout << "k1 " << gParams.k1 << " k2 " << gParams.k2 << endl;
+			Vector k(2);
+			k(0) = gParams.k1;
+			k(1) = gParams.k2;
+			
+			// normalize
+			gParams.k1 *= 1. / k.norm2();
+			gParams.k2 *= 1. / k.norm2();
 		}
 		else
 		{
@@ -203,6 +220,8 @@ int main(int argc, char* argv[])
 		gParams.errors = new double[gParams.errorCount];
 		gParams.errorsL2 = new double[gParams.errorCount];
 		gParams.errorsGradientL2 = new double[gParams.errorCount];
+		gParams.solveTime = new double[gParams.errorCount];
+		gParams.solveAssTime = new double[gParams.errorCount];
 	}
 	
 	// if we're not in benchmark mode, we're just going through once
@@ -335,22 +354,23 @@ int main(int argc, char* argv[])
 		// stop measuring time, display of graphs is optional
 		tEnd = clock();
 		
+		// ---
+		
+		// combine clock times
+		
+		// display computation time
+
+		clock_t tCombinedAssembly = tMatA + tMatM + tMatB + tRhsF + tRhsG;
+		clock_t tCombinedAssSolve = tSolve + tCombinedAssembly;
+		clock_t tCombined = tLoadMesh + tCombinedAssSolve;
+		
+		// calculate errors
+		
 		double error = err.norm2();
 		double errorL2 = globalL2Error(mesh, u, uh);
 		double errorGradL2 = globalL2GradError(mesh, u, uh);
 		double hInner = mesh.maxIncircleDiameter();
 		double hOuter = mesh.maxCircumcircleDiameter();
-		
-		if (gParams.errorBenchmark)
-		{
-			gParams.vertexCount[iMsh] = mesh.countVertices();
-			gParams.triangleCount[iMsh] = mesh.countTriangles();
-			gParams.hInner[iMsh] = hInner;
-			gParams.hOuter[iMsh] = hOuter;
-			gParams.errors[iMsh] = error;
-			gParams.errorsL2[iMsh] = errorL2;
-			gParams.errorsGradientL2[iMsh] = errorGradL2;
-		}
 		
 		cout << "Error: " << error << endl;
 		
@@ -361,6 +381,16 @@ int main(int argc, char* argv[])
 
 		if (gParams.errorBenchmark)
 		{
+			gParams.vertexCount[iMsh] = mesh.countVertices();
+			gParams.triangleCount[iMsh] = mesh.countTriangles();
+			gParams.hInner[iMsh] = hInner;
+			gParams.hOuter[iMsh] = hOuter;
+			gParams.errors[iMsh] = error;
+			gParams.errorsL2[iMsh] = errorL2;
+			gParams.errorsGradientL2[iMsh] = errorGradL2;
+			gParams.solveTime[iMsh] = ((double)tSolve)/CLOCKS_PER_SEC;
+			gParams.solveAssTime[iMsh] = ((double)tCombinedAssSolve)/CLOCKS_PER_SEC;
+
 			cout << "### calculated errors " << iMsh + 1 << " / " << gParams.errorCount << endl << endl;
 		}
 		else
@@ -381,25 +411,21 @@ int main(int argc, char* argv[])
 			PlotMesh plotUh("helmholtz_uh", mesh, uh, "Solution FEM");
 			plotUh.generate(ePT_MEDIT);
 			plotUh.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
+			if (gParams.save) { plotUh.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
 			
 			// exact solution
 			
 			PlotMesh plotU("helmholtz_u", mesh, u, "Solution Exacte");
 			plotU.generate(ePT_MEDIT);
 			plotU.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
+			if (gParams.save) { plotU.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
 			
 			// error
 			
 			PlotMesh plotErr("helmholtz_err", mesh, err, "Erreur");
 			plotErr.generate(ePT_MEDIT);
 			plotErr.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
-			
-			// ---
-			
-			// display computation time
-
-			clock_t tCombinedAssembly = tMatA + tMatM + tMatB + tRhsF + tRhsG;
-			clock_t tCombined = tLoadMesh + tSolve + tCombinedAssembly;
+			if (gParams.save) { plotErr.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
 			
 			// ---
 			
@@ -455,6 +481,7 @@ int main(int argc, char* argv[])
 		
 			Plot p("helmholtz_hInnerErrors", x, y, "errors over inscribed circle", "", " w linespoints");
 			p.generate(ePT_GNUPLOT, true);
+			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 		
 		{
@@ -469,6 +496,7 @@ int main(int argc, char* argv[])
 		
 			Plot p("helmholtz_hInnerErrorsL2", x, y, "L2 errors over inscribed circle", "", " w linespoints");
 			p.generate(ePT_GNUPLOT, true);
+			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 		
 		{
@@ -483,6 +511,37 @@ int main(int argc, char* argv[])
 		
 			Plot p("helmholtz_hInnerErrorsGradientL2", x, y, "L2 grad errors over inscribed circle", "", " w linespoints");
 			p.generate(ePT_GNUPLOT, true);
+			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+		
+		{
+			Vector x(gParams.errorCount);
+			Vector y(gParams.errorCount);
+			
+			for (uint i = 0; i < gParams.errorCount; i++)
+			{
+				x(i) = gParams.hInner[i];
+				y(i) = gParams.solveTime[i];
+			}
+		
+			Plot p("helmholtz_hInnerSolve", x, y, "solve time over inscribed circle", "", " w linespoints");
+			p.generate(ePT_GNUPLOT, true);
+			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+		
+		{
+			Vector x(gParams.errorCount);
+			Vector y(gParams.errorCount);
+			
+			for (uint i = 0; i < gParams.errorCount; i++)
+			{
+				x(i) = gParams.hInner[i];
+				y(i) = gParams.solveAssTime[i];
+			}
+		
+			Plot p("helmholtz_hInnerSolveAss", x, y, "solve + assembly time over inscribed circle", "", " w linespoints");
+			p.generate(ePT_GNUPLOT, true);
+			if (gParams.save) {	p.generate(ePT_GNUPLOT, true, true); }
 		}
 	}
 	
@@ -497,6 +556,8 @@ int main(int argc, char* argv[])
 	SAFE_ARRDELETE(gParams.errors);
 	SAFE_ARRDELETE(gParams.errorsL2);
 	SAFE_ARRDELETE(gParams.errorsGradientL2);
+	SAFE_ARRDELETE(gParams.solveTime);
+	SAFE_ARRDELETE(gParams.solveAssTime);
 	
 	return 0;
 }

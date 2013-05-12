@@ -3,4 +3,5 @@
 #          Stjepan Stamenkovic (stjepan@stjepan.net)
 # Template used when noone was specified
 bind Close "exit gnuplot"
+set hidden3d
 set nokey
