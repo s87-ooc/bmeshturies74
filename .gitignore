@@ -5,6 +5,8 @@ data/plots/*.p
 data/plots/*.pdat
 data/plots/*.bb
 data/plots/*.mesh
+data/plots/*.png
+data/plots/*.avi
 *.dat
 data/linsys/*.log
 data/linsys/*.linsys
@@ -12,3 +14,5 @@ data/_ffpp/*.txt
 data/_ffpp/*.msh
 data/_ffpp/*.log
 docs/html/
+data/mesh/carre_ffpp_*
+data/mesh/cercle_ffpp_*

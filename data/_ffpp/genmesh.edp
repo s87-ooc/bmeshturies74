@@ -1,0 +1,64 @@
+/*************************************************************
+
+ Projet
+
+ (C) 2013 Charles Podkanski (charles@podkanski.com),
+          Stjepan Stamenkovic (stjepan@stjepan.net)
+
+ ---
+
+     Fichier: genmesh.edp
+
+ Description: génére quelques maillages du carré et du disque
+
+**************************************************************/
+
+mesh Th;
+
+// ---
+
+// defining the boundary
+border bLeft(t=0, 1) { x=0; y=1-t; label=1;}
+border bBottom(t=0, 1) { x=t; y=0; label=1;}
+border bRight(t=0, 1) { x=1; y=t; label=1;}
+border bTop(t=0, 1) { x=1-t; y=1; label=1;}
+
+// generate squares
+
+int gridSquare = 15;
+int stepSquare = 5;
+int countSquare = 8;
+
+for (int i = 0; i < countSquare; i++)
+{
+	string fn = "../mesh/carre_ffpp_" + i + ".msh";
+	int grid = gridSquare + i * stepSquare;
+	
+	Th = buildmesh(bLeft(grid) + bBottom(grid) + bRight(grid) + bTop(grid));
+	savemesh(Th, fn);
+	
+	cout << " -- Generated " << fn << endl;
+}
+
+// ----------------------------------------------------------------------------
+
+// defining the boundary
+
+border C(t=0, 2*pi) {x=cos(t); y=sin(t);}
+
+// generate circles
+
+int gridCircle = 50;
+int stepCircle = 10;
+int countCircle = 8;
+
+for (int i = 0; i < countCircle; i++)
+{
+	string fn = "../mesh/cercle_ffpp_" + i + ".msh";
+	int grid = gridCircle + i * stepCircle;
+	
+	Th = buildmesh(C(grid));
+	savemesh(Th, fn);
+	
+	cout << " -- Generated " << fn << endl;
+}
