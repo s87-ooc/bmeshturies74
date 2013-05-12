@@ -1041,16 +1041,16 @@ void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& 
 	
 	// calculate value for new u
 	
-	DUMP((uMatU * u).norm2());
-	DUMP((vMatU * v).norm2());
+	//DUMP((uMatU * u).norm2());
+	//DUMP((vMatU * v).norm2());
 	
 	rhsU = uMatU * u + vMatU * v;
 	uNew = conjGradient(rhsU);
 	
 	// calculate values for new v
 	
-	DUMP((uMatV * (u + uNew)).norm2());
-	DUMP(((*this) * v).norm2());
+	//DUMP((uMatV * (u + uNew)).norm2());
+	//DUMP(((*this) * v).norm2());
 	
 	rhsV = uMatV * (u + uNew) + (*this) * v;
 	vNew = conjGradient(rhsV);

@@ -226,7 +226,7 @@ mDataType(ePD_FUNCTION)
 	}
 }
 
-void PlotMesh::generate(EPlotType type, bool run, uint grid)
+void PlotMesh::generate(EPlotType type, bool run, bool savePNG, uint grid)
 {
 	assert(mMeshPtr);
 	
@@ -296,6 +296,12 @@ void PlotMesh::generate(EPlotType type, bool run, uint grid)
 			ifstream fin(mTemplate.c_str());
 			fout << fin.rdbuf() << endl;
 
+			if (savePNG)
+			{
+				fout << "set term pngcairo" << endl;
+				fout << "set output " << fileName << ".png" << endl;
+			}
+			
 			if (!mTitle.empty())
 			{
 				fout << "set title \"" << mTitle << "\"" << endl;
@@ -311,7 +317,11 @@ void PlotMesh::generate(EPlotType type, bool run, uint grid)
 			fout << endl;
 		}
 		
-		if (run)
+		if (savePNG)
+		{
+			string cmd = "gnuplot " + fileName + ".p";
+		}
+		else if (run)
 		{
 			string cmd = "gnuplot -persist " + fileName + ".p";
 			system(cmd.c_str());

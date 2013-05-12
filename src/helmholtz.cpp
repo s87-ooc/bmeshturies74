@@ -387,7 +387,7 @@ int main(int argc, char* argv[])
 	PlotMesh plotUh("helmholtz_uh", mesh, uh, "Solution FEM");
 	plotUh.generate(ePT_GNUPLOT, true);
 	plotUh.generate(ePT_MEDIT);
-	plotUh.generate(ePT_GNUPLOT_SURF, true, 20);
+	plotUh.generate(ePT_GNUPLOT_SURF, true, false, 20);
 	
 	// exact solution
 	

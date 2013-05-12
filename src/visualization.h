@@ -134,7 +134,7 @@ public:
 	PlotMesh(const char* name, Mesh& msh, double (&func)(const Vertex&), const char* title = 0, const char* templ = 0, const char* args = 0);
 	
 	/** generate the plot out of the mesh and data in one of the various formats, specify the grid density for surface plots */
-	void generate(EPlotType type = ePT_GNUPLOT, bool run = false, uint grid = 10);
+	void generate(EPlotType type = ePT_GNUPLOT, bool run = false, bool savePNG = false, uint grid = 10);
 };
 
 #endif // __VISUALIZATION_H__

@@ -317,9 +317,6 @@ int main(int argc, char* argv[])
 	xLast.constructFunc(mesh, wave::u0);
 	yLast.constructFunc(mesh, wave::u1);
 	
-	PlotMesh plot0("x", mesh, xLast, "Initial x");
-	plot0.generate(ePT_GNUPLOT, true);
-	
 	for (uint i = 0; i < nSteps; i++)
 	{
 		cout << "Solving t = " << (i+1) * gParams.dt << "s" << endl;
@@ -328,8 +325,8 @@ int main(int argc, char* argv[])
 
 		M.newmark(x, y, xLast, yLast, uMatU, vMatU, uMatV);
 		
-		DUMP(x.norm2());
-		DUMP(y.norm2());
+		//DUMP(x.norm2());
+		//DUMP(y.norm2());
 		
 		xLast = x;
 		yLast = y;
@@ -338,8 +335,13 @@ int main(int argc, char* argv[])
 		
 		//tSteps[i] = ((double)tSolve) / CLOCKS_PER_SEC;
 		
-		PlotMesh plotD("x", mesh, x);
-		plotD.generate(ePT_GNUPLOT, true);
+		stringstream buf;
+		buf << "helmholtz_" << (i+1) * gParams.dt;
+		string plotFile;
+		buf << plotFile;
+		
+		PlotMesh plotD(plotFile.c_str(), mesh, x);
+		plotD.generate(ePT_GNUPLOT, false, true);
 	}
 	
 	// ----------
