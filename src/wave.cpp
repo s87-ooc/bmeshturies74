@@ -312,6 +312,18 @@ int main(int argc, char* argv[])
 	Vector xLast(dim);
 	Vector y(dim);
 	Vector yLast(dim);
+	Vector originPos(nSteps);
+
+	// find origin ID
+	int oID = 0;
+	for (uint i = 0; i < mesh.Nv; i++)
+	{
+		if( mesh.V[i].x == 0 && mesh.V[i].y == 0)
+		{
+			oID = mesh.V[i].id;
+			break;
+		}
+	}
 	
 	// initial values
 	xLast.constructFunc(mesh, wave::u0);
