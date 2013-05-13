@@ -164,6 +164,9 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			}
 			
 			system(cmd.c_str());
+			
+			// gnuplot doesn't generate a new line
+			cout << endl;
 		}
 	}
 	else
@@ -332,6 +335,9 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 			}
 
 			system(cmd.c_str());
+			
+			// gnuplot doesn't generate a new line
+			cout << endl;
 		}
 	}
 	else if (type == ePT_MEDIT)

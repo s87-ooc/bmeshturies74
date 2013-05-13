@@ -76,7 +76,7 @@ test: bin/unittest
 
 # documentation
 
-docs: docs/_doxygen/projet.doxygen
+documentation:
 	doxygen docs/_doxygen/projet.doxygen
 
 # -----------------------------------------------------------------------------
