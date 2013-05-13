@@ -446,7 +446,7 @@ int main(int argc, char* argv[])
 
 			// exact solution
 
-			PlotMesh plotU("helmholtz_u", mesh, u, "Solution Exacte");
+			PlotMesh plotU("p1t2_u", mesh, u, "Solution Exacte");
 			plotU.generate(ePT_MEDIT);
 			plotU.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
 			if (gParams.save) { plotU.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
@@ -454,18 +454,19 @@ int main(int argc, char* argv[])
 		
 		if(!gParams.test && !gParams.lumping)
 		{
-			//TODO: why doesn't the plot work with mass lumping?
+			ostringstream buf;
+			buf	<< iMsh + 1;
 			
 			// our solution
 
-			PlotMesh plotUh("helmholtz_uh", mesh, uh, "Solution FEM");
+			PlotMesh plotUh(("p1t2_uh_" + buf.str()).c_str(), mesh, uh, "Solution FEM");
 			plotUh.generate(ePT_MEDIT);
 			plotUh.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
 			if (gParams.save) { plotUh.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
 			
 			// error
 			
-			PlotMesh plotErr("helmholtz_err", mesh, err, "Erreur");
+			PlotMesh plotErr(("p1t2_err_" + buf.str()).c_str(), mesh, err, "Erreur");
 			plotErr.generate(ePT_MEDIT);
 			plotErr.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
 			if (gParams.save) { plotErr.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
@@ -590,36 +591,6 @@ int main(int argc, char* argv[])
 			p.generate(ePT_GNUPLOT, true);
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
-		
-		/*{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.solveTime[0][i];
-			}
-		
-			Plot p("helmholtz_hInnerSolve", x, y, "solve time over inscribed circle", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-		
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.solveAssTime[0][i];
-			}
-		
-			Plot p("helmholtz_hInnerSolveAss", x, y, "solve + assembly time over inscribed circle", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) {	p.generate(ePT_GNUPLOT, true, true); }
-		}*/
 	}
 		
 	// ---

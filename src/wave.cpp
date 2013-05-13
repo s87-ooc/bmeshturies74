@@ -250,9 +250,9 @@ int main(int argc, char* argv[])
 	
 	gParams.hInner = new double[gParams.meshCount];
 	gParams.hOuter = new double[gParams.meshCount];
+	gParams.dth = new double[gParams.dtCount];
 	gParams.times[0] = new double[gParams.meshCount];
 	gParams.times[1] = new double[gParams.meshCount];
-	gParams.dth = new double[gParams.dtCount];
 	gParams.uNorms[0] = new Vector[gParams.meshCount];
 	gParams.uNorms[1] = new Vector[gParams.meshCount];
 	gParams.vNorms[0] = new Vector[gParams.meshCount];
@@ -262,6 +262,7 @@ int main(int argc, char* argv[])
 	// ------------------------------------------------------------------------
 	// ------------------------------------------------------------------------
 
+	// fill the dt/h values, will be x-axis on CFL condition plots
 	if (gParams.dtCount > 1)
 	{
 		for (int i = 0; i < gParams.dtCount; i++)
@@ -272,7 +273,7 @@ int main(int argc, char* argv[])
 	
 	for (int iMsh = 0; iMsh < gParams.meshCount; iMsh++)
 	{
-		// selection of the mesh happens automated if in test mode
+		// select the ffpp meshes if in test mode
 		if (gParams.test)
 		{
 			stringstream buf;
@@ -315,6 +316,7 @@ int main(int argc, char* argv[])
 		gParams.hInner[iMsh] = mesh.maxIncircleDiameter();
 		gParams.hOuter[iMsh] = mesh.maxCircumcircleDiameter();
 
+		// idx selects the [2] arrays to keep track of lumping values as well
 		int idx = gParams.lumping ? 1 : 0;
 		
 		int dtCount;
@@ -326,6 +328,7 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
+			// in other modes we're iterating over all dts
 			gParams.uNorms[idx][iMsh] = Vector(gParams.dtCount);
 			gParams.vNorms[idx][iMsh] = Vector(gParams.dtCount);
 			dtCount = gParams.dtCount;
@@ -388,7 +391,7 @@ int main(int argc, char* argv[])
 			originPos(0) = mesh.eval(0.0, 0.0, uLast);
 			timeVals(0) = 0;
 			
-			cout << "Solving " << gParams.fileMesh << " with dt: " << gParams.dt << " T:" << "[0," << gParams.T << "]";
+			cout << "Solving " << gParams.fileMesh << " with dt: " << gParams.dt << " T:" << " [0," << gParams.T << "]";
 			if (gParams.lumping)
 			{
 				cout << " with mass lumping" << endl;
@@ -486,11 +489,11 @@ int main(int argc, char* argv[])
 				
 				if (gParams.meshCount == 1)
 				{
-					PlotMesh plotU0("wave_u0", mesh, wave::u0, "Initial distribution");
+					PlotMesh plotU0("p2t1_u0", mesh, wave::u0, "Initial distribution");
 					plotU0.generate(ePT_GNUPLOT, true);
 					if (gParams.save) { plotU0.generate(ePT_GNUPLOT, true, true); }
 					
-					PlotMesh plotU1("wave_u1", mesh, wave::u1, "Initial velocity");
+					PlotMesh plotU1("p2t1_u1", mesh, wave::u1, "Initial velocity");
 					plotU1.generate(ePT_GNUPLOT, true);
 					if (gParams.save) { plotU1.generate(ePT_GNUPLOT, true, true); }
 				}
@@ -499,16 +502,20 @@ int main(int argc, char* argv[])
 				
 				// TODO: combined plots
 				
-				PlotMesh plotU("p2t1_u", mesh, u, "u(T, x)");
+				ostringstream buf;
+				buf << iMsh + 1;
+				
+				PlotMesh plotU(("p2t1_u_" + buf.str()).c_str(), mesh, u, "u(T, x)");
 				plotU.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
 				if (gParams.save) { plotU.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
 				
-				PlotMesh plotV("p2t1_v", mesh, v, "v(T, x)");
+				PlotMesh plotV(("p2t1_v_" + buf.str()).c_str(), mesh, v, "v(T, x)");
 				plotV.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
 				if (gParams.save) { plotV.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
 				
-				// Plot solving times
-				/*{
+				// Plot solving times if we're investigating a mesh in more detail
+				if (gParams.meshCount == 1)
+				{
 					Vector x(nSteps);
 					Vector y(nSteps);
 					
@@ -518,13 +525,13 @@ int main(int argc, char* argv[])
 						y(i) = ((double)tSteps[i]) / CLOCKS_PER_SEC;
 					}
 				
-					Plot p("wave_times", x, y, "solve time per step", "", " w linespoints");
+					Plot p("p2t1_times", x, y, "solve time per step", "", " w linespoints");
 					p.generate(ePT_GNUPLOT, true);
 					if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-				}*/
+				}
 				
 				// Plot position of origin over time
-				Plot plotOrigin("p2t3_origin", timeVals, originPos, "Position of origin over time", "", " w linespoints");
+				Plot plotOrigin(("p2t3_origin_" + buf.str()).c_str(), timeVals, originPos, "Position of origin over time", "", " w linespoints");
 				plotOrigin.generate(ePT_GNUPLOT, true);
 				if (gParams.save) { plotOrigin.generate(ePT_GNUPLOT, true, true); }
 				
@@ -547,7 +554,12 @@ int main(int argc, char* argv[])
 			if (gParams.mode == eWM_CFL)
 			{
 				cout << "CFL test: dt " << iDt + 1 << "/" << gParams.dtCount << " mesh "
-					<< iMsh + 1 << "/" << gParams.meshCount << endl;
+					<< iMsh + 1 << "/" << gParams.meshCount;
+				if (gParams.lumping)
+				{
+					cout << " with mass lumping";
+				}
+				cout << endl;
 			}
 		}
 			
@@ -567,11 +579,14 @@ int main(int argc, char* argv[])
 				{
 					gParams.mode = eWM_CFL;
 					gParams.lumping = false;
-					cout << endl << endl << "=== Caclulate CFL ===" << endl << endl;
+					cout << endl << endl << "=== CFL Test ===" << endl << endl;
 					iMsh = -1;
 				}
 			}
 		}
+		
+		// reset the dt value, will be determined automatically on next step
+		gParams.dt = -1.;
 	}
 	
 	// ------------------------------------------------------------------------
