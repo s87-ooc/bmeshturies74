@@ -223,10 +223,10 @@ int main(int argc, char* argv[])
 	
 	// iterate through meshes we have to
 	
-	for (uint iMsh = 0; iMsh < gParams.meshCount; iMsh++)
+	for (int iMsh = 0; iMsh < gParams.meshCount; iMsh++)
 	{
 	
-		// selection of the mesh happens automated if in benchmark mode
+		// selection of the mesh happens automated if in test mode
 		if (gParams.test)
 		{
 			stringstream buf;
@@ -337,7 +337,7 @@ int main(int argc, char* argv[])
 		Sparse AMB(Amap);
 
 		// convert back to sparselil for use with lu
-		SparseLIL AMBlil(AMB,1);
+		//SparseLIL AMBlil(AMB,1);
 
 
 		Vector rhs = rhsF + rhsG;
@@ -348,9 +348,9 @@ int main(int argc, char* argv[])
 		
 		RESETCLOCK();
 
-		//Vector uh = AMB.conjGradient(rhs);
+		Vector uh = AMB.conjGradient(rhs);
 		//Vector uh = AMB.jacobi(rhs);
-		Vector uh = AMBlil.LU(rhs);
+		//Vector uh = AMBlil.LU(rhs);
 		
 		CLOCK(tSolve);
 		
@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
 		{
 			// reset the iteration and calculate values with mass lumping
 			cout << endl << "### Calculate values with mass lumping" << endl << endl;
-			iMsh = 0;
+			iMsh = -1;
 			gParams.lumping = true;
 		}
 		
@@ -541,7 +541,24 @@ int main(int argc, char* argv[])
 		}
 		
 		// TODO
-		/*{
+		{
+			Vector x(gParams.meshCount);
+			Vector y(gParams.meshCount);
+			Vector ylump(gParams.meshCount);
+			
+			for (uint i = 0; i < gParams.meshCount; i++)
+			{
+				x(i) = gParams.hInner[i];
+				y(i) = gParams.errorsL2[0][i];
+			}
+		
+			Plot p("p2t4_precision", x, y, "Mass Lumping: Precision", "", " w linespoints");
+			p.generate(ePT_GNUPLOT, true);
+			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+		
+		// TODO
+		{
 			Vector x(gParams.meshCount);
 			Vector y(gParams.meshCount);
 			Vector ylump(gParams.meshCount);
@@ -552,13 +569,13 @@ int main(int argc, char* argv[])
 				y(i) = gParams.errorsGradientL2[0][i];
 			}
 		
-			Plot p("p2t4_time1", x, y, "Mass Lumping: Precision", "", " w linespoints");
+			Plot p("p2t4_precisionGrad", x, y, "Mass Lumping: Precision Gradient", "", " w linespoints");
 			p.generate(ePT_GNUPLOT, true);
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}*/
+		}
 
 		// TODO
-		/*{
+		{
 			Vector x(gParams.meshCount);
 			Vector y(gParams.meshCount);
 			Vector ylump(gParams.meshCount);
@@ -566,13 +583,13 @@ int main(int argc, char* argv[])
 			for (uint i = 0; i < gParams.meshCount; i++)
 			{
 				x(i) = gParams.hInner[i];
-				y(i) = gParams.errorsGradientL2[0][i];
+				y(i) = gParams.solveTime[0][i];
 			}
 		
 			Plot p("p2t4_time1", x, y, "Mass Lumping: Time", "", " w linespoints");
 			p.generate(ePT_GNUPLOT, true);
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}*/
+		}
 		
 		/*{
 			Vector x(gParams.meshCount);
