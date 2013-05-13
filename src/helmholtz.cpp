@@ -336,8 +336,7 @@ int main(int argc, char* argv[])
 		// convert the matrix to Sparse so we can apply a solver
 		Sparse AMB(Amap);
 
-		// convert back to sparselil for use with lu
-		//SparseLIL AMBlil(AMB,1);
+		
 
 
 		Vector rhs = rhsF + rhsG;
@@ -350,6 +349,9 @@ int main(int argc, char* argv[])
 
 		Vector uh = AMB.conjGradient(rhs);
 		//Vector uh = AMB.jacobi(rhs);
+
+		// convert back to sparselil for use with lu
+		//SparseLIL AMBlil(AMB,1);
 		//Vector uh = AMBlil.LU(rhs);
 		
 		CLOCK(tSolve);
