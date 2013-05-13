@@ -509,10 +509,12 @@ int main(int argc, char* argv[])
 				{
 					PlotMesh plotU0("p2t1_u0", mesh, wave::u0, "Initial distribution");
 					plotU0.generate(ePT_GNUPLOT, true);
+					plotU0.generate(ePT_MEDIT);
 					if (gParams.save) { plotU0.generate(ePT_GNUPLOT, true, true); }
 					
 					PlotMesh plotU1("p2t1_u1", mesh, wave::u1, "Initial velocity");
 					plotU1.generate(ePT_GNUPLOT, true);
+					plotU1.generate(ePT_MEDIT);
 					if (gParams.save) { plotU1.generate(ePT_GNUPLOT, true, true); }
 				}
 				
@@ -524,10 +526,12 @@ int main(int argc, char* argv[])
 				buf << iMsh + 1;
 				
 				PlotMesh plotU(("p2t1_u_" + buf.str()).c_str(), mesh, u, "u(T, x)");
+				plotU.generate(ePT_MEDIT);
 				plotU.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
 				if (gParams.save) { plotU.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
 				
 				PlotMesh plotV(("p2t1_v_" + buf.str()).c_str(), mesh, v, "v(T, x)");
+				plotV.generate(ePT_MEDIT);
 				plotV.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
 				if (gParams.save) { plotV.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
 				
