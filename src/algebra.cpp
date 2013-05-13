@@ -640,20 +640,24 @@ SparseLIL::SparseLIL(Sparse& S, int option):
 		}
 	}
 
+	// LU decomposition
 	for(uint i = 0; i < sizeRows(); i++)
 	{
+		//cout << "LU row: " << (i+1) << " / " << sizeRows() << endl;
 		for(uint j = max(1, S.firstColumn(i)); j <= i; j++)
 		{
 			(*this)(i,j-1) /= (*this)(j-1, j-1);
-			(*this)(i,j) -= dotijk( i, j, j);
+			//mRowVals[i][j-S.firstColumn(i)] /= (*this)(j-1, j-1);
+
+			mRowVals[i][j-S.firstColumn(i)+1] -= dotijk( i, j, j);
 		}
 		for(uint j = i+1; j < S.firstColumn(i) + nel[i]; j++)
 		{
-			(*this)(i,j) -= dotijk( i, j, i);
+			mRowVals[i][j-S.firstColumn(i)+1] -= dotijk( i, j, i);
 		}
 	}
 
-	cout << "Done" << endl;
+	cout << "LU decomposition complete" << endl;
 
 }
 
@@ -664,7 +668,7 @@ Vector SparseLIL::LU(Vector const& b)
 	Vector y(n);
 
 	SparseLIL& A = (*this);
-	// do this outside of the loop as we want to go over uint, -1 not uint
+	
 	y(0) = b((uint)0);
 	
 	for (uint k = 1; k < n; k++)
@@ -822,7 +826,7 @@ double& SparseLIL::operator() (uint row, uint col)
 			break;
 		}
 	}
-	
+
 	// create a new entry
 	TVals::iterator itNew = mRowVals[row].insert(it, 0.0);
 	mColInd[row].insert(itInd, col);
