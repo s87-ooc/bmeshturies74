@@ -41,6 +41,21 @@ Plot::~Plot()
 {
 }
 
+void Plot::setAxisLabel(EPlotAxis axis, const char* label)
+{
+	if (label)
+	{
+		if (axis == ePA_X)
+		{
+			mLabelX = label;
+		}
+		else
+		{
+			mLabelY = label;
+		}
+	}
+}
+
 Plot::Plot(const char* name, Vector& x, Vector& y, const char* title, const char* templ, const char* args) :
 mName(name),
 mXPtr(&x),
@@ -137,6 +152,16 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			if (!mTitle.empty())
 			{
 				fout << "set title \"" << mTitle << "\"" << endl;
+			}
+			
+			if (!mLabelX.empty())
+			{
+				fout << "set xlabel \"" << mLabelX << "\"" << endl;
+			}
+			
+			if (!mLabelY.empty())
+			{
+				fout << "set ylabel \"" << mLabelY << "\"" << endl;
 			}
 			
 			fout << "plot '" << fileName << ".pdat'";

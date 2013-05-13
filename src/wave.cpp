@@ -35,8 +35,7 @@ using namespace std;
 enum EWaveMode
 {
 	eWM_TIME = 0,	/** default mode, time is measured and dt picked optimally */
-	eWM_CFL,		/** we're varying dt to see stability */
-	eWM_STABILITY	/** we're checking the stability for different dt for mass lumping and without */
+	eWM_CFL			/** we're varying dt to see stability */
 };
 
 // ----------------------------------------------------------------------------
@@ -46,21 +45,21 @@ struct SWaveParams
 	EWaveMode mode;		/** mode for the main loop */
 	double T;			/** maximal time */
 	double dt;			/** time step */
-	string fileMesh;
+	string fileMesh;	/** file of the current mesh */
 	bool lumping;		/** enable mass lumping */
 	bool render;		/** render a video of the time development */
 	double framerate;	/** framerate of the video */
-	uint meshCount;
+	uint meshCount;		/** number of meshes that should be tested automatically */
 	uint dtCount;		/** how many dt values should be tested for CFL/Stability */
 	bool save;			/** whether to save the plot */
-	bool test;			/** performs tests on convergency and computation time */
+	bool test;			/** select other set of files that were generated with freefem */
 	// values below are used in test mode, [0] = normal [1] = mass lumping:
 	double* hInner;			/** max inscribed diameter of the triangles */
 	double* hOuter;			/** max circumscribed diameter of the triangles */
 	double* dth;			/** dt/h for stability testing */
-	double* times[2];		/** total computation time */
-	Vector* uNorms[2];		/** norm of u after the final timestep */
-	Vector* vNorms[2];		/** norm of v after the final timestep */
+	double* times[2];		/** total computation time, [0] = normal [1] = mass lumping */
+	Vector* uNorms[2];		/** norm of u after the final timestep, [0] = normal [1] = mass lumping */
+	Vector* vNorms[2];		/** norm of v after the final timestep, [0] = normal [1] = mass lumping */
 };
 
 /** global parameters */
@@ -71,7 +70,7 @@ SWaveParams gParams;
 // we're keeping the problem specific functions in a namespace to avoid any ambiguity
 namespace wave
 {	
-	// NOTE: f and g are constant 0 what simplifies the problem
+	// NOTE: f and g are constantly 0 what simplifies the problem
 
 	/** initial value of u */
 	double u0(const Vertex& v)
@@ -160,12 +159,12 @@ int main(int argc, char* argv[])
 
 	gParams.mode = eWM_TIME;
 	gParams.T = 2.25;
-	gParams.dt = -1;
+	gParams.dt = -1.;
 	gParams.fileMesh = "data/mesh/cercle1.msh";
 	gParams.lumping = false;
 	gParams.render = false;
 	gParams.framerate = 25.;
-	gParams.meshCount = 2;
+	gParams.meshCount = 2;	// by default we'll treat data/mesh/cercle1.msh and data/mesh/cercle2.msh
 	gParams.dtCount = 8;
 	gParams.save = false;
 	gParams.test = false;
@@ -176,11 +175,12 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/wave [-lump] [-r fps] [-save] [-test] -T " << gParams.T << " -dt 0.2 " << gParams.fileMesh << endl;
+			cout << "Usage: bin/wave [-lump] [-r fps] [-save] [-test] -T " << gParams.T << " -dt 0.001 "
+			<< gParams.fileMesh << endl;
 			cout << "       -lump = use mass lumping for the assembly of M" << endl;
 			cout << "       -r fps = render a video of the time development (fps=25 if empty)" << endl;
 			cout << "       -save = generate PNGs of the plots" << endl;
-			cout << "       -test = perform tests on calculation time and convergency" << endl;
+			cout << "       -test = perform tests on another set of meshes" << endl;
 			return 0;
 		}
 		else if (strcmp(argv[iArg], "-lump") == 0)
@@ -236,6 +236,7 @@ int main(int argc, char* argv[])
 				stringstream buf;
 				buf << argv[iArg];
 				buf >> gParams.dt;
+				cout << "Set dt manually to " << gParams.dt << endl;
 			}
 		}
 		else
@@ -263,19 +264,20 @@ int main(int argc, char* argv[])
 	// ------------------------------------------------------------------------
 
 	// fill the dt/h values, will be x-axis on CFL condition plots
-	if (gParams.dtCount > 1)
+	for (int i = 0; i < gParams.dtCount; i++)
 	{
-		for (int i = 0; i < gParams.dtCount; i++)
-		{
-			gParams.dth[i] = 0.5 + i * 4. / gParams.dtCount;
-		}
+		gParams.dth[i] = 0.4 + 0.1 * i;
 	}
+
+	// iterate over the list of meshes
 	
 	for (int iMsh = 0; iMsh < gParams.meshCount; iMsh++)
 	{
-		// select the ffpp meshes if in test mode
+		// select the the default meshes or ffpp generated ones
+	
 		if (gParams.test)
 		{
+			// FFPP
 			stringstream buf;
 			buf << "data/mesh/cercle_ffpp_";
 			buf << iMsh;
@@ -313,37 +315,41 @@ int main(int argc, char* argv[])
 		
 		CLOCK(tLoadMesh);
 
+		// calculate min/max diameters of the mesh triangles
+		
 		gParams.hInner[iMsh] = mesh.maxIncircleDiameter();
 		gParams.hOuter[iMsh] = mesh.maxCircumcircleDiameter();
 
 		// idx selects the [2] arrays to keep track of lumping values as well
 		int idx = gParams.lumping ? 1 : 0;
 		
+		// we'll be starting in TIME mode, only one dt value is picked here
 		int dtCount;
 		
-		// for the first iteration we're in time mode, only calculate once
 		if (gParams.mode == eWM_TIME)
 		{
 			dtCount = 1;
 		}
 		else
 		{
-			// in other modes we're iterating over all dts
+			// prepare the vectors holding the norms for u and v
 			gParams.uNorms[idx][iMsh] = Vector(gParams.dtCount);
 			gParams.vNorms[idx][iMsh] = Vector(gParams.dtCount);
 			dtCount = gParams.dtCount;
 		}
 
-		// iterate over dt when in cfl or stability mode
+		// iterate over dt when in CFL mode, else only one run
+		
 		for (uint iDt = 0; iDt < dtCount; iDt++)
 		{
 			// Prepare time steps
 			
-			if (gParams.mode != eWM_TIME)
+			if (gParams.mode == eWM_CFL)
 			{
+				// we're picking a fixed dth in CFT mode
 				gParams.dt = gParams.dth[iDt] * gParams.hInner[iMsh];
 			}
-			else if (gParams.dt <= 0.) 
+			else if (gParams.dt <= 0.)
 			{
 				gParams.dt = gParams.hInner[iMsh] / 3.;
 			}
@@ -446,6 +452,16 @@ int main(int argc, char* argv[])
 			for (uint i = 0; i < nSteps; i++)
 			{
 				tSolve += tSteps[i];
+				
+				// in CFL test mode we may have divergency
+				if (gParams.mode == eWM_CFL)
+				{
+					if (dot(u,u) > 10e10)
+					{
+						cout << "Divergency, abort" << endl;
+						break;
+					}
+				}
 			}
 			
 			double uNorm = u.norm2();
@@ -553,8 +569,8 @@ int main(int argc, char* argv[])
 			
 			if (gParams.mode == eWM_CFL)
 			{
-				cout << "CFL test: dt " << iDt + 1 << "/" << gParams.dtCount << " mesh "
-					<< iMsh + 1 << "/" << gParams.meshCount;
+				cout << "CFL test: dt " << gParams.dt << "(" << iDt + 1 << "/" << gParams.dtCount << "), mesh "
+					<< "(" << iMsh + 1 << "/" << gParams.meshCount << ")";
 				if (gParams.lumping)
 				{
 					cout << " with mass lumping";
@@ -562,8 +578,10 @@ int main(int argc, char* argv[])
 				cout << endl;
 			}
 		}
+		
+		// ----------
 			
-		if (iMsh == gParams.meshCount - 1)
+		if (gParams.meshCount > 1 && iMsh == gParams.meshCount - 1)
 		{
 			if (!gParams.lumping)
 			{
@@ -573,15 +591,12 @@ int main(int argc, char* argv[])
 				gParams.lumping = true;
 			}
 			// switch the program mode
-			else if (gParams.meshCount > 1)
+			else if (gParams.mode == eWM_TIME)
 			{
-				if (gParams.mode == eWM_TIME)
-				{
-					gParams.mode = eWM_CFL;
-					gParams.lumping = false;
-					cout << endl << endl << "=== CFL Test ===" << endl << endl;
-					iMsh = -1;
-				}
+				gParams.mode = eWM_CFL;
+				gParams.lumping = false;
+				cout << endl << endl << "=== CFL Test ===" << endl << endl;
+				iMsh = -1;
 			}
 		}
 		

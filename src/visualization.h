@@ -37,6 +37,12 @@ enum EPlotData
 
 // ----------------------------------------------------------------------------
 
+enum EPlotAxis
+{
+	ePA_X = 0,
+	ePA_Y
+};
+
 /** Plot a 2-dimensional graph or a set of points in the plane */
 class Plot
 {
@@ -53,6 +59,12 @@ private:
 	/** additional plotting arguments */
 	std::string mArgs;
 
+	/** label for the x-Axis */
+	std::string mLabelX;
+	
+	/** label for the y-Axis */
+	std::string mLabelY;
+	
 	// ---
 	
 	/** type of the data to plot over the x values */
@@ -70,6 +82,9 @@ private:
 public:
 	Plot();
 	~Plot();
+	
+	/** set the title of an axis */
+	void setAxisLabel(EPlotAxis axis, const char* label);
 	
 	/** set up plot based on a value vector */
 	Plot(const char* name, Vector& x, Vector& y, const char* title = 0, const char* templ = 0, const char* args = 0);

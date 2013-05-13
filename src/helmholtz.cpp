@@ -520,6 +520,8 @@ int main(int argc, char* argv[])
 			string pName = "p1t3_errL2";
 			pName += gParams.test ? "GEN" : "";
 			Plot p(pName.c_str(), x, y, "L2 errors over inscribed circle", "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "erreur L2");
 			p.generate(ePT_GNUPLOT, true);
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
@@ -537,6 +539,8 @@ int main(int argc, char* argv[])
 			string pName = "p1t3_errgradL2";
 			pName += gParams.test ? "GEN" : "";
 			Plot p(pName.c_str(), x, y, "L2 grad errors over inscribed circle", "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "erreur Gradient L2");
 			p.generate(ePT_GNUPLOT, true);
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
