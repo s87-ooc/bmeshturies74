@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 	gParams.render = false;
 	gParams.framerate = 25.;
 	gParams.meshCount = 2;	// by default we'll treat data/mesh/cercle1.msh and data/mesh/cercle2.msh
-	gParams.dtCount = 8;
+	gParams.dtCount = 10;
 	gParams.save = false;
 	gParams.test = false;
 	
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
 	// fill the dt/h values, will be x-axis on CFL condition plots
 	for (int i = 0; i < gParams.dtCount; i++)
 	{
-		gParams.dth[i] = 0.4 + 0.1 * i;
+		gParams.dth[i] = 1.1 - 0.1 * i;
 	}
 
 	// iterate over the list of meshes
@@ -420,6 +420,18 @@ int main(int argc, char* argv[])
 				
 				CLOCK(tSteps[i]);
 				
+				// in CFL test mode we may have divergency
+				if (gParams.mode == eWM_CFL)
+				{
+					double _unorm = u.norm2();
+					// the development after 2s should be way smaller than 10
+					if (_unorm > 12.)
+					{
+						cout << "Divergency, abort" << endl;
+						break;
+					}
+				}
+				
 				// track initial position
 				originPos(i+1) = mesh.eval(0.0, 0.0, uLast);
 				timeVals(i+1) = (i+1) * gParams.dt;
@@ -452,16 +464,6 @@ int main(int argc, char* argv[])
 			for (uint i = 0; i < nSteps; i++)
 			{
 				tSolve += tSteps[i];
-				
-				// in CFL test mode we may have divergency
-				if (gParams.mode == eWM_CFL)
-				{
-					if (dot(u,u) > 10e10)
-					{
-						cout << "Divergency, abort" << endl;
-						break;
-					}
-				}
 			}
 			
 			double uNorm = u.norm2();
