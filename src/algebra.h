@@ -168,8 +168,19 @@ public:
 	/** convert CSR to LIL */
 	SparseLIL(const Sparse& matCSR);
 
+	/** LU decomposition constructor */
+	SparseLIL(Sparse& S, int option);
+
+	/** LU solve */
+	Vector LU(Vector const& b);
+
 	/** return the product of the matrix and its transpose: M * M' */
 	SparseLIL prodTranspose() const;
+
+	/** dotIJK */
+	double dotijk(uint i, uint j, uint k) const;
+
+	/** Solve LU */
 	
 	/** get value read-only */
     double operator() (uint row, uint col) const;
@@ -233,6 +244,9 @@ public:
     uint sizeRows() const;
     uint sizeNNZ() const;
 
+    uint firstColumn(uint row) const;
+    uint lastColumn(uint row) const;
+
 	/** values can only be read  */
     double operator() (uint row, uint col) const;
 	
@@ -251,6 +265,9 @@ public:
 	/** solve Ax = b with LU, optionally return the decomposed matrix */
     Vector LU(Vector const& b, Sparse* lu = 0) const;
 	
+    /** LU decompose*/
+    void decomposeLU();
+
 	/** calculate uNew and vNew using the Newmark method using this matrix as mass matrix M
 		according to the notation from the course we have:
 		M * uNew = uMatU * u + vMatU * v + uFactor * (F(t) + G(t))

@@ -603,6 +603,135 @@ mSizeColumns(matCSR.sizeColumns())
 	}
 }
 
+#define max( a, b ) ( ((a) > (b)) ? (a) : (b) )
+
+SparseLIL::SparseLIL(Sparse& S, int option):
+	mSizeRows(S.sizeRows()),
+	mSizeColumns(S.sizeColumns())
+{
+	// allocate the necessary data structure for LU
+	mRowVals = new TVals[mSizeRows];
+	mColInd = new TInd[mSizeRows];
+
+	TInd nel(sizeRows());
+
+	uint maxLastColumnIndex = S.lastColumn(0);
+
+	for(uint i = 0; i < sizeRows(); i++)
+	{
+		if ( S.lastColumn(i) > maxLastColumnIndex )
+		{
+			maxLastColumnIndex = S.lastColumn(i);
+		}
+		nel[i] = maxLastColumnIndex - S.firstColumn(i) + 1;
+
+		mRowVals[i].resize(nel[i]);
+		mColInd[i].resize(nel[i]);
+
+		for( uint j = 0; j < nel[i]; j++)
+		{
+			mColInd[i][j] = S.firstColumn(i) + j;
+		}
+
+		// fill the matrix with values
+		for( uint k = S.mRowPtr[i]; k < S.mRowPtr[i+1]; k++)
+		{
+			mRowVals[i][ S.mColInd[k] - S.firstColumn(i)] = S.mVals[k];
+		}
+	}
+
+	for(uint i = 0; i < sizeRows(); i++)
+	{
+		for(uint j = max(1, S.firstColumn(i)); j <= i; j++)
+		{
+			(*this)(i,j-1) /= (*this)(j-1, j-1);
+			(*this)(i,j) -= dotijk( i, j, j);
+		}
+		for(uint j = i+1; j < S.firstColumn(i) + nel[i]; j++)
+		{
+			(*this)(i,j) -= dotijk( i, j, i);
+		}
+	}
+
+	cout << "Done" << endl;
+
+}
+
+Vector SparseLIL::LU(Vector const& b)
+{
+	int n = b.size();
+	Vector x(n);
+	Vector y(n);
+
+	SparseLIL& A = (*this);
+	// do this outside of the loop as we want to go over uint, -1 not uint
+	y(0) = b((uint)0);
+	
+	for (uint k = 1; k < n; k++)
+	{
+		y(k) = b(k);
+		for (uint j = 0; mColInd[k][j] < k; j++)
+		{
+			//y(k) -= A(k, j) * y(j);
+			y(k) -= mRowVals[k][j] * y( mColInd[k][j] );
+		}
+	}
+	
+	for (uint k = n-1; k > 0; k--)
+	{
+		x(k) = y(k);
+		//for (uint j = n-1; j >= k+1; j--)
+		for (uint j = 0; j < mRowVals[k].size(); j++)
+		{
+			if( mColInd[k][j] > k )
+			{
+				//x(k) -= A(k, j) * x(j);
+				x(k) -= mRowVals[k][j] * x( mColInd[k][j] );
+			} 
+		}
+		x(k) /= A(k, k);
+	}
+	
+	// do this outside of the loop since we're using uint
+	x(0) = y(0);
+	
+	//for (uint j = n-1; j >= 1; j--)
+	for (uint j = 1; j < mRowVals[0].size(); j++)
+	{
+		//x(0) -= A(0, j) * x(j);
+		x(0) -= mRowVals[0][j] * x( mColInd[0][j] );
+	}
+	//x(0) /= A(0, 0);
+	x(0) /= mRowVals[0][0];
+
+	return x;
+
+}
+
+double SparseLIL::dotijk(uint i, uint j, uint k) const
+{
+	double res = 0;
+	uint m=mColInd[i][0], n=0, l=0;
+
+	while( mColInd[i][l] < k)
+	{
+		while( n < mColInd[m].size() && mColInd[m][n] < j)
+		{
+			n++;
+		}
+		if( n < mColInd[m].size())
+		{
+			res += mRowVals[i][l] * mRowVals[m][n];
+		}
+		l++;
+		m++;
+		n=0;
+	}
+
+
+	return res;
+}
+
 SparseLIL SparseLIL::prodTranspose() const
 {
 	assert (sizeRows() == sizeColumns());
@@ -652,6 +781,11 @@ SparseLIL SparseLIL::prodTranspose() const
 	
 	return m;
 }
+
+
+
+
+
 
 double SparseLIL::operator() (uint row, uint col) const
 {
@@ -805,6 +939,18 @@ unsigned int Sparse::sizeNNZ() const
 {
     return mVals.size();
 }
+
+uint Sparse::firstColumn(uint row) const
+{
+	assert( row < sizeRows());
+	return mColInd[ mRowPtr[row] ];
+}
+uint Sparse::lastColumn(uint row) const
+{
+	assert( row < sizeRows());
+	return mColInd[ mRowPtr[row+1] - 1];
+}
+
 
 double Sparse::operator() (unsigned int row, unsigned int col) const
 {
@@ -1075,6 +1221,7 @@ Vector Sparse::LU(Vector const& b, Sparse* lu) const
 	
 	return x;
 }
+
 
 void Sparse::newmark(Vector& uNew, Vector& vNew, const Vector& u, const Vector& v, const Sparse& uMatU, const Sparse& vMatU, const Sparse& uMatV, double uFactor, double vFactor, double dt, double t, double (*f)(const Vertex&, double), double (*g)(const Vertex&, double)) const
 {
