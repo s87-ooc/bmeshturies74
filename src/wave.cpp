@@ -31,6 +31,71 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+/*
+
+GENERAL STRUCTURE:
+
+- function defs
+- main with function calls
+- function implementation
+
+---
+
+bin/wave data/mesh/cercle1.msh > plots (exact sol, position), times in console
+	> simple
+bin/wave -timetest
+	> timetest
+bin/wave -cfltest
+	> precisiontest
+
+---
+
+Always do comparison over calculation methods
+
+METHODS:	
+
+bin/wave -lumpA
+	> use lumping for A
+bin/wave -defA
+	> default construction for A
+
+---
+
+INPUT:
+- 1 file
+- 1 directory
+- data/mesh/cercle*
+
+>> Construction of filename list
+
+---
+
+OUTPUT:
+
+bin/wave -o /dir
+	> specify output directory
+bin/wave -q
+	> don't call gnuplot
+bin/wave -g
+	> generate graphics
+bin/wave -r
+	> generate plot at each step that can be combined into a video
+
+---
+
+PROBLEM SPECIFIC:
+
+bin/wave -T
+	> final time
+bin/wave -dt
+	> force time step
+bin/wave -peak x,y
+	> default position 0.1,0.1
+	
+*/
+
+// ----------------------------------------------------------------------------
+
 /** the program can loop over different meshes in different modes */
 enum EWaveMode
 {
@@ -520,8 +585,6 @@ int main(int argc, char* argv[])
 				
 				// plot last step
 				
-				// TODO: combined plots
-				
 				ostringstream buf;
 				buf << iMsh + 1;
 				
@@ -564,6 +627,7 @@ int main(int argc, char* argv[])
 				if (gParams.render)
 				{
 					PlotVideo::renderVideo("wave_gnuplot.avi", "wave_gnuplot_", gParams.framerate);
+					break;
 				}
 			}
 			
@@ -582,6 +646,11 @@ int main(int argc, char* argv[])
 					cout << " with mass lumping";
 				}
 				cout << endl;
+			}
+			
+			if (gParams.render)
+			{
+				break;
 			}
 		}
 		
@@ -608,6 +677,11 @@ int main(int argc, char* argv[])
 		
 		// reset the dt value, will be determined automatically on next step
 		gParams.dt = -1.;
+		
+		if (gParams.render)
+		{
+			break;
+		}
 	}
 	
 	// ------------------------------------------------------------------------
@@ -618,7 +692,6 @@ int main(int argc, char* argv[])
 	
 	if (gParams.meshCount > 1)
 	{
-		// TODO
 		{
 			Vector x(gParams.dtCount);
 			Vector y(gParams.dtCount);
@@ -635,7 +708,6 @@ int main(int argc, char* argv[])
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 		
-		// TODO
 		{
 			Vector x(gParams.meshCount);
 			Vector y(gParams.meshCount);
@@ -652,7 +724,6 @@ int main(int argc, char* argv[])
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 		
-		// TODO
 		{
 			Vector x(gParams.dtCount);
 			Vector y(gParams.dtCount);

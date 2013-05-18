@@ -30,6 +30,10 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+// TODO: multiplot for Plot class
+
+// ----------------------------------------------------------------------------
+
 Plot::Plot() :
 mXPtr(0),
 mYPtr(0),
@@ -189,14 +193,7 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			}
 			
 			system(cmd.c_str());
-			
-			// gnuplot doesn't generate a new line
-			cout << endl;
 		}
-	}
-	else
-	{
-		// TODO: define/implement other plot types
 	}
 }
 
@@ -437,10 +434,6 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 			string cmd = "medit " + fileName;
 			system(cmd.c_str());
 		}
-	}
-	else
-	{
-		// TODO: define/implement other plot types
 	}
 }
 

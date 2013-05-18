@@ -31,6 +31,65 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
+/*
+
+GENERAL STRUCTURE:
+
+- function defs
+- main with function calls
+- function implementation
+
+---
+
+bin/helmholtz data/mesh/carre1.msh > plots (exact sol, error), times in console
+	> simple
+bin/helmholtz -timetest
+	> timetest
+bin/helmholtz -precisiontest
+	> precisiontest
+
+---
+
+Always do comparison over calculation methods
+
+METHODS:	
+
+bin/helmholtz -lumpA
+	> use lumping for A
+bin/helmholtz -defA
+	> default construction for A
+
+---
+
+INPUT:
+- 1 file
+- 1 directory
+- data/mesh/carre*
+
+>> Construction of filename list
+
+---
+
+OUTPUT:
+
+bin/helmholtz -o /dir
+	> specify output directory
+bin/helmholtz -q
+	> don't call gnuplot
+bin/helmholtz -g
+	> generate graphics
+
+---
+
+PROBLEM SPECIFIC:
+
+bin/helmholtz -kappa
+bin/helmholtz -k 1.0,2.0
+
+*/
+
+// ----------------------------------------------------------------------------
+
 struct SHelmholtzParams
 {
 	double kappa;				/** problem parameter */
@@ -118,6 +177,7 @@ int main(int argc, char* argv[])
 	
 	// get filenames and parameters from cmdline arguments (if any)
 	
+	// TODO: put in extra function
 	for (int iArg = 1; iArg < argc; iArg++)
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
