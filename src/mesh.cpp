@@ -242,9 +242,86 @@ istream& operator>>(istream &is, Mesh &M)
     //     cout << endl;
     // }
     
-    cout << "Finished reading Mesh from file" << endl;
+//    cout << "Finished reading Mesh from file" << endl;
     
     return is;
+}
+
+Mesh::Mesh() :
+V(0),
+T(0),
+E(0),
+Nv(0),
+Nt(0),
+Ne(0)
+{
+}
+/*
+Mesh::Mesh(const Mesh& mesh)
+{
+	SAFE_ARRDELETE(V);
+	SAFE_ARRDELETE(T);
+	SAFE_ARRDELETE(E);
+
+	Nv = mesh.countVertices();
+	Nt = mesh.countTriangles();
+	Ne = mesh.countEdges();
+
+	V = new Vertex[mesh.countVertices()];
+	T = new Triangle[mesh.countTriangles()];
+	E = new BoundEdge[mesh.countEdges()];
+
+	for (uint i = 0; i < mesh.countVertices(); i++)
+	{
+		V[i] = mesh.V[i];
+	}
+
+	for (uint i = 0; i < mesh.countTriangles(); i++)
+	{
+		T[i] = mesh.T[i];
+	}
+
+	for (uint i = 0; i < mesh.countEdges(); i++)
+	{
+		E[i] = mesh.E[i];
+	}
+}
+
+Mesh& Mesh::operator=(const Mesh& mesh)
+{
+	SAFE_ARRDELETE(V);
+	SAFE_ARRDELETE(T);
+	SAFE_ARRDELETE(E);
+
+	Nv = mesh.countVertices();
+	Nt = mesh.countTriangles();
+	Ne = mesh.countEdges();
+
+	V = new Vertex[mesh.countVertices()];
+	T = new Triangle[mesh.countTriangles()];
+	E = new BoundEdge[mesh.countEdges()];
+
+	for (uint i = 0; i < mesh.countVertices(); i++)
+	{
+		V[i] = mesh.V[i];
+	}
+
+	for (uint i = 0; i < mesh.countTriangles(); i++)
+	{
+		T[i] = mesh.T[i];
+	}
+
+	for (uint i = 0; i < mesh.countEdges(); i++)
+	{
+		E[i] = mesh.E[i];
+	}
+}*/
+
+Mesh::~Mesh()
+{
+	SAFE_ARRDELETE(V);
+	SAFE_ARRDELETE(T);
+	SAFE_ARRDELETE(E);
 }
 
 Mesh::Mesh(const char* filename) :
@@ -264,13 +341,6 @@ Nv(Nv), Nt(Nt), Ne(Ne)
     V = new Vertex[Nv];
     T = new Triangle[Nt];
     E = new BoundEdge[Ne];
-}
-
-Mesh::~Mesh()
-{
-	SAFE_ARRDELETE(V);
-	SAFE_ARRDELETE(T);
-	SAFE_ARRDELETE(E);
 }
 
 uint Mesh::countVertices() const

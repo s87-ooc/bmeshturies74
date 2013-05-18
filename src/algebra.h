@@ -84,7 +84,6 @@ public:
 
 	/** construct normal vector to edge */
 	Vector& constructNormal(const BoundEdge& edge);
-
 };
 
 Vector operator* (const Vector& v, const double s);

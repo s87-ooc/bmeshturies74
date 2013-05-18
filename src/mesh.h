@@ -128,9 +128,13 @@ private:
     friend class Plot;
 	
 public:
+	Mesh();
+	//Mesh(const Mesh& mesh);
+	//Mesh& operator=(const Mesh& mesh);
+	~Mesh();
+
     Mesh(const char* filename);
     Mesh(uint Nv, uint Nt, uint Ne);
-	~Mesh();
 	
     uint countVertices() const;
 	uint countTriangles() const;
