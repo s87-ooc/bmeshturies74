@@ -30,19 +30,19 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
-// TODO: multiplot for Plot class
-
-// ----------------------------------------------------------------------------
-
 Plot::Plot() :
 mXPtr(0),
-mYPtr(0),
 mFuncPtr(0)
 {
 }
 
 Plot::~Plot()
 {
+}
+
+void Plot::addYVector(Vector& y)
+{
+	mYPtrs.push_back(&y);
 }
 
 void Plot::setAxisLabel(EPlotAxis axis, const char* label)
@@ -63,7 +63,6 @@ void Plot::setAxisLabel(EPlotAxis axis, const char* label)
 Plot::Plot(const char* name, Vector& x, Vector& y, const char* title, const char* templ, const char* args) :
 mName(name),
 mXPtr(&x),
-mYPtr(&y),
 mDataType(ePD_VECTOR)
 {
 	if (title)
@@ -80,6 +79,8 @@ mDataType(ePD_VECTOR)
 	{
 		mArgs = args;
 	}
+
+	mYPtrs.push_back(&y);
 }
 	
 Plot::Plot(const char* name, Vector& x, double (&func)(double), const char* title, const char* templ, const char* args) :
@@ -127,11 +128,16 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			}
 			else if (mDataType == ePD_VECTOR)
 			{
-				assert(dim == mYPtr->size());
+				assert(dim == mYPtrs[0]->size());
 				
 				for (uint i = 0; i < dim; i++)
 				{
-					fout << (*mXPtr)(i) << " " << (*mYPtr)(i) << endl;
+					fout << (*mXPtr)(i) << " " << (*mYPtrs[0])(i);
+					for (uint iY = 1; iY < mYPtrs.size(); iY++)
+					{
+						fout << " " << (*mYPtrs[iY])(i);
+					}
+					fout << endl;
 				}
 			}
 		}
@@ -169,12 +175,20 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			}
 			
 			fout << "plot '" << fileName << ".pdat'";
-			
 			if (!mArgs.empty())
 			{
 				fout << mArgs;
 			}
-			
+
+			for (uint iY = 1; iY < mYPtrs.size(); iY++)
+			{
+				fout << ", '" << fileName << ".pdat' using 1:" << iY + 2 ;
+				if (!mArgs.empty())
+				{
+					fout << mArgs;
+				}
+			}
+
 			fout << endl;
 			
 			if (savePNG)

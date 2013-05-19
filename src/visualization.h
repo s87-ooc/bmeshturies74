@@ -16,8 +16,6 @@
 
 **************************************************************/
 
-// ----------------------------------------------------------------------------
-
 /** which application is used for plotting */
 enum EPlotType
 {
@@ -73,8 +71,8 @@ private:
 	/** x values */
 	Vector* mXPtr;
 	
-	/** y values */
-	Vector* mYPtr;
+	/** y values, multiple functions possible */
+	std::vector<Vector*> mYPtrs;
 	
 	/** ponter to a function to plot */
 	double (*mFuncPtr)(double);
@@ -83,6 +81,12 @@ public:
 	Plot();
 	~Plot();
 	
+	/** add another y vector to the plot */
+	void addYVector(Vector& y);
+
+	/** add another function to the plot */
+	//void addYFunction;
+
 	/** set the title of an axis */
 	void setAxisLabel(EPlotAxis axis, const char* label);
 	

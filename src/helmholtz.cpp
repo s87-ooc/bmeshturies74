@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 	// commercial break
 	
 	cout << "  -- Helmholtz (Partie 1), Projet Final [MM031], 2013" << endl;
-	cout << "     Copyright (C) K. Podkanski, S. Stamenkovic" << endl;
+	cout << "     Copyright (C) K. Podkanski, S. Stamenkovic" << endl << endl;
 
 	// ---
 	
@@ -213,165 +213,6 @@ int main(int argc, char* argv[])
 	return iReturn;
 
 /*		
-		// Evaluate stuff
-		
-		// calculate exact solution
-		Vector u(dim);
-
-		// ---
-		
-		// combine clock times
-		
-		// display computation time
-
-		clock_t tCombinedAssembly = tMatA + tMatM + tMatB + tRhsF + tRhsG;
-		clock_t tCombined = tSolve + tCombinedAssembly;
-		
-		double hInner = mesh.maxIncircleDiameter();
-		double hOuter = mesh.maxCircumcircleDiameter();
-
-		gParams.vertexCount[iMsh] = mesh.countVertices();
-		gParams.triangleCount[iMsh] = mesh.countTriangles();
-		gParams.hInner[iMsh] = hInner;
-		gParams.hOuter[iMsh] = hOuter;
-		int idx = gParams.lumping ? 1 : 0;
-		gParams.errors[idx][iMsh] = error;
-		gParams.errorsL2[idx][iMsh] = errorL2;
-		gParams.errorsGradientL2[idx][iMsh] = errorGradL2;
-		gParams.solveTime[idx][iMsh] = ((double)tSolve)/CLOCKS_PER_SEC;
-		gParams.solveAssTime[idx][iMsh] = ((double)tCombined)/CLOCKS_PER_SEC;
-
-		cout << "---" << endl;
-		
-		LOGTIME("Load Mesh", tLoadMesh);
-		
-		cout << "---" << endl;
-		
-		LOGPARTTIME("A Assembly", tMatA, tCombinedAssembly);
-		LOGPARTTIME("M Assembly", tMatM, tCombinedAssembly);
-		LOGPARTTIME("B Assembly", tMatB, tCombinedAssembly);
-		
-		//LOGPARTTIME("F Assembly", tRhsF, tCombinedAssembly);
-		//LOGPARTTIME("G Assembly", tRhsG, tCombinedAssembly);
-		
-		LOGPARTTIME("Combined Assembly", tCombinedAssembly, tCombined);
-		
-		cout << "---" << endl;
-		
-		LOGTIME("Solving", tSolve);
-		
-		cout << "---" << endl;
-		
-		LOGTIME("Combined time", tCombined);
-		
-		cout << "---" << endl;
-		cout << "Computed: " << gParams.fileMesh << " - Nv: " << mesh.countVertices() << 
-		", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << ", h: " << hInner << endl;
-		cout << "          Matrix NNZ: " << AMB.sizeNNZ() << " (" << (double)AMB.sizeNNZ() / (AMB.sizeRows() * AMB.sizeColumns()) * 100. << "%)" << endl;
-
-		cout << "---" << endl;
-		
-		cout << "Error: " << error << endl;
-		
-		cout << "L2 error: " << errorL2 << endl;
-		cout << "L2 grad error: " << errorGradL2 << endl;
-		//cout << "Max inscribed circle diameter: " << hInner << endl;
-		//cout << "Max circumscribed circle diameter: " << hOuter << endl;
-		
-		// ---
-
-		// plot initial data only if we're having only one mesh to check
-		
-		if (gParams.meshCount == 1)
-		{
-			// boundary conditions
-
-			//PlotMesh plotF("helmholtz_f", mesh, helmholtz::f);
-			//plotF.generate(ePT_GNUPLOT, true);
-
-			//PlotMesh plotG("helmholtz_g", mesh, helmholtz::g);
-			//plotG.generate(ePT_GNUPLOT, true);
-
-			// exact solution
-
-			PlotMesh plotU("p1t2_u", mesh, u, "Solution Exacte");
-			plotU.generate(ePT_MEDIT);
-			plotU.generate(ePT_GNUPLOT_SURF, true, false, "", "", 20);
-			if (gParams.save) { plotU.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
-		}
-		
-		// ---
-
-		if (iMsh == gParams.meshCount - 1 && !gParams.lumping)
-		{
-			// reset the iteration and calculate values with mass lumping
-			cout << endl << "### Calculate values with mass lumping" << endl << endl;
-			iMsh = -1;
-			gParams.lumping = true;
-		}
-		
-	}
-
-	// ------------------------------------------------------------------------
-	// ------------------------------------------------------------------------
-	// ------------------------------------------------------------------------
-	
-	// plot combined data
-	
-	if (gParams.meshCount > 1)
-	{
-		/*{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.errors[0][i];
-			}
-		
-			Plot p("helmholtz_hInnerErrors", x, y, "errors over inscribed circle", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}*/
-	/*	
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.errorsL2[0][i];
-			}
-		
-			string pName = "p1t3_errL2";
-			pName += gParams.test ? "GEN" : "";
-			Plot p(pName.c_str(), x, y, "L2 errors over inscribed circle", "", " w linespoints");
-			p.setAxisLabel(ePA_X, "h");
-			p.setAxisLabel(ePA_Y, "erreur L2");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-		
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.errorsGradientL2[0][i];
-			}
-			
-			string pName = "p1t3_errgradL2";
-			pName += gParams.test ? "GEN" : "";
-			Plot p(pName.c_str(), x, y, "L2 grad errors over inscribed circle", "", " w linespoints");
-			p.setAxisLabel(ePA_X, "h");
-			p.setAxisLabel(ePA_Y, "erreur Gradient L2");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
 		
 		// TODO
 		{
@@ -406,23 +247,6 @@ int main(int argc, char* argv[])
 			p.generate(ePT_GNUPLOT, true);
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
-
-		// TODO
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			Vector ylump(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.solveTime[0][i];
-			}
-		
-			Plot p("p2t4_time1", x, y, "Mass Lumping: Time", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
 	}
 */
 }
@@ -433,115 +257,6 @@ int main(int argc, char* argv[])
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-bool loadMesh(const char* file, Mesh& mesh, clock_t& tLoadMesh)
-{
-	ifstream fileMesh(file);
-
-	if (!fileMesh)
-	{
-		cout << "No valid mesh " << file << endl;
-		return false;
-	}
-
-	RESETCLOCK();
-    fileMesh >> mesh;
-	CLOCK(tLoadMesh);
-
-	return true;
-}
-
-void solveHelmholtz(Vector& u, const Mesh& mesh, bool lumping,
-	clock_t& tMatA, clock_t& tMatM, clock_t& tMatB, clock_t& tRhsF, clock_t& tRhsG, clock_t& tSolve)
-{
-		// Assemble the matrices and vectors
-		
-		uint dim = mesh.countVertices();
-
-		assert(dim == u.size());
-
-		SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
-		Vector rhsF(dim), rhsG(dim);
-		
-		// A
-		
-		RESETCLOCK();
-		Amap.constructA(mesh);
-		CLOCK(tMatA);
-		
-		// M
-		
-		RESETCLOCK();
-		if (lumping)
-		{
-			Mmap.constructMlump(mesh);
-		}
-		else
-		{
-			Mmap.constructM(mesh);
-		}
-		CLOCK(tMatM);
-		
-		// B
-		
-		RESETCLOCK();
-		Bmap.constructB(mesh);
-		CLOCK(tMatB);
-		
-		// F (rhs)
-		
-		RESETCLOCK();
-		rhsF.constructFuncIntSurf(mesh, helmholtz::f);
-		CLOCK(tRhsF);
-		
-		// G (rhs)
-		
-		RESETCLOCK();
-		rhsG.constructFuncSurf(mesh, helmholtz::g);
-		CLOCK(tRhsG);
-		
-		// ----------
-
-		// construct the linear system
-
-		Mmap *= -pow(gParams.kappa, 2);	
-		Amap += Mmap;
-		Amap += Bmap;
-
-		// AMB = A - kappa^2 * M + B
-		// convert the matrix to Sparse so we can apply a solver
-		Sparse AMB(Amap);
-
-		Vector rhs = rhsF + rhsG;
-		
-		// ----------
-
-		// solve the stationary problem	
-		
-		switch(gParams.solver)
-		{
-		case eS_CG:
-			RESETCLOCK();
-			u = AMB.conjGradient(rhs);
-			CLOCK(tSolve);
-			break;
-		case eS_JACOBI:
-			RESETCLOCK();
-			u = AMB.jacobi(rhs);
-			CLOCK(tSolve);
-			break;
-		case eS_LU:
-			// TODO: add LU solver to Sparse class if not there already
-			// convert back to sparselil for use with lu
-			/*RESETCLOCK();
-			SparseLIL AMBlil(AMB,1);
-			u = AMBlil.LU(rhs);
-			CLOCK(tSolve);*/
-			break;
-		}
-
-//	cout << "          Matrix NNZ: " << AMB.sizeNNZ() << " (" << (double)AMB.sizeNNZ() / (AMB.sizeRows() * AMB.sizeColumns()) * 100. << "%)" << endl;
-}
-
 int parseCmd(int argc, char* argv[])
 {
 	bool firstFile = true;
@@ -550,7 +265,7 @@ int parseCmd(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/helmholtz [-defM] [-lumpM] [-q] [-g] [-timetest] [-precisiontest] [-kappa " << gParams.kappa << "] [-k " << gParams.k1 << "," << gParams.k2  << "] [" << gParams.files[0] << "] ... [-o " << gParams.outPath << "]" << endl;
+			cout << "Usage: bin/helmholtz [-defM] [-lumpM] [-q] [-g] [-timetest] [-precisiontest] [-kappa " << gParams.kappa << "] [-k " << gParams.k1 << "," << gParams.k2  << "] [-o " << gParams.outPath << "] [" << gParams.files[0] << "] ..." << endl;
 			cout << "       -defM = use mass lumping for the assembly of M" << endl;
 			cout << "       -lumpM = use mass lumping for the assembly of M" << endl;
 			cout << "       -q = don't run gnuplot to display plots" << endl;
@@ -671,6 +386,115 @@ int parseCmd(int argc, char* argv[])
 
 // ----------
 
+bool loadMesh(const char* file, Mesh& mesh, clock_t& tLoadMesh)
+{
+	ifstream fileMesh(file);
+
+	if (!fileMesh)
+	{
+		cout << "No valid mesh " << file << endl;
+		return false;
+	}
+
+	RESETCLOCK();
+    fileMesh >> mesh;
+	CLOCK(tLoadMesh);
+
+	return true;
+}
+
+void solveHelmholtz(Vector& u, const Mesh& mesh, bool lumping,
+	clock_t& tMatA, clock_t& tMatM, clock_t& tMatB, clock_t& tRhsF, clock_t& tRhsG, clock_t& tSolve)
+{
+		// Assemble the matrices and vectors
+		
+		uint dim = mesh.countVertices();
+
+		assert(dim == u.size());
+
+		SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
+		Vector rhsF(dim), rhsG(dim);
+		
+		// A
+		
+		RESETCLOCK();
+		Amap.constructA(mesh);
+		CLOCK(tMatA);
+		
+		// M
+		
+		RESETCLOCK();
+		if (lumping)
+		{
+			Mmap.constructMlump(mesh);
+		}
+		else
+		{
+			Mmap.constructM(mesh);
+		}
+		CLOCK(tMatM);
+		
+		// B
+		
+		RESETCLOCK();
+		Bmap.constructB(mesh);
+		CLOCK(tMatB);
+		
+		// F (rhs)
+		
+		RESETCLOCK();
+		rhsF.constructFuncIntSurf(mesh, helmholtz::f);
+		CLOCK(tRhsF);
+		
+		// G (rhs)
+		
+		RESETCLOCK();
+		rhsG.constructFuncSurf(mesh, helmholtz::g);
+		CLOCK(tRhsG);
+		
+		// ----------
+
+		// construct the linear system
+
+		Mmap *= -pow(gParams.kappa, 2);	
+		Amap += Mmap;
+		Amap += Bmap;
+
+		// AMB = A - kappa^2 * M + B
+		// convert the matrix to Sparse so we can apply a solver
+		Sparse AMB(Amap);
+
+		Vector rhs = rhsF + rhsG;
+		
+		// ----------
+
+		// solve the stationary problem	
+		
+		switch(gParams.solver)
+		{
+		case eS_CG:
+			RESETCLOCK();
+			u = AMB.conjGradient(rhs);
+			CLOCK(tSolve);
+			break;
+		case eS_JACOBI:
+			RESETCLOCK();
+			u = AMB.jacobi(rhs);
+			CLOCK(tSolve);
+			break;
+		case eS_LU:
+			// TODO: add LU solver to Sparse class if not there already
+			// convert back to sparselil for use with lu
+			/*RESETCLOCK();
+			SparseLIL AMBlil(AMB,1);
+			u = AMBlil.LU(rhs);
+			CLOCK(tSolve);*/
+			break;
+		}
+
+//	cout << "          Matrix NNZ: " << AMB.sizeNNZ() << " (" << (double)AMB.sizeNNZ() / (AMB.sizeRows() * AMB.sizeColumns()) * 100. << "%)" << endl;
+}
+
 int simple()
 {
 	cout << "Solving the problem over " << gParams.files.size() << " mesh(es)" << endl;
@@ -686,7 +510,7 @@ int simple()
 
 	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
 	{
-		cout << "Loading the mesh..." << endl;
+		cout << endl << "Loading the mesh" << gParams.files[iMsh] << "..." << endl;
 
 		Mesh mesh;
 		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
@@ -719,7 +543,7 @@ int simple()
 
 		while (!solved)
 		{
-			cout << endl << "Solving the linear system";
+			cout << "Solving the linear system";
 			if (lumping)
 			{
 				cout << " with lumping";
@@ -783,6 +607,137 @@ int simple()
 int timetest()
 {
 	cout << "Timetest over " << gParams.files.size() << " meshes" << endl;
+
+	// ---
+
+	clock_t times[eT_END];
+
+	RESETCLOCK();
+	CLOCK(times[eT_START]);
+
+	// ---
+
+	uint meshCount = gParams.files.size();
+
+	Vector hMeshes(meshCount);
+
+	Vector timesAssembleDefault(meshCount); 
+	Vector timesSolveDefault(meshCount);
+
+	Vector timesAssembleLumping(meshCount);
+	Vector timesSolveLumping(meshCount);
+
+	// Calculate soltions and clock the time
+
+	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
+	{
+		cout << endl << "Loading the mesh" << gParams.files[iMsh] << "..." << endl;
+
+		Mesh mesh;
+		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
+		{
+			return 1;
+		}
+
+		hMeshes(iMsh) = mesh.maxIncircleDiameter();
+
+		// ----------
+
+		// problem will be solved with and/or without mass lumping (method), no lumping first if desired
+
+		bool solved = false;
+		bool lumping = !gParams.calcMDefault;
+
+		while (!solved)
+		{
+			cout << "Solving the linear system";
+			if (lumping)
+			{
+				cout << " with lumping";
+			}
+			cout << "..." << endl;
+
+			Vector u(mesh.countVertices());
+			solveHelmholtz(u, mesh, lumping,
+				times[eT_MATA], times[eT_MATM], times[eT_MATB], times[eT_RHSF], times[eT_RHSG], times[eT_SOLVE]);
+
+			// ----------
+
+			double assembleTime = ((double)(times[eT_MATA] + times[eT_MATM] + times[eT_MATB]
+					+ times[eT_RHSF] + times[eT_RHSG]))	/ CLOCKS_PER_SEC;
+			double solveTime = ((double) times[eT_SOLVE]) / CLOCKS_PER_SEC;
+
+			if (lumping)
+			{
+				timesAssembleLumping(iMsh) = assembleTime;
+				timesSolveLumping(iMsh) = solveTime;
+			}
+			else
+			{
+				timesAssembleDefault(iMsh) = assembleTime;
+				timesSolveDefault(iMsh) = solveTime;
+			}
+
+			// ----------
+
+			if (!lumping && gParams.calcMLumping)
+			{
+				// lumping is always the second step if we had the default method before
+				lumping = true;
+			}
+			else
+			{
+				solved = true;
+			}
+		}
+	}
+
+	// ---
+
+	// visualization
+
+	if (gParams.calcMLumping && gParams.calcMDefault)
+	{
+		// compare default and lumping methods
+		{
+			Plot p("p2t4_timeSolve1", hMeshes, timesSolveDefault, "Time comparison (solving)", "", " w linespoints");
+			p.addYVector(timesSolveLumping);
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Plot p("p2t4_timeAssemble1", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "", " w linespoints");
+			p.addYVector(timesAssembleLumping);
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+	else
+	{
+		// plot default OR lumping times
+		{
+			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
+			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
+
+			Plot p("p2t4_timeSolve1", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Vector& y = gParams.calcMLumping ? timesAssembleLumping : timesAssembleDefault;
+			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
+
+			Plot p("p2t4_timeSolve1", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+
+	// ---
+
+	CLOCK(times[eT_END]);
 
 	return 0;
 }

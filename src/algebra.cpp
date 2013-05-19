@@ -516,7 +516,6 @@ SparseMap& SparseMap::constructMlump(const Mesh& mesh)
 
 	Triangle* const& T = mesh.T;
 
-	double mel = 1/12.0; // since det = 2 * area we have 2/24 = 1/12
 	double value;
 	double coef;
 
@@ -528,7 +527,7 @@ SparseMap& SparseMap::constructMlump(const Mesh& mesh)
 		{
 			for(uint j=0; j < 3; j++)
 			{
-				coef = (i == j) / 3.;
+				coef = i == j ? 1. / 3. : 0.;
 				value = coef * T[t].area;
 				addAt(T[t](i).id, T[t](j).id, value);
 			}
