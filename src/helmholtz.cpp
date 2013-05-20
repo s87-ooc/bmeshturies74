@@ -222,13 +222,13 @@ int parseCmd(int argc, char* argv[])
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
 			cout << "Usage: bin/helmholtz [-defM] [-lumpM] [-q] [-g] [-timetest] [-precisiontest] [-kappa " << gParams.kappa << "] [-k " << gParams.k1 << "," << gParams.k2  << "] [-o " << gParams.outPath << "] [" << gParams.files[0] << "] ..." << endl;
-			cout << "  -defM           use mass lumping for the assembly of M" << endl;
+			cout << "  -defM           use default method for the assembly of M" << endl;
 			cout << "  -lumpM          use mass lumping for the assembly of M" << endl;
 			cout << "  -q              don't run gnuplot to display plots" << endl;
 			cout << "  -g              generate PNGs of the plots" << endl;
 			cout << "  -timetest       measure and compare solvingtimes" << endl;
 			cout << "  -precisiontest  measure and compare precisions" << endl;
-			cout << "  -o              outpot folder for plots" << endl;
+			cout << "  -o              output folder for plots" << endl;
 			cout << endl;
 			cout << "If both '-defM' and '-lumpM' are used, comparisons are generated in the tests." << endl;
 			cout << endl;
@@ -463,29 +463,26 @@ void solveHelmholtz(Vector& u, const Mesh& mesh, bool lumping,
 
 		// solve the stationary problem	
 		
-		switch(gParams.solver)
+		if (gParams.solver == eS_CG)
 		{
-		case eS_CG:
 			RESETCLOCK();
 			u = AMB.conjGradient(rhs);
 			CLOCK(tSolve);
-			break;
-		case eS_JACOBI:
+		}
+		else if (gParams.solver == eS_JACOBI)
+		{
 			RESETCLOCK();
 			u = AMB.jacobi(rhs);
 			CLOCK(tSolve);
-			break;
-		case eS_LU:
-			// TODO: add LU solver to Sparse class if not there already
+		}
+		else if (gParams.solver == eS_LU)
+		{
 			// convert back to sparselil for use with lu
-			/*RESETCLOCK();
+			RESETCLOCK();
 			SparseLIL AMBlil(AMB,1);
 			u = AMBlil.LU(rhs);
-			CLOCK(tSolve);*/
-			break;
+			CLOCK(tSolve);
 		}
-
-//	cout << "          Matrix NNZ: " << AMB.sizeNNZ() << " (" << (double)AMB.sizeNNZ() / (AMB.sizeRows() * AMB.sizeColumns()) * 100. << "%)" << endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -578,7 +575,6 @@ int simple()
 			if (gParams.generatePNG) { plotErr.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
 
 			// ----------
-
 
 			if (!lumping && gParams.calcMLumping)
 			{
