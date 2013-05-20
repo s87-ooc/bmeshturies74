@@ -75,12 +75,6 @@ int timetest();
 /** precisiontest, solve the problem over the meshes and compare precision, optionally with lumping */
 int precisiontest();
 
-// ----------
-
-/** print stats after solving a problem */
-void printStats(const char* meshFile, const Mesh& mesh, clock_t times[],
-				double error, double errorL2, double errorGradientL2);
-
 // ----------------------------------------------------------------------------
 
 struct SHelmholtzParams
@@ -353,7 +347,37 @@ int parseCmd(int argc, char* argv[])
 	return -1;
 }
 
-// ----------
+// ----------------------------------------------------------------------------
+
+void printStats(const char* meshFile, const Mesh& mesh, clock_t times[],
+				double error, double errorL2, double errorGradientL2)
+{
+	clock_t tCombinedAssembly = times[eT_MATA] + times[eT_MATM] + times[eT_MATB] + times[eT_RHSF] + times[eT_RHSG];
+
+	cout << "---" << endl;
+	
+	LOGPARTTIME("A Assembly", times[eT_MATA], tCombinedAssembly);
+	LOGPARTTIME("M Assembly", times[eT_MATM], tCombinedAssembly);
+	LOGPARTTIME("B Assembly", times[eT_MATB], tCombinedAssembly);	
+	LOGPARTTIME("F Assembly", times[eT_RHSF], tCombinedAssembly);
+	LOGPARTTIME("G Assembly", times[eT_RHSG], tCombinedAssembly);
+
+	cout << "---" << endl;
+	
+	LOGTIME("Combined Assembly", tCombinedAssembly);
+	LOGTIME("Solving", times[eT_SOLVE]);
+	LOGTIME("Load Mesh", times[eT_LOADMESH]);
+		
+	cout << "---" << endl;
+	cout << "Computed: " << meshFile << " - Nv: " << mesh.countVertices() << 
+	", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << ", h: " << mesh.maxIncircleDiameter() << endl;
+
+	cout << "---" << endl;
+	
+	cout << "Error: " << error << endl;
+	cout << "L2 error: " << errorL2 << endl;
+	cout << "L2 grad error: " << errorGradientL2 << endl;
+}
 
 bool loadMesh(const char* file, Mesh& mesh, clock_t& tLoadMesh)
 {
@@ -463,6 +487,8 @@ void solveHelmholtz(Vector& u, const Mesh& mesh, bool lumping,
 
 //	cout << "          Matrix NNZ: " << AMB.sizeNNZ() << " (" << (double)AMB.sizeNNZ() / (AMB.sizeRows() * AMB.sizeColumns()) * 100. << "%)" << endl;
 }
+
+// ----------------------------------------------------------------------------
 
 int simple()
 {
@@ -908,37 +934,5 @@ int precisiontest()
 
 	CLOCK(times[eT_END]);
 }
-
-void printStats(const char* meshFile, const Mesh& mesh, clock_t times[],
-				double error, double errorL2, double errorGradientL2)
-{
-	clock_t tCombinedAssembly = times[eT_MATA] + times[eT_MATM] + times[eT_MATB] + times[eT_RHSF] + times[eT_RHSG];
-
-	cout << "---" << endl;
-	
-	LOGPARTTIME("A Assembly", times[eT_MATA], tCombinedAssembly);
-	LOGPARTTIME("M Assembly", times[eT_MATM], tCombinedAssembly);
-	LOGPARTTIME("B Assembly", times[eT_MATB], tCombinedAssembly);	
-	LOGPARTTIME("F Assembly", times[eT_RHSF], tCombinedAssembly);
-	LOGPARTTIME("G Assembly", times[eT_RHSG], tCombinedAssembly);
-
-	cout << "---" << endl;
-	
-	LOGTIME("Combined Assembly", tCombinedAssembly);
-	LOGTIME("Solving", times[eT_SOLVE]);
-	LOGTIME("Load Mesh", times[eT_LOADMESH]);
-		
-	cout << "---" << endl;
-	cout << "Computed: " << meshFile << " - Nv: " << mesh.countVertices() << 
-	", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << ", h: " << mesh.maxIncircleDiameter() << endl;
-
-	cout << "---" << endl;
-	
-	cout << "Error: " << error << endl;
-	cout << "L2 error: " << errorL2 << endl;
-	cout << "L2 grad error: " << errorGradientL2 << endl;
-}
-
-// ----------------------------------------------------------------------------
 
 // FIN de la partie I :)

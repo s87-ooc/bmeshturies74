@@ -233,10 +233,6 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 
 			if (!savePNG)
 			{
-				string bof;
-				cin >> bof;
-				cout << "HERE: '" << bof << "'" << endl;
-				//cin.ignore();
 				cout << "\n<<< Press any key to continue >>>";
 				cin.get();
 			}

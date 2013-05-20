@@ -31,100 +31,66 @@ using namespace std;
 
 // ----------------------------------------------------------------------------
 
-/*
+enum EWaveMode
+{
+	eWM_SIMPLE = 0,
+	eWM_TIMETEST,
+	eWM_CFLTEST,
+	eWM_COMBINEDTEST
+};
 
-GENERAL STRUCTURE:
+enum ETime
+{
+	eT_START = 0,
+	eT_LOADMESH,
+	eT_MATM,
+	eT_SOLVE,
+	eT_END
+};
 
-- function defs
-- main with function calls
-- function implementation
-
----
-
-bin/wave data/mesh/cercle1.msh > plots (exact sol, position), times in console
-	> simple
-bin/wave -timetest
-	> timetest
-bin/wave -cfltest
-	> precisiontest
-
----
-
-Always do comparison over calculation methods
-
-METHODS:	
-
-bin/wave -lumpA
-	> use lumping for A
-bin/wave -defA
-	> default construction for A
-
----
-
-INPUT:
-- 1 file
-- 1 directory
-- data/mesh/cercle*
-
->> Construction of filename list
-
----
-
-OUTPUT:
-
-bin/wave -o /dir
-	> specify output directory
-bin/wave -q
-	> don't call gnuplot
-bin/wave -g
-	> generate graphics
-bin/wave -r
-	> generate plot at each step that can be combined into a video
-
----
-
-PROBLEM SPECIFIC:
-
-bin/wave -T
-	> final time
-bin/wave -dt
-	> force time step
-bin/wave -peak x,y
-	> default position 0.1,0.1
-	
-*/
+enum ESolver
+{
+	eS_CG = 0,
+	eS_JACOBI,
+	eS_LU
+};
 
 // ----------------------------------------------------------------------------
 
-/** the program can loop over different meshes in different modes */
-enum EWaveMode
-{
-	eWM_TIME = 0,	/** default mode, time is measured and dt picked optimally */
-	eWM_CFL			/** we're varying dt to see stability */
-};
+/** parse the commandline parameters */
+int parseCmd(int argc, char* argv[]);
+
+// ----------
+
+/** simple run, calculate the solution over the specified mesh(es) and show position of origin */
+int simple();
+
+/** timetest, solve the problem on the meshes and compare calculation times, optionally with lumping */
+int timetest();
+
+/** cfltest, solve the problem over the meshes with varying timestep based on same dt/h factor */
+int cfltest();
 
 // ----------------------------------------------------------------------------
 
 struct SWaveParams
 {
-	EWaveMode mode;		/** mode for the main loop */
-	double T;			/** maximal time */
-	double dt;			/** time step */
-	string fileMesh;	/** file of the current mesh */
-	bool lumping;		/** enable mass lumping */
-	bool render;		/** render a video of the time development */
-	double framerate;	/** framerate of the video */
-	uint meshCount;		/** number of meshes that should be tested automatically */
-	uint dtCount;		/** how many dt values should be tested for CFL/Stability */
-	bool save;			/** whether to save the plot */
-	bool test;			/** select other set of files that were generated with freefem */
-	// values below are used in test mode, [0] = normal [1] = mass lumping:
-	double* hInner;			/** max inscribed diameter of the triangles */
-	double* hOuter;			/** max circumscribed diameter of the triangles */
-	double* dth;			/** dt/h for stability testing */
-	double* times[2];		/** total computation time, [0] = normal [1] = mass lumping */
-	Vector* uNorms[2];		/** norm of u after the final timestep, [0] = normal [1] = mass lumping */
-	Vector* vNorms[2];		/** norm of v after the final timestep, [0] = normal [1] = mass lumping */
+	EWaveMode mode;
+	std::vector<string> files;	/** list of mesh files we should perform our calculations on */
+	string outPath;				/** path where generated plot files, etc should be stored in */
+	bool calcMDefault;			/** whether to assemble A using the default method, can be combined with calcMLumping */
+	bool calcMLumping;			/** whether to assemble A using mass lumping, can be combined with calcMDefault */
+	ESolver solver;				/** which solver should be used for the linear system(s) */
+	bool quiet;					/** if true, gnuplot won't be launched to display plots */
+	bool generatePNG;			/** if true, gnuplot will be launched to generate a png */
+	bool render;				/** render a video of the time development */
+	double framerate;			/** framerate of the video */
+	// ---
+	double T;					/** maximal time */
+	double dt;					/** time step, can be speficied  */
+	std::vector<double> CFLs;	/** list of dt/h factors to run tests on */
+	double peakX;				/** peak center of the initial function, x value */
+	double peakY;				/** peak center of the initial function, y value */
 };
 
 /** global parameters */
@@ -151,453 +117,97 @@ namespace wave
 };
 
 // ----------------------------------------------------------------------------
-
-void assembleIterationMatrices(const Mesh& mesh, Sparse& uMatU, Sparse& vMatU, Sparse& uMatV, Sparse& vMatV)
-{
-	uint dim = mesh.countVertices();
-
-	// Assemble simple matrices
-
-	SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
-	
-	// A
-	
-	Amap.constructA(mesh);
-	
-	// M
-	
-	if (gParams.lumping)
-	{
-		Mmap.constructMlump(mesh);
-	}
-	else
-	{
-		Mmap.constructM(mesh);
-	}
-	
-	// B
-	
-	Bmap.constructB(mesh);
-
-	// Assemble combined matrices
-
-	SparseMap uMatUmap(dim, dim), vMatUmap(dim, dim), uMatVmap(dim, dim);
-	
-	SparseMap ABmap = Amap;
-	ABmap += Bmap;
-	
-	uMatUmap = ABmap;
-	uMatUmap *= -pow(gParams.dt, 2) / 2.;
-	uMatUmap += Mmap;
-	uMatU = uMatUmap;
-	
-	vMatUmap = Mmap;
-	vMatUmap *= gParams.dt;
-	vMatU = vMatUmap;
-	
-	uMatVmap = ABmap;
-	uMatVmap *= -gParams.dt / 2.;
-	uMatV = uMatVmap;
-	
-	vMatV = Mmap;
-}
-
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
-	clock_t t, tStart, tLoadMesh, tSolve, tEnd;
-	clock_t* tSteps = 0;
-
-	tStart = clock();
-
-	// ---
-
 	// commercial break
 	
 	cout << "  -- Wave (Partie 2), Projet Final [MM031], 2013" << endl;
-	cout << "     Copyright (C) K. Podkanski, S. Stamenkovic" << endl;
-	
+	cout << "     Copyright (C) K. Podkanski, S. Stamenkovic" << endl << endl;
+
 	// ---
 	
 	// default values
 
-	gParams.mode = eWM_TIME;
-	gParams.T = 2.25;
-	gParams.dt = -1.;
-	gParams.fileMesh = "data/mesh/cercle1.msh";
-	gParams.lumping = false;
+	gParams.mode = eWM_SIMPLE;
+	gParams.files.push_back("data/mesh/cercle1.msh");
+	gParams.outPath = "data/plots/";
+	gParams.calcMDefault = false;	// will be set to true after parsing if no other method specified
+	gParams.calcMLumping = false;
+	gParams.solver = eS_CG;
+	gParams.quiet = false;
+	gParams.generatePNG = false;
 	gParams.render = false;
 	gParams.framerate = 25.;
-	gParams.meshCount = 2;	// by default we'll treat data/mesh/cercle1.msh and data/mesh/cercle2.msh
-	gParams.dtCount = 10;
-	gParams.save = false;
-	gParams.test = false;
-	
-	// get filenames and parameters from cmdline arguments (if any)
-	
-	for (int iArg = 1; iArg < argc; iArg++)
+	// ---
+	gParams.T = 2.25;
+	gParams.dt = -1.;	// forces automatic choice later
+	gParams.CFLs.push_back(0.3);
+	gParams.peakX = 0.1;
+	gParams.peakY = 0.1;
+
+	// ---
+
+	// parse cmdline arguments, gives -1 if we should continue the program
+
+	int iReturn = parseCmd(argc, argv);
+	if (iReturn != -1)
 	{
-		if (strcmp(argv[iArg], "-h") == 0)
-		{
-			cout << "Usage: bin/wave [-lump] [-r fps] [-save] [-test] -T " << gParams.T << " -dt 0.001 "
-			<< gParams.fileMesh << endl;
-			cout << "       -lump = use mass lumping for the assembly of M" << endl;
-			cout << "       -r fps = render a video of the time development (fps=25 if empty)" << endl;
-			cout << "       -save = generate PNGs of the plots" << endl;
-			cout << "       -test = perform tests on another set of meshes" << endl;
-			return 0;
-		}
-		else if (strcmp(argv[iArg], "-lump") == 0)
-		{
-			gParams.lumping = true;
-		}
-		else if (strcmp(argv[iArg], "-save") == 0)
-		{
-			gParams.save = true;
-		}
-		else if (strcmp(argv[iArg], "-test") == 0)
-		{
-			gParams.test = true;
-			
-			iArg++;
-			
-			if (iArg < argc)
-			{
-				stringstream buf;
-				buf << argv[iArg];
-				buf >> gParams.meshCount;
-			}
-		}
-		else if (strcmp(argv[iArg], "-r") == 0)
-		{
-			gParams.render = true;
-			
-			if (iArg < argc - 1 && !strstr(argv[iArg+1], "-"))
-			{
-				iArg++;
-				stringstream buf;
-				buf << argv[iArg];
-				buf >> gParams.framerate;
-			}
-		}
-		else if (strcmp(argv[iArg], "-T") == 0)
-		{
-			iArg++;
-			
-			if (iArg < argc)
-			{
-				stringstream buf;
-				buf << argv[iArg];
-				buf >> gParams.T;
-			}
-		}
-		else if (strcmp(argv[iArg], "-dt") == 0)
-		{
-			iArg++;
-			
-			if (iArg < argc)
-			{
-				stringstream buf;
-				buf << argv[iArg];
-				buf >> gParams.dt;
-				cout << "Set dt manually to " << gParams.dt << endl;
-			}
-		}
-		else
-		{
-			gParams.fileMesh = argv[iArg];
-			gParams.dtCount = 1;
-			gParams.meshCount = 1;
-		}
+		return iReturn;
 	}
 
-	// ----------
-	
-	gParams.hInner = new double[gParams.meshCount];
-	gParams.hOuter = new double[gParams.meshCount];
-	gParams.dth = new double[gParams.dtCount];
-	gParams.times[0] = new double[gParams.meshCount];
-	gParams.times[1] = new double[gParams.meshCount];
-	gParams.uNorms[0] = new Vector[gParams.meshCount];
-	gParams.uNorms[1] = new Vector[gParams.meshCount];
-	gParams.vNorms[0] = new Vector[gParams.meshCount];
-	gParams.vNorms[1] = new Vector[gParams.meshCount];
-	
-	// ------------------------------------------------------------------------
-	// ------------------------------------------------------------------------
-	// ------------------------------------------------------------------------
 
-	// fill the dt/h values, will be x-axis on CFL condition plots
-	for (int i = 0; i < gParams.dtCount; i++)
+	DUMP(gParams.mode);
+	DUMP(gParams.files.size());
+	DUMP(gParams.outPath);
+	DUMP(gParams.calcMDefault);
+	DUMP(gParams.calcMLumping);
+	DUMP(gParams.solver);
+	DUMP(gParams.quiet);
+	DUMP(gParams.generatePNG);
+	DUMP(gParams.render);
+	DUMP(gParams.framerate);
+	// ---
+	DUMP(gParams.T);
+	DUMP(gParams.dt);
+	DUMP(gParams.CFLs.size());
+	DUMP(gParams.peakX);
+	DUMP(gParams.peakY);
+
+
+	switch (gParams.mode)
 	{
-		gParams.dth[i] = 1.1 - 0.1 * i;
-	}
-
-	// iterate over the list of meshes
-	
-	for (int iMsh = 0; iMsh < gParams.meshCount; iMsh++)
-	{
-		// select the the default meshes or ffpp generated ones
-	
-		if (gParams.test)
+	case eWM_SIMPLE:
+		iReturn = simple();	
+		break;
+	case eWM_TIMETEST:
+		iReturn = timetest();
+		break;
+	case eWM_CFLTEST:
+		iReturn = cfltest();
+		break;
+	case eWM_COMBINEDTEST:
+		iReturn = timetest();
+		if (iReturn != 0)
 		{
-			// FFPP
-			stringstream buf;
-			buf << "data/mesh/cercle_ffpp_";
-			buf << iMsh;
-			buf >> gParams.fileMesh;
-			
-			gParams.fileMesh += ".msh";
+			break;
 		}
-		else if (gParams.meshCount > 1)
-		{
-			stringstream buf;
-			buf << "data/mesh/cercle";
-			buf << iMsh + 1;
-			buf >> gParams.fileMesh;
-			
-			gParams.fileMesh += ".msh";
-		}
-	
-		{
-			ifstream fileTest(gParams.fileMesh.c_str());
-			
-			if (!fileTest)
-			{
-				cout << "No valid mesh " << gParams.fileMesh << endl;
-				return 0;
-			}
-		}
-		
-		cout << endl << "Loading mesh..." << endl;
-		
-		// Load the mesh
+		iReturn = cfltest();
+		break;
+	};
 
-		RESETCLOCK();
-		
-		Mesh mesh(gParams.fileMesh.c_str());
-		
-		CLOCK(tLoadMesh);
-
-		// calculate min/max diameters of the mesh triangles
-		
-		gParams.hInner[iMsh] = mesh.maxIncircleDiameter();
-		gParams.hOuter[iMsh] = mesh.maxCircumcircleDiameter();
-
-		// idx selects the [2] arrays to keep track of lumping values as well
-		int idx = gParams.lumping ? 1 : 0;
-		
-		// we'll be starting in TIME mode, only one dt value is picked here
-		int dtCount;
-		
-		if (gParams.mode == eWM_TIME)
-		{
-			dtCount = 1;
-		}
-		else
-		{
-			// prepare the vectors holding the norms for u and v
-			gParams.uNorms[idx][iMsh] = Vector(gParams.dtCount);
-			gParams.vNorms[idx][iMsh] = Vector(gParams.dtCount);
-			dtCount = gParams.dtCount;
-		}
-
-		// iterate over dt when in CFL mode, else only one run
-		
-		for (uint iDt = 0; iDt < dtCount; iDt++)
-		{
-			// Prepare time steps
-			
-			if (gParams.mode == eWM_CFL)
-			{
-				// we're picking a fixed dth in CFT mode
-				gParams.dt = gParams.dth[iDt] * gParams.hInner[iMsh];
-			}
-			else if (gParams.dt <= 0.)
-			{
-				gParams.dt = gParams.hInner[iMsh] / 3.;
-			}
-			
-			uint nSteps = ceil(gParams.T / gParams.dt);
-			tSteps = new clock_t[nSteps];
-
-			// ----------
-			
-			// Assemble the matrices and vectors
-
-			uint dim = mesh.countVertices();
-			
-			// vMatV = M
-			Sparse uMatU, vMatU, uMatV, M;
-			
-			assembleIterationMatrices(mesh, uMatU, vMatU, uMatV, M);
-
-			// ----------
-
-			// solve the problem
-			
-			Vector u(dim);
-			Vector uLast(dim);
-			Vector v(dim);
-			Vector vLast(dim);
-
-			Vector originPos(nSteps+1);
-			Vector timeVals(nSteps+1);
-			
-			// initial values
-			uLast.constructFunc(mesh, wave::u0);
-			vLast.constructFunc(mesh, wave::u1);
-
-			// ---
-			
-			if (gParams.render)
-			{
-				PlotMesh plotD("wave_gnuplot_000", mesh, uLast);
-				plotD.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
-			}
-			
-			// ---
-			
-			originPos(0) = mesh.eval(0.0, 0.0, uLast);
-			timeVals(0) = 0;
-			
-			cout << "Solving " << gParams.fileMesh << " with dt: " << gParams.dt << " T:" << " [0," << gParams.T << "]";
-			if (gParams.lumping)
-			{
-				cout << " with mass lumping" << endl;
-			}
-			else
-			{
-				cout << endl;
-			}
-			
-			// iteration over the time steps
-			
-			for (uint i = 0; i < nSteps; i++)
-			{
-				RESETCLOCK();
-
-				M.newmark(u, v, uLast, vLast, uMatU, vMatU, uMatV);
-				
-				uLast = u;
-				vLast = v;
-				
-				CLOCK(tSteps[i]);
-				
-				// in CFL test mode we may have divergency
-				if (gParams.mode == eWM_CFL)
-				{
-					double _unorm = u.norm2();
-					// the development after 2s should be way smaller than 10
-					if (_unorm > 12.)
-					{
-						cout << "Divergency, abort" << endl;
-						break;
-					}
-				}
-				
-				// track initial position
-				originPos(i+1) = mesh.eval(0.0, 0.0, uLast);
-				timeVals(i+1) = (i+1) * gParams.dt;
-				
-				if (gParams.render)
-				{
-					stringstream buf;
-					buf << "wave_gnuplot_";
-					if (i+1 < 100)
-					{
-						if (i+1 < 10)
-						{
-							buf << "0";
-						}
-						buf << "0";
-					}
-					buf << i+1;
-					
-					string plotFile;
-					buf >> plotFile;
-					
-					PlotMesh plotD(plotFile.c_str(), mesh, u);
-					plotD.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
-				}
-			}
-
-			// computation time
-
-			tSolve = 0;
-			for (uint i = 0; i < nSteps; i++)
-			{
-				tSolve += tSteps[i];
-			}
-			
-			double uNorm = u.norm2();
-			double vNorm = v.norm2();
-			
-			if (gParams.mode == eWM_TIME)
-			{
-				gParams.times[idx][iMsh] = ((double)tSolve) / CLOCKS_PER_SEC;
-			}
-			else if (gParams.mode == eWM_CFL)
-			{
-				gParams.uNorms[idx][iMsh](iDt) = uNorm;
-				gParams.vNorms[idx][iMsh](iDt) = vNorm;
-			}
-			
-			// ---
-			
-			cout << "---" << endl;
-			
-			LOGTIME("Load Mesh", tLoadMesh);
-			
-			cout << "---" << endl;
-			
-			LOGTIME("Solving", tSolve);
-			
-			cout << "---" << endl;
-			cout << "Computed: " << gParams.fileMesh << " - Nv: " << mesh.countVertices() << 
-			", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << ", h: " << gParams.hInner[iMsh] << endl;
-
-			cout << "---" << endl;
-			
-			cout << "norm2(u): " << uNorm << endl;
-			cout << "norm2(v): " << vNorm << endl;
-			cout << "dt/h: " << gParams.dt / gParams.hInner[iMsh] << endl;
-			
-			// ----------
-
-			if (!gParams.test && !gParams.lumping && gParams.mode == eWM_TIME)
-			{
-				// Plot initial data if we're considering only a single mesh
-				
-				if (gParams.meshCount == 1)
-				{
-					PlotMesh plotU0("p2t1_u0", mesh, wave::u0, "Initial distribution");
-					plotU0.generate(ePT_GNUPLOT, true);
-					plotU0.generate(ePT_MEDIT);
-					if (gParams.save) { plotU0.generate(ePT_GNUPLOT, true, true); }
-					
-					PlotMesh plotU1("p2t1_u1", mesh, wave::u1, "Initial velocity");
-					plotU1.generate(ePT_GNUPLOT, true);
-					plotU1.generate(ePT_MEDIT);
-					if (gParams.save) { plotU1.generate(ePT_GNUPLOT, true, true); }
-				}
+	return iReturn;
+/*
 				
 				// plot last step
 				
 				ostringstream buf;
 				buf << iMsh + 1;
-				
-				PlotMesh plotU(("p2t1_u_" + buf.str()).c_str(), mesh, u, "u(T, x)");
-				plotU.generate(ePT_MEDIT);
-				plotU.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
-				if (gParams.save) { plotU.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
-				
-				PlotMesh plotV(("p2t1_v_" + buf.str()).c_str(), mesh, v, "v(T, x)");
-				plotV.generate(ePT_MEDIT);
-				plotV.generate(ePT_GNUPLOT, true, false, "data/_gnuplot/wave.ptpl");
-				if (gParams.save) { plotV.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
-				
+								
 				// Plot solving times if we're investigating a mesh in more detail
 				if (gParams.meshCount == 1)
 				{
@@ -615,74 +225,9 @@ int main(int argc, char* argv[])
 					if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 				}
 				
-				// Plot position of origin over time
-				Plot plotOrigin(("p2t3_origin_" + buf.str()).c_str(), timeVals, originPos, "Position of origin over time", "", " w linespoints");
-				plotOrigin.generate(ePT_GNUPLOT, true);
-				if (gParams.save) { plotOrigin.generate(ePT_GNUPLOT, true, true); }
-				
 				// ---
-				
-				// render the time development as video if desired
-				
-				if (gParams.render)
-				{
-					PlotVideo::renderVideo("wave_gnuplot.avi", "wave_gnuplot_", gParams.framerate);
-					break;
-				}
+
 			}
-			
-			// ----------
-		
-			SAFE_ARRDELETE(tSteps);
-			
-			// ----------
-			
-			if (gParams.mode == eWM_CFL)
-			{
-				cout << "CFL test: dt " << gParams.dt << "(" << iDt + 1 << "/" << gParams.dtCount << "), mesh "
-					<< "(" << iMsh + 1 << "/" << gParams.meshCount << ")";
-				if (gParams.lumping)
-				{
-					cout << " with mass lumping";
-				}
-				cout << endl;
-			}
-			
-			if (gParams.render)
-			{
-				break;
-			}
-		}
-		
-		// ----------
-			
-		if (gParams.meshCount > 1 && iMsh == gParams.meshCount - 1)
-		{
-			if (!gParams.lumping)
-			{
-				// reset the iteration and calculate values with mass lumping
-				cout << endl << "### Calculate values with mass lumping" << endl;
-				iMsh = -1;
-				gParams.lumping = true;
-			}
-			// switch the program mode
-			else if (gParams.mode == eWM_TIME)
-			{
-				gParams.mode = eWM_CFL;
-				gParams.lumping = false;
-				cout << endl << endl << "=== CFL Test ===" << endl << endl;
-				iMsh = -1;
-			}
-		}
-		
-		// reset the dt value, will be determined automatically on next step
-		gParams.dt = -1.;
-		
-		if (gParams.render)
-		{
-			break;
-		}
-	}
 	
 	// ------------------------------------------------------------------------
 	// ------------------------------------------------------------------------
@@ -740,26 +285,825 @@ int main(int argc, char* argv[])
 			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 	}
-	
-	// ----------
-	
-	// cleanup
-	
-	SAFE_ARRDELETE(gParams.hInner);
-	SAFE_ARRDELETE(gParams.hOuter);
-	SAFE_ARRDELETE(gParams.dth);
-	SAFE_ARRDELETE(gParams.times[0]);
-	SAFE_ARRDELETE(gParams.times[1]);
-	SAFE_ARRDELETE(gParams.uNorms[0]);
-	SAFE_ARRDELETE(gParams.uNorms[1]);
-	SAFE_ARRDELETE(gParams.vNorms[0]);
-	SAFE_ARRDELETE(gParams.vNorms[1]);
+	*/
+	return 0;
+}
 
-	tEnd = clock();
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+int parseCmd(int argc, char* argv[])
+{
+	bool firstFile = true;
+
+	for (int iArg = 1; iArg < argc; iArg++)
+	{
+		if (strcmp(argv[iArg], "-h") == 0)
+		{
+			cout << "Usage: bin/wave [-defM] [-lumpM] [-q] [-g] [-r] [-fps " << gParams.framerate << "] [-timetest] [-cfltest] [-cfls " << gParams.CFLs[0] << ",...] [-peak " << gParams.peakX << "," << gParams.peakY  << "] [-o " << gParams.outPath << "] [" << gParams.files[0] << "] ..." << endl;
+			cout << "  -defM           use mass lumping for the assembly of M" << endl;
+			cout << "  -lumpM          use mass lumping for the assembly of M" << endl;
+			cout << "  -q              don't run gnuplot to display plots" << endl;
+			cout << "  -g              generate PNGs of the plots" << endl;
+			cout << "  -r              render a video based on plots of each timestep" << endl;
+			cout << "  -fps            framerate of the video to render" << endl;
+			cout << "  -timetest       measure and compare solvingtimes" << endl;
+			cout << "  -cfltest        measure the norm of the solution depending on cfl" << endl;
+			cout << "  -cfls           list of cfl factors separated by comma" << endl;
+			cout << "  -peak           position of the peak center for initial u" << endl;
+			cout << "  -o              outpot folder for plots" << endl;
+			cout << endl;
+			cout << "If both '-defM' and '-lumpM' are used, comparisons are generated in the tests." << endl;
+			cout << endl;
+			cout << "Multiple files can be passed on UNIX systems using 'find', 'xargs' and pipelines:" << endl;
+			cout << endl;
+			cout << "  $ find data/mesh/cercle?.msh | xargs bin/wave -defM -lumpM -cfltest" << endl;
+			cout << endl;
+			return 0;
+		}
+		else if (strcmp(argv[iArg], "-defM") == 0)
+		{
+			gParams.calcMDefault = true;
+		}
+		else if (strcmp(argv[iArg], "-lumpM") == 0)
+		{
+			gParams.calcMLumping = true;
+		}
+		else if (strcmp(argv[iArg], "-q") == 0)
+		{
+			gParams.quiet = true;
+		}
+		else if (strcmp(argv[iArg], "-g") == 0)
+		{
+			gParams.generatePNG = true;
+		}
+		else if (strcmp(argv[iArg], "-r") == 0)
+		{
+			gParams.render = true;
+		}
+		else if (strcmp(argv[iArg], "-fps") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				stringstream buf;
+				buf << argv[iArg];
+				buf >> gParams.framerate;
+			}
+		}
+		else if (strcmp(argv[iArg], "-timetest") == 0)
+		{
+			if (gParams.mode == eWM_CFLTEST)
+			{
+				gParams.mode = eWM_COMBINEDTEST;
+			}
+			else
+			{
+				gParams.mode = eWM_TIMETEST;
+			}
+		}
+		else if (strcmp(argv[iArg], "-cfltest") == 0)
+		{
+			if (gParams.mode == eWM_TIMETEST)
+			{
+				gParams.mode = eWM_COMBINEDTEST;
+			}
+			else
+			{
+				gParams.mode = eWM_CFLTEST;
+			}
+		}
+		else if (strcmp(argv[iArg], "-o") == 0)
+		{			
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				gParams.outPath = argv[iArg];
+			}
+		}
+		else if (strcmp(argv[iArg], "-T") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				stringstream buf;
+				buf << argv[iArg];
+				buf >> gParams.T;
+			}
+		}
+		else if (strcmp(argv[iArg], "-dt") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				stringstream buf;
+				buf << argv[iArg];
+				buf >> gParams.dt;
+			}
+		}
+		else if (strcmp(argv[iArg], "-peak") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				char* sDim = strtok(argv[iArg], ",");
+				
+				{
+					stringstream buf;
+					buf << sDim;
+					buf >> gParams.peakX;
+				}
+				
+				sDim = strtok(0, ",");
+				
+				{
+					stringstream buf;
+					buf << sDim;
+					buf >> gParams.peakY;
+				}
+			}
+		}
+		else if (strcmp(argv[iArg], "-cfls") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				char* sDim = strtok(argv[iArg], ",");
+
+				while (sDim)				
+				{
+					double cfl;
+					stringstream buf;
+					buf << sDim;
+					buf >> cfl;
+
+					gParams.CFLs.push_back(cfl);
+
+					sDim = strtok(0, ",");
+				}
+			}
+		}
+		else
+		{
+			if (firstFile)
+			{
+				gParams.files.clear();
+				firstFile = false;
+			}
+			gParams.files.push_back(argv[iArg]);
+		}
+	}
+
+	if (!gParams.calcMDefault && !gParams.calcMLumping)
+	{
+		// if no method was explicitly chosen, pick the default one
+		gParams.calcMDefault = true;
+	}
+
+	return -1;
+}
+
+// ----------------------------------------------------------------------------
+
+void printStats(const char* meshFile, const Mesh& mesh, clock_t times[],
+				double uNorm, double vNorm, double timestep)
+{
+	double h = mesh.maxIncircleDiameter();
+
+	cout << "---" << endl;
+	
+	LOGTIME("Assemble M", times[eT_MATM]);
+	LOGTIME("Solving", times[eT_SOLVE]);
+	LOGTIME("Load Mesh", times[eT_LOADMESH]);
 	
 	cout << "---" << endl;
-	LOGTIME("Total time", tEnd - tStart);
+
+	cout << "Computed: " << meshFile << " - Nv: " << mesh.countVertices() << 
+	", Nt: " << mesh.countTriangles() << ", nE: " << mesh.countEdges() << ", h: " << h << endl;
+
+	cout << "---" << endl;
 	
+	cout << "norm2(u): " << uNorm << endl;
+	cout << "norm2(v): " << vNorm << endl;
+	cout << "dt/h: " << timestep / h << endl;
+}
+
+bool loadMesh(const char* file, Mesh& mesh, clock_t& tLoadMesh)
+{
+	ifstream fileMesh(file);
+
+	if (!fileMesh)
+	{
+		cout << "No valid mesh " << file << endl;
+		return false;
+	}
+
+	RESETCLOCK();
+    fileMesh >> mesh;
+	CLOCK(tLoadMesh);
+
+	return true;
+}
+
+void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
+	double timestep, bool origin, clock_t& tMatM, clock_t& tSolve)
+{
+	uint dim = mesh.countVertices();
+
+	Vector u(dim);
+	Vector v(dim);
+
+	Vector uLast(dim);
+	Vector vLast(dim);
+
+	// ----------
+
+	// vMatV = M
+	Sparse uMatU, vMatU, uMatV, M;
+
+	{
+		// Assemble simple matrices
+
+		SparseMap Amap(dim, dim), Mmap(dim, dim), Bmap(dim, dim);
+	
+		// A
+	
+		Amap.constructA(mesh);
+	
+		// M
+
+		RESETCLOCK();	
+		if (gParams.calcMLumping)
+		{
+			Mmap.constructMlump(mesh);
+		}
+		else
+		{
+			Mmap.constructM(mesh);
+		}
+		CLOCK(tMatM);
+	
+		// B
+	
+		Bmap.constructB(mesh);
+
+		// Assemble combined matrices
+
+		SparseMap uMatUmap(dim, dim), vMatUmap(dim, dim), uMatVmap(dim, dim);
+	
+		SparseMap ABmap = Amap;
+		ABmap += Bmap;
+	
+		uMatUmap = ABmap;
+		uMatUmap *= -pow(gParams.dt, 2) / 2.;
+		uMatUmap += Mmap;
+		uMatU = uMatUmap;
+	
+		vMatUmap = Mmap;
+		vMatUmap *= gParams.dt;
+		vMatU = vMatUmap;
+	
+		uMatVmap = ABmap;
+		uMatVmap *= -gParams.dt / 2.;
+		uMatV = uMatVmap;
+	
+		M = Mmap;
+	}
+
+	// ----------
+
+	uint nSteps = ceil(gParams.T / timestep);
+
+	clock_t* tSteps = new clock_t[nSteps];
+
+	Vector originPos(nSteps+1);
+	Vector timeVals(nSteps+1);
+			
+	// initial values
+	uLast.constructFunc(mesh, wave::u0);
+	vLast.constructFunc(mesh, wave::u1);
+
+	if (gParams.render)
+	{
+		PlotMesh p("wave_gnuplot_000", mesh, uLast);
+		p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
+	}
+	
+	// ---
+	
+	originPos(0) = mesh.eval(0.0, 0.0, uLast);
+	timeVals(0) = 0;
+	
+	cout << "Solving with dt: " << timestep << " T:" << " [0," << gParams.T << "]";
+	if (lumping)
+	{
+		cout << " with mass lumping";
+	}
+	cout << "..." << endl;
+	
+	// iteration over the time steps
+	
+	for (uint i = 0; i < nSteps; i++)
+	{
+		RESETCLOCK();
+
+		M.newmark(u, v, uLast, vLast, uMatU, vMatU, M);
+		
+		uLast = u;
+		vLast = v;
+		
+		CLOCK(tSteps[i]);
+		
+		// in CFL test mode we may have divergency
+		/*if (gParams.mode == eWM_CFL)
+		{
+			double _unorm = u.norm2();
+			// the development after 2s should be way smaller than 10
+			if (_unorm > 12.)
+			{
+				cout << "Divergency, abort" << endl;
+				break;
+			}
+		}*/
+		
+		// track initial position
+		originPos(i+1) = mesh.eval(0.0, 0.0, uLast);
+		timeVals(i+1) = (i+1) * timestep;
+		
+		if (gParams.render)
+		{
+			stringstream buf;
+			buf << "wave_gnuplot_";
+			if (i+1 < 100)
+			{
+				if (i+1 < 10)
+				{
+					buf << "0";
+				}
+				buf << "0";
+			}
+			buf << i+1;
+			
+			string plotFile;
+			buf >> plotFile;
+			
+			PlotMesh p(plotFile.c_str(), mesh, u);
+			p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
+		}
+	}
+
+	// add up calculation time
+
+	tSolve = 0;
+	for (uint i = 0; i < nSteps; i++)
+	{
+		tSolve += tSteps[i];
+	}
+
+	// ---
+
+	// Plot position of origin over time
+	if (origin)
+	{
+		Plot p("p2t3_origin", timeVals, originPos, "Position of origin", "", " w linespoints");
+		p.addScriptLine("set nokey");
+		p.setAxisLabel(ePA_X, "t [s]");
+		p.setAxisLabel(ePA_Y, "z");
+		p.generate(ePT_GNUPLOT, !gParams.quiet);
+		if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+	}
+
+	// ---
+
+	SAFE_ARRDELETE(tSteps);
+
+	uResult = u;
+	vResult = v;
+}
+
+// ----------------------------------------------------------------------------
+
+int simple()
+{
+	cout << "Solving the problem over " << gParams.files.size() << " mesh(es)" << endl;
+	
+	// ---
+
+	clock_t times[eT_END];
+
+	RESETCLOCK();
+	CLOCK(times[eT_START]);
+
+	// Calculate approximate solutions and compare with the exact one
+
+	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
+	{
+		cout << endl << "Loading the mesh " << gParams.files[iMsh] << "..." << endl;
+
+		Mesh mesh;
+		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
+		{
+			return 1;
+		}
+
+		double h = mesh.maxIncircleDiameter();
+
+		// ----------
+
+		// setup timestep
+
+		double dt = gParams.dt < 0 ? h / .3 : gParams.dt;
+
+		// ----------
+
+		// visualization of initial data
+
+		{
+			PlotMesh p("p2t1_u0", mesh, wave::u0, "Initial distribution");
+			p.generate(ePT_GNUPLOT, true);
+			p.generate(ePT_MEDIT);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+		
+		{	
+			PlotMesh p("p2t1_u1", mesh, wave::u1, "Initial velocity");
+			p.generate(ePT_GNUPLOT, true);
+			p.generate(ePT_MEDIT);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		// ----------
+
+		// problem will be solved with and/or without mass lumping (method), no lumping first if desired
+
+		bool solved = false;
+		bool lumping = !gParams.calcMDefault;
+
+		while (!solved)
+		{
+			Vector u(mesh.countVertices());
+			Vector v(mesh.countVertices());
+
+			solveWave(u, v, mesh, lumping, dt, true, times[eT_MATM], times[eT_SOLVE]);
+
+			// ---
+			
+			// calculate norms
+
+			double uNorm = u.norm2();
+			double vNorm = v.norm2();
+
+			// ----------
+
+			printStats(gParams.files[iMsh].c_str(), mesh, times, uNorm, vNorm, dt);
+
+			// ----------
+
+			// visualization
+
+			//plotU.generate(ePT_GNUPLOT_SURF, !gParams.quiet, false, "", "", 20);
+
+			{
+				PlotMesh p("p2t1_u", mesh, u, "u(T, x)");
+				p.generate(ePT_MEDIT);
+				p.generate(ePT_GNUPLOT, !gParams.quiet, false, "data/_gnuplot/wave.ptpl");
+				if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
+			}
+			
+			{
+				PlotMesh p("p2t1_v", mesh, v, "v(T, x)");
+				p.generate(ePT_MEDIT);
+				p.generate(ePT_GNUPLOT, !gParams.quiet, false, "data/_gnuplot/wave.ptpl");
+				if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
+			}
+
+			// ----------
+
+			if (!lumping && gParams.calcMLumping)
+			{
+				// lumping is always the second step if we had the default method before
+				lumping = true;
+			}
+			else
+			{
+				solved = true;
+			}
+		}
+	}
+
+				
+	// render the time development as video if desired
+	
+	if (gParams.render)
+	{
+		PlotVideo::renderVideo("wave_gnuplot.avi", "wave_gnuplot_", gParams.framerate);
+	}
+
+	// ---
+
+	CLOCK(times[eT_END]);
+
+	return 0;
+}
+
+int timetest()
+{
+	cout << "Timetest over " << gParams.files.size() << " meshes" << endl;
+
+	// ---
+
+	clock_t times[eT_END];
+
+	RESETCLOCK();
+	CLOCK(times[eT_START]);
+
+	// ---
+
+	uint meshCount = gParams.files.size();
+
+	Vector hMeshes(meshCount);
+
+	Vector timesAssembleDefault(meshCount); 
+	Vector timesSolveDefault(meshCount);
+
+	Vector timesAssembleLumping(meshCount);
+	Vector timesSolveLumping(meshCount);
+
+	// Calculate solutions and clock the time
+
+	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
+	{
+		cout << endl << "Loading the mesh " << gParams.files[iMsh] << "..." << endl;
+
+		Mesh mesh;
+		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
+		{
+			return 1;
+		}
+
+		hMeshes(iMsh) = mesh.maxIncircleDiameter();
+
+		// ----------
+
+		// setup timestep
+
+		double dt = gParams.dt < 0 ? hMeshes(iMsh) / .3 : gParams.dt;
+
+		// problem will be solved with and/or without mass lumping (method), no lumping first if desired
+
+		bool solved = false;
+		bool lumping = !gParams.calcMDefault;
+
+		while (!solved)
+		{
+			Vector u(mesh.countVertices());
+			Vector v(mesh.countVertices());
+
+			solveWave(u, v, mesh, lumping, dt, false, times[eT_MATM], times[eT_SOLVE]);
+
+			// ----------
+
+			double assembleTime = ((double)times[eT_MATM]) / CLOCKS_PER_SEC;
+			double solveTime = ((double) times[eT_SOLVE]) / CLOCKS_PER_SEC;
+
+			if (lumping)
+			{
+				timesAssembleLumping(iMsh) = assembleTime;
+				timesSolveLumping(iMsh) = solveTime;
+			}
+			else
+			{
+				timesAssembleDefault(iMsh) = assembleTime;
+				timesSolveDefault(iMsh) = solveTime;
+			}
+
+			// ----------
+
+			if (!lumping && gParams.calcMLumping)
+			{
+				// lumping is always the second step if we had the default method before
+				lumping = true;
+			}
+			else
+			{
+				solved = true;
+			}
+		}
+	}
+	// ---
+
+	// visualization
+
+	if (gParams.calcMLumping && gParams.calcMDefault)
+	{
+		// compare default and lumping methods
+		{
+			Plot p("p2t4_timeSolve2", hMeshes, timesSolveDefault, "Time comparison (solving)", "",
+					" w linespoints title 'default'");
+			p.addYVector(timesSolveLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Plot p("p2t4_timeAssemble2", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "",
+					" w linespoints title 'default'");
+			p.addYVector(timesAssembleLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+	else
+	{
+		// plot default OR lumping times
+		{
+			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
+			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
+
+			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Vector& y = gParams.calcMLumping ? timesAssembleLumping : timesAssembleDefault;
+			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
+
+			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+
+	// ---
+
+	CLOCK(times[eT_END]);
+
+	return 0;
+}
+
+int cfltest()
+{
+	cout << "CFLtest over " << gParams.files.size() << " meshes and " << gParams.CFLs.size() << " factors" << endl;
+/*
+	// ---
+
+	clock_t times[eT_END];
+
+	RESETCLOCK();
+	CLOCK(times[eT_START]);
+
+	// ---
+
+	uint meshCount = gParams.files.size();
+
+	Vector hMeshes(meshCount);
+
+	Vector timesAssembleDefault(meshCount); 
+	Vector timesSolveDefault(meshCount);
+
+	Vector timesAssembleLumping(meshCount);
+	Vector timesSolveLumping(meshCount);
+
+	// Calculate solutions and clock the time
+
+	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
+	{
+		cout << endl << "Loading the mesh " << gParams.files[iMsh] << "..." << endl;
+
+		Mesh mesh;
+		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
+		{
+			return 1;
+		}
+
+		hMeshes(iMsh) = mesh.maxIncircleDiameter();
+
+		// ----------
+
+		// setup timestep
+
+		double dt = gParams.dt < 0 ? hMeshes(iMsh) / .3 : gParams.dt;
+
+		// problem will be solved with and/or without mass lumping (method), no lumping first if desired
+
+		bool solved = false;
+		bool lumping = !gParams.calcMDefault;
+
+		while (!solved)
+		{
+			Vector u(mesh.countVertices());
+			Vector v(mesh.countVertices());
+
+			solveWave(u, v, mesh, lumping, dt, false, times[eT_MATM], times[eT_SOLVE]);
+
+			// ----------
+
+			double assembleTime = ((double)times[eT_MATM]) / CLOCKS_PER_SEC;
+			double solveTime = ((double) times[eT_SOLVE]) / CLOCKS_PER_SEC;
+
+			if (lumping)
+			{
+				timesAssembleLumping(iMsh) = assembleTime;
+				timesSolveLumping(iMsh) = solveTime;
+			}
+			else
+			{
+				timesAssembleDefault(iMsh) = assembleTime;
+				timesSolveDefault(iMsh) = solveTime;
+			}
+
+			// ----------
+
+			if (!lumping && gParams.calcMLumping)
+			{
+				// lumping is always the second step if we had the default method before
+				lumping = true;
+			}
+			else
+			{
+				solved = true;
+			}
+		}
+	}
+	// ---
+
+	// visualization
+
+	if (gParams.calcMLumping && gParams.calcMDefault)
+	{
+		// compare default and lumping methods
+		{
+			Plot p("p2t4_timeSolve2", hMeshes, timesSolveDefault, "Time comparison (solving)", "",
+					" w linespoints title 'default'");
+			p.addYVector(timesSolveLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Plot p("p2t4_timeAssemble2", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "",
+					" w linespoints title 'default'");
+			p.addYVector(timesAssembleLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+	else
+	{
+		// plot default OR lumping times
+		{
+			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
+			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
+
+			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Vector& y = gParams.calcMLumping ? timesAssembleLumping : timesAssembleDefault;
+			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
+
+			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+
+	// ---
+
+	CLOCK(times[eT_END]);
+*/
 	return 0;
 }
 
