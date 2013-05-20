@@ -40,9 +40,26 @@ Plot::~Plot()
 {
 }
 
-void Plot::addYVector(Vector& y)
+void Plot::addYVector(Vector& y, const char* args)
 {
 	mYPtrs.push_back(&y);
+
+	if (args)
+	{
+		mArgs.push_back(args);
+	}
+	else
+	{
+		mArgs.push_back("");
+	}
+}
+
+void Plot::addScriptLine(const char* line)
+{
+	if (line)
+	{
+		mScriptLines.push_back(line);
+	}
 }
 
 void Plot::setAxisLabel(EPlotAxis axis, const char* label)
@@ -77,7 +94,11 @@ mDataType(ePD_VECTOR)
 	
 	if (args)
 	{
-		mArgs = args;
+		mArgs.push_back(args);
+	}
+	else
+	{
+		mArgs.push_back("");
 	}
 
 	mYPtrs.push_back(&y);
@@ -101,7 +122,11 @@ mDataType(ePD_FUNCTION)
 	
 	if (args)
 	{
-		mArgs = args;
+		mArgs.push_back(args);
+	}
+	else
+	{
+		mArgs.push_back("");
 	}
 }
 
@@ -147,11 +172,16 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			ofstream fout((fileName + ".p").c_str());
 			if (mTemplate.empty())
 			{
-				mTemplate = "data/_gnuplot/default.ptpl";
+				mTemplate = "data/_gnuplot/default_2d.ptpl";
 			}
 
 			ifstream fin(mTemplate.c_str());
 			fout << fin.rdbuf() << endl;
+
+			for (uint iLine = 0; iLine < mScriptLines.size(); iLine++)
+			{
+				fout << mScriptLines[iLine] << endl;
+			}
 
 			if (savePNG)
 			{
@@ -174,19 +204,12 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 				fout << "set ylabel \"" << mLabelY << "\"" << endl;
 			}
 			
-			fout << "plot '" << fileName << ".pdat'";
-			if (!mArgs.empty())
-			{
-				fout << mArgs;
-			}
+			fout << "plot '" << fileName << ".pdat'" << mArgs[0];
 
 			for (uint iY = 1; iY < mYPtrs.size(); iY++)
 			{
 				fout << ", '" << fileName << ".pdat' using 1:" << iY + 2 ;
-				if (!mArgs.empty())
-				{
-					fout << mArgs;
-				}
+				fout << mArgs[iY];
 			}
 
 			fout << endl;
@@ -210,6 +233,10 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 
 			if (!savePNG)
 			{
+				string bof;
+				cin >> bof;
+				cout << "HERE: '" << bof << "'" << endl;
+				//cin.ignore();
 				cout << "\n<<< Press any key to continue >>>";
 				cin.get();
 			}

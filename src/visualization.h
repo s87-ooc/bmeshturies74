@@ -54,8 +54,11 @@ private:
 	/** initial template for the gnuplot script file */
 	std::string mTemplate;
 	
-	/** additional plotting arguments */
-	std::string mArgs;
+	/** additional plotting arguments per y value */
+	std::vector<std::string> mArgs;
+
+	/** additional Gnuplot script lines */
+	std::vector<std::string> mScriptLines;
 
 	/** label for the x-Axis */
 	std::string mLabelX;
@@ -82,10 +85,13 @@ public:
 	~Plot();
 	
 	/** add another y vector to the plot */
-	void addYVector(Vector& y);
+	void addYVector(Vector& y, const char* args = 0);
 
 	/** add another function to the plot */
 	//void addYFunction;
+
+	/** add an additional Gnuplot script line */
+	void addScriptLine(const char* line);
 
 	/** set the title of an axis */
 	void setAxisLabel(EPlotAxis axis, const char* label);

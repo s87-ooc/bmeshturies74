@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
 	}
 
 
-	DUMP(gParams.mode);
+	/*DUMP(gParams.mode);
 	DUMP(gParams.files.size());
 	DUMP(gParams.outPath);
 	DUMP(gParams.calcMDefault);
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
 	// ---
 	DUMP(gParams.kappa);
 	DUMP(gParams.k1);
-	DUMP(gParams.k2);
+	DUMP(gParams.k2);*/
 
 
 	switch (gParams.mode)
@@ -211,44 +211,6 @@ int main(int argc, char* argv[])
 	};
 
 	return iReturn;
-
-/*		
-		
-		// TODO
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			Vector ylump(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.errorsL2[0][i];
-			}
-		
-			Plot p("p2t4_precision", x, y, "Mass Lumping: Precision", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-		
-		// TODO
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			Vector ylump(gParams.meshCount);
-			
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.errorsGradientL2[0][i];
-			}
-		
-			Plot p("p2t4_precisionGrad", x, y, "Mass Lumping: Precision Gradient", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-	}
-*/
 }
 
 // ----------------------------------------------------------------------------
@@ -266,13 +228,20 @@ int parseCmd(int argc, char* argv[])
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
 			cout << "Usage: bin/helmholtz [-defM] [-lumpM] [-q] [-g] [-timetest] [-precisiontest] [-kappa " << gParams.kappa << "] [-k " << gParams.k1 << "," << gParams.k2  << "] [-o " << gParams.outPath << "] [" << gParams.files[0] << "] ..." << endl;
-			cout << "       -defM = use mass lumping for the assembly of M" << endl;
-			cout << "       -lumpM = use mass lumping for the assembly of M" << endl;
-			cout << "       -q = don't run gnuplot to display plots" << endl;
-			cout << "       -g = generate PNGs of the plots" << endl;
-			cout << "       -timetest = measure and compare solvingtimes" << endl;
-			cout << "       -precisiontest = measure and compare precisions" << endl;
-			cout << "       -o = outpot folder for plots" << endl;
+			cout << "  -defM           use mass lumping for the assembly of M" << endl;
+			cout << "  -lumpM          use mass lumping for the assembly of M" << endl;
+			cout << "  -q              don't run gnuplot to display plots" << endl;
+			cout << "  -g              generate PNGs of the plots" << endl;
+			cout << "  -timetest       measure and compare solvingtimes" << endl;
+			cout << "  -precisiontest  measure and compare precisions" << endl;
+			cout << "  -o              outpot folder for plots" << endl;
+			cout << endl;
+			cout << "If both '-defM' and '-lumpM' are used, comparisons are generated in the tests." << endl;
+			cout << endl;
+			cout << "Multiple files can be passed on UNIX systems using 'find', 'xargs' and pipelines:" << endl;
+			cout << endl;
+			cout << "  $ find data/mesh/carre?.msh | xargs bin/helmholtz -defM -lumpM -timetest" << endl;
+			cout << endl;
 			return 0;
 		}
 		else if (strcmp(argv[iArg], "-defM") == 0)
@@ -627,7 +596,7 @@ int timetest()
 	Vector timesAssembleLumping(meshCount);
 	Vector timesSolveLumping(meshCount);
 
-	// Calculate soltions and clock the time
+	// Calculate solutions and clock the time
 
 	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
 	{
@@ -663,8 +632,9 @@ int timetest()
 
 			// ----------
 
-			double assembleTime = ((double)(times[eT_MATA] + times[eT_MATM] + times[eT_MATB]
-					+ times[eT_RHSF] + times[eT_RHSG]))	/ CLOCKS_PER_SEC;
+			//double assembleTime = ((double)(times[eT_MATA] + times[eT_MATM] + times[eT_MATB]
+			//		+ times[eT_RHSF] + times[eT_RHSG]))	/ CLOCKS_PER_SEC;
+			double assembleTime = ((double)times[eT_MATM]) / CLOCKS_PER_SEC;
 			double solveTime = ((double) times[eT_SOLVE]) / CLOCKS_PER_SEC;
 
 			if (lumping)
@@ -700,15 +670,21 @@ int timetest()
 	{
 		// compare default and lumping methods
 		{
-			Plot p("p2t4_timeSolve1", hMeshes, timesSolveDefault, "Time comparison (solving)", "", " w linespoints");
-			p.addYVector(timesSolveLumping);
+			Plot p("p2t4_timeSolve1", hMeshes, timesSolveDefault, "Time comparison (solving)", "",
+					" w linespoints title 'default'");
+			p.addYVector(timesSolveLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 
 		{
-			Plot p("p2t4_timeAssemble1", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "", " w linespoints");
-			p.addYVector(timesAssembleLumping);
+			Plot p("p2t4_timeAssemble1", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "",
+					" w linespoints title 'default'");
+			p.addYVector(timesAssembleLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
@@ -721,6 +697,9 @@ int timetest()
 			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
 
 			Plot p("p2t4_timeSolve1", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addScriptLine("set nokey");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
@@ -730,6 +709,9 @@ int timetest()
 			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
 
 			Plot p("p2t4_timeSolve1", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addScriptLine("set nokey");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
@@ -746,7 +728,185 @@ int precisiontest()
 {
 	cout << "Precisiontest over " << gParams.files.size() << " meshes" << endl;
 
-	return 0;
+	// ---
+
+	clock_t times[eT_END];
+
+	RESETCLOCK();
+	CLOCK(times[eT_START]);
+
+	// ---
+
+	uint meshCount = gParams.files.size();
+
+	Vector hMeshes(meshCount);
+
+	Vector errorsDefault(meshCount);
+	Vector errorsL2Default(meshCount);
+	Vector errorsGradientL2Default(meshCount);
+
+	Vector errorsLumping(meshCount);
+	Vector errorsL2Lumping(meshCount);
+	Vector errorsGradientL2Lumping(meshCount);
+
+	// Calculate solutions and track the errors
+
+	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
+	{
+		cout << endl << "Loading the mesh" << gParams.files[iMsh] << "..." << endl;
+
+		Mesh mesh;
+		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
+		{
+			return 1;
+		}
+
+		hMeshes(iMsh) = mesh.maxIncircleDiameter();
+
+		// ----------
+
+		cout << "Calculating the exact solution..." << endl;
+
+		Vector uExact(mesh.countVertices());
+		uExact.constructFunc(mesh, helmholtz::u);
+
+		// ----------
+
+		// problem will be solved with and/or without mass lumping (method), no lumping first if desired
+
+		bool solved = false;
+		bool lumping = !gParams.calcMDefault;
+
+		while (!solved)
+		{
+			cout << "Solving the linear system";
+			if (lumping)
+			{
+				cout << " with lumping";
+			}
+			cout << "..." << endl;
+
+			Vector u(mesh.countVertices());
+			solveHelmholtz(u, mesh, lumping,
+				times[eT_MATA], times[eT_MATM], times[eT_MATB], times[eT_RHSF], times[eT_RHSG], times[eT_SOLVE]);
+
+			// ----------
+
+			// calculate errors
+
+			Vector err = u - uExact;
+		
+			double error = err.norm2();
+			double errorL2 = globalL2Error(mesh, uExact, u);
+			double errorGradientL2 = globalL2GradError(mesh, uExact, u);
+
+			if (lumping)
+			{
+				errorsLumping(iMsh) = error;
+				errorsL2Lumping(iMsh) = errorL2;
+				errorsGradientL2Lumping(iMsh) = errorGradientL2;
+			}
+			else
+			{
+				errorsDefault(iMsh) = error;
+				errorsL2Default(iMsh) = errorL2;
+				errorsGradientL2Default(iMsh) = errorGradientL2;
+			}
+
+			// ----------
+
+			if (!lumping && gParams.calcMLumping)
+			{
+				// lumping is always the second step if we had the default method before
+				lumping = true;
+			}
+			else
+			{
+				solved = true;
+			}
+		}
+	}
+
+	// ---
+
+	// visualization
+
+	if (gParams.calcMLumping && gParams.calcMDefault)
+	{
+		// compare default and lumping methods
+		{
+			Plot p("p2t4_error1", hMeshes, errorsDefault, "Error", "",
+					" w linespoints title 'default'");
+			p.addYVector(errorsLumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "error");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Plot p("p2t4_errorL21", hMeshes, errorsL2Default, "Error L2", "",
+					" w linespoints title 'default'");
+			p.addYVector(errorsL2Lumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "error");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Plot p("p2t4_errorGradientL21", hMeshes, errorsGradientL2Default, "Error Gradient L2", "",
+					" w linespoints title 'default'");
+			p.addYVector(errorsGradientL2Lumping, " w linespoints title 'mass lumping'");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "error");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+	else
+	{
+		// plot default OR lumping precision
+		{
+			Vector& y = gParams.calcMLumping ? errorsLumping : errorsDefault;
+			string s = gParams.calcMLumping ? "Errors with mass lumping" : "Errors" ;
+
+			Plot p("p2t4_error1", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "error");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Vector& y = gParams.calcMLumping ? errorsL2Lumping : errorsL2Default;
+			string s = gParams.calcMLumping ? "Errors L2 with mass lumping" : "Errors L2" ;
+
+			Plot p("p2t4_errorL21", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "error");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+
+		{
+			Vector& y = gParams.calcMLumping ? errorsL2Lumping : errorsL2Default;
+			string s = gParams.calcMLumping ? "Errors Gradient L2 with mass lumping" : "Errors Gradient L2" ;
+
+			Plot p("p2t4_errorGradientL21", hMeshes, y, s.c_str(), "", " w linespoints");
+			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_Y, "error");
+			p.addScriptLine("set nokey");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
+	}
+
+	// ---
+
+	CLOCK(times[eT_END]);
 }
 
 void printStats(const char* meshFile, const Mesh& mesh, clock_t times[],
