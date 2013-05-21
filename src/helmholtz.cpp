@@ -221,7 +221,8 @@ int parseCmd(int argc, char* argv[])
 	{
 		if (strcmp(argv[iArg], "-h") == 0)
 		{
-			cout << "Usage: bin/helmholtz [-defM] [-lumpM] [-q] [-g] [-timetest] [-precisiontest] [-kappa " << gParams.kappa << "] [-k " << gParams.k1 << "," << gParams.k2  << "] [-o " << gParams.outPath << "] [" << gParams.files[0] << "] ..." << endl;
+			cout << "Usage: bin/helmholtz [-s 0] [-defM] [-lumpM] [-q] [-g] [-timetest] [-precisiontest] [-kappa " << gParams.kappa << "] [-k " << gParams.k1 << "," << gParams.k2  << "] [-o " << gParams.outPath << "] [" << gParams.files[0] << "] ..." << endl;
+			cout << "  -s              use solver 0 = CG, 1 = Jacobi, 2 = LU" << endl;			
 			cout << "  -defM           use default method for the assembly of M" << endl;
 			cout << "  -lumpM          use mass lumping for the assembly of M" << endl;
 			cout << "  -q              don't run gnuplot to display plots" << endl;
@@ -237,6 +238,33 @@ int parseCmd(int argc, char* argv[])
 			cout << "  $ find data/mesh/carre?.msh | xargs bin/helmholtz -defM -lumpM -timetest" << endl;
 			cout << endl;
 			return 0;
+		}
+		else if (strcmp(argv[iArg], "-s") == 0)
+		{
+			iArg++;
+			
+			if (iArg < argc)
+			{
+				int i;
+				stringstream buf;
+				buf << argv[iArg];
+				buf >> i;
+				switch(i)
+				{
+				case 0:
+					cout << "Solver: CG" << endl;
+					gParams.solver = eS_CG;
+					break;
+				case 1:
+					cout << "Solver: Jacobi" << endl;
+					gParams.solver = eS_JACOBI;
+					break;
+				case 2:
+					cout << "Solver: LU" << endl;
+					gParams.solver = eS_LU;
+					break;
+				}
+			}
 		}
 		else if (strcmp(argv[iArg], "-defM") == 0)
 		{
