@@ -499,7 +499,7 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 		// M
 
 		RESETCLOCK();
-		if (gParams.calcMLumping)
+		if (lumping)
 		{
 			Mmap.constructMlump(mesh);
 		}
