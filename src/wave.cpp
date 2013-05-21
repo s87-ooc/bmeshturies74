@@ -576,7 +576,7 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 		M.newmark(u, v, uLast, vLast, uMatU, vMatU, uMatV);
 
 		// in CFLtest mode we're handling divergency
-		if (gParams.mode == eWM_CFLTEST)
+		/*if (gParams.mode == eWM_CFLTEST)
 		{
 			// the norm of the next step should not explode
 			if (dot(u, u) / dot(uLast, uLast) > 3.)
@@ -584,7 +584,7 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 				cout << "Divergency at " << (i+1)*timestep << "s (" << i+1 << "steps), abort" << endl;
 				break;
 			}
-		}
+		}*/
 
 		uLast = u;
 		vLast = v;
@@ -1041,6 +1041,7 @@ int cfltest()
 				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
 			}
 			//p.addScriptLine("set yrange [0:2.1]");
+			p.addScriptLine("set logscale y");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1057,6 +1058,7 @@ int cfltest()
 				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
 			}
 			//p.addScriptLine("set yrange [0:2.1]");
+			p.addScriptLine("set logscale y");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|v|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1077,6 +1079,7 @@ int cfltest()
 				p.addYVector(y[i], " w linespoints title 'default'");
 			}
 			//p.addScriptLine("set yrange [0:2.1]");
+			p.addScriptLine("set logscale y");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1094,6 +1097,7 @@ int cfltest()
 				p.addYVector(y[i], " w linespoints title 'default'");
 			}
 			//p.addScriptLine("set yrange [0:2.1]");
+			p.addScriptLine("set logscale y");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
