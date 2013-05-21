@@ -1023,7 +1023,7 @@ int cfltest()
 			{
 				vArrs[iArr][iMsh](iVal) /= vArrs[iArr][iMsh](0);
 				// limit factor to 2 = divergence
-				vArrs[iArr][iMsh](iVal) = vArrs[iArr][iMsh](iVal) > 2. ? 2. : vArrs[iArr][iMsh](iVal);
+				vArrs[iArr][iMsh](iVal) = vArrs[iArr][iMsh](iVal) > 5. ? 5. : vArrs[iArr][iMsh](iVal);
 			}
 		}
 	}
@@ -1032,7 +1032,7 @@ int cfltest()
 	{
 		// compare default and lumping methods
 		{
-			Plot p("p2t4_uStability", CFLs, uNormsDefault[0], "Stability of u", "",
+			Plot p((gParams.outPath + "p2t4_uStability").c_str(), CFLs, uNormsDefault[0], "Stability of u", "",
 					" w linespoints title 'default'");
 			p.addYVector(uNormsLumping[0], " w linespoints title 'mass lumping'");
 			for (uint i = 1; i < meshCount; i++)
@@ -1048,7 +1048,7 @@ int cfltest()
 		}
 
 		{
-			Plot p("p2t4_vStability", CFLs, vNormsDefault[0], "Stability of v", "",
+			Plot p((gParams.outPath + "p2t4_vStability").c_str(), CFLs, vNormsDefault[0], "Stability of v", "",
 					" w linespoints title 'default'");
 			p.addYVector(vNormsLumping[0], " w linespoints title 'mass lumping'");
 			for (uint i = 1; i < meshCount; i++)
@@ -1070,7 +1070,7 @@ int cfltest()
 			Vector*& y = gParams.calcMLumping ? uNormsLumping : uNormsDefault;
 			string s = gParams.calcMLumping ? "Stability of u with lumping" : "Stability of u" ;
 
-			Plot p("p2t4_uStability", CFLs, y[0], s.c_str(), "",
+			Plot p((gParams.outPath + "p2t4_uStability").c_str(), CFLs, y[0], s.c_str(), "",
 					" w linespoints title 'default'");
 			for (uint i = 1; i < meshCount; i++)
 			{
@@ -1087,7 +1087,7 @@ int cfltest()
 			Vector*& y = gParams.calcMLumping ? vNormsLumping : vNormsDefault;
 			string s = gParams.calcMLumping ? "Stability of v with lumping" : "Stability of v" ;
 
-			Plot p("p2t4_vStability", CFLs, y[0], s.c_str(), "",
+			Plot p((gParams.outPath + "p2t4_vStability").c_str(), CFLs, y[0], s.c_str(), "",
 					" w linespoints title 'default'");
 			for (uint i = 1; i < meshCount; i++)
 			{
