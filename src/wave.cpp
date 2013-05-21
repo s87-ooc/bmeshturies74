@@ -1009,7 +1009,7 @@ int cfltest()
 	} 
 
 	// we're dividing the norm vectors by the first element to get factors for comparison
-	Vector* vArrs[4];
+	/*Vector* vArrs[4];
 	vArrs[0] = uNormsDefault;
 	vArrs[1] = uNormsLumping;
 	vArrs[2] = vNormsDefault;
@@ -1026,7 +1026,7 @@ int cfltest()
 				vArrs[iArr][iMsh](iVal) = vArrs[iArr][iMsh](iVal) > 5. ? 5. : vArrs[iArr][iMsh](iVal);
 			}
 		}
-	}
+	}*/
 
 	if (gParams.calcMLumping && gParams.calcMDefault)
 	{
