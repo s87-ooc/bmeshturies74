@@ -575,26 +575,21 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 
 		M.newmark(u, v, uLast, vLast, uMatU, vMatU, uMatV);
 
+		// in CFLtest mode we're handling divergency
+		if (gParams.mode == eWM_CFLTEST)
+		{
+			// the norm of the next step should not explode
+			if (dot(u, u) / dot(uLast, uLast) > 1.5)
+			{
+				cout << "Divergency at " << (i+1)*timestep << "s (" << i+1 << "steps), abort" << endl;
+				break;
+			}
+		}
+
 		uLast = u;
 		vLast = v;
 
-		// @@@
-		//cout << "|u| " << u.norm2() << endl;
-		//cout << "|v| " << v.norm2() << endl;
-
 		CLOCK(tSteps[i]);
-
-		// in CFLtest mode we're handling divergency
-		/*if (gParams.mode == eWM_CFLTEST)
-		{
-			double _unorm = u.norm2();
-			// the development after 2.25s should not grow too much
-			if (_unorm > 5.)
-			{
-				cout << "Divergency, abort" << endl;
-				break;
-			}
-		}*/
 
 		// track initial position
 		originPos(i+1) = mesh.eval(0.0, 0.0, uLast);
@@ -953,6 +948,8 @@ int cfltest()
 		{
 			// setup timestep
 
+			cout << "dt/h: " << gParams.CFLs[iCFL] << endl;
+
 			double dt = h * gParams.CFLs[iCFL];
 
 			// problem will be solved with and/or without mass lumping (method), no lumping first if desired
@@ -1011,6 +1008,26 @@ int cfltest()
 		CFLs(i) = gParams.CFLs[i];
 	} 
 
+	// we're dividing the norm vectors by the first element to get factors for comparison
+	Vector* vArrs[4];
+	vArrs[0] = uNormsDefault;
+	vArrs[1] = uNormsLumping;
+	vArrs[2] = vNormsDefault;
+	vArrs[3] = vNormsLumping;
+
+	for (uint iArr = 0; iArr < 4; iArr++)
+	{
+		for (uint iMsh = 0; iMsh < meshCount; iMsh++)
+		{
+			for (uint iVal = 0; iVal < CFLCount; iVal++)
+			{
+				vArrs[iArr][iMsh](iVal) /= vArrs[iArr][iMsh](0);
+				// limit factor to 2 = divergence
+				vArrs[iArr][iMsh](iVal) = vArrs[iArr][iMsh](iVal) > 2. ? 2. : vArrs[iArr][iMsh](iVal);
+			}
+		}
+	}
+
 	if (gParams.calcMLumping && gParams.calcMDefault)
 	{
 		// compare default and lumping methods
@@ -1023,6 +1040,7 @@ int cfltest()
 				p.addYVector(uNormsDefault[i], " w linespoints title 'default'");
 				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
 			}
+			p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1038,6 +1056,7 @@ int cfltest()
 				p.addYVector(uNormsDefault[i], " w linespoints title 'default'");
 				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
 			}
+			p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|v|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1047,17 +1066,39 @@ int cfltest()
 	else
 	{
 		// plot default OR lumping stability
-		/*{
-			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
+		{
+			Vector*& y = gParams.calcMLumping ? uNormsLumping : uNormsDefault;
 			string s = gParams.calcMLumping ? "Stability of u with lumping" : "Stability of u" ;
 
-			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p("p2t4_uStability", CFLs, y[0], s.c_str(), "",
+					" w linespoints title 'default'");
+			for (uint i = 1; i < meshCount; i++)
+			{
+				p.addYVector(y[i], " w linespoints title 'default'");
+			}
+			p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
-			p.setAxisLabel(ePA_Y, "t [s]");
-			p.addScriptLine("set nokey");
+			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
-		}*/
+		}
+
+		{
+			Vector*& y = gParams.calcMLumping ? vNormsLumping : vNormsDefault;
+			string s = gParams.calcMLumping ? "Stability of v with lumping" : "Stability of v" ;
+
+			Plot p("p2t4_vStability", CFLs, y[0], s.c_str(), "",
+					" w linespoints title 'default'");
+			for (uint i = 1; i < meshCount; i++)
+			{
+				p.addYVector(y[i], " w linespoints title 'default'");
+			}
+			p.addScriptLine("set yrange [0:2.1]");
+			p.setAxisLabel(ePA_X, "dt/h");
+			p.setAxisLabel(ePA_Y, "|u|");
+			p.generate(ePT_GNUPLOT, !gParams.quiet);
+			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
+		}
 	}
 
 	// ---
