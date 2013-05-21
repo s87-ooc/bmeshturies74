@@ -1040,7 +1040,7 @@ int cfltest()
 				p.addYVector(uNormsDefault[i], " w linespoints title 'default'");
 				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
 			}
-			p.addScriptLine("set yrange [0:2.1]");
+			//p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1056,7 +1056,7 @@ int cfltest()
 				p.addYVector(uNormsDefault[i], " w linespoints title 'default'");
 				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
 			}
-			p.addScriptLine("set yrange [0:2.1]");
+			//p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|v|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1076,7 +1076,7 @@ int cfltest()
 			{
 				p.addYVector(y[i], " w linespoints title 'default'");
 			}
-			p.addScriptLine("set yrange [0:2.1]");
+			//p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
@@ -1093,7 +1093,7 @@ int cfltest()
 			{
 				p.addYVector(y[i], " w linespoints title 'default'");
 			}
-			p.addScriptLine("set yrange [0:2.1]");
+			//p.addScriptLine("set yrange [0:2.1]");
 			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
