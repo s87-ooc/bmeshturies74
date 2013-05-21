@@ -520,7 +520,7 @@ int simple()
 		{
 			// visualization
 
-			PlotMesh plotUExact("p1t2_uh_exacte", mesh, uExact, "Solution exacte");
+			PlotMesh plotUExact((gParams.outPath + "p1t2_uh_exacte").c_str(), mesh, uExact, "Solution exacte");
 			plotUExact.generate(ePT_MEDIT);
 			plotUExact.generate(ePT_GNUPLOT_SURF, !gParams.quiet, false, "", "", 20);
 			if (gParams.generatePNG) { plotUExact.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
@@ -564,12 +564,12 @@ int simple()
 
 			// visualization
 
-			PlotMesh plotU("p1t2_uh_000", mesh, u, "Solution FEM");
+			PlotMesh plotU((gParams.outPath + "p1t2_uh_000").c_str(), mesh, u, "Solution FEM");
 			plotU.generate(ePT_MEDIT);
 			plotU.generate(ePT_GNUPLOT_SURF, !gParams.quiet, false, "", "", 20);
 			if (gParams.generatePNG) { plotU.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
 			
-			PlotMesh plotErr("p1t2_err_000", mesh, err, "Erreur");
+			PlotMesh plotErr((gParams.outPath + "p1t2_err_000").c_str(), mesh, err, "Erreur");
 			plotErr.generate(ePT_MEDIT);
 			plotErr.generate(ePT_GNUPLOT_SURF, !gParams.quiet, false, "", "", 20);
 			if (gParams.generatePNG) { plotErr.generate(ePT_GNUPLOT_SURF, true, true, "", "", 20); }
@@ -692,8 +692,8 @@ int timetest()
 	{
 		// compare default and lumping methods
 		{
-			Plot p("p2t4_timeSolve1", hMeshes, timesSolveDefault, "Time comparison (solving)", "",
-					" w linespoints title 'default'");
+			Plot p((gParams.outPath + "p2t4_timeSolve1").c_str(), hMeshes, timesSolveDefault,
+					"Time comparison (solving)", "", " w linespoints title 'default'");
 			p.addYVector(timesSolveLumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
@@ -702,8 +702,8 @@ int timetest()
 		}
 
 		{
-			Plot p("p2t4_timeAssemble1", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "",
-					" w linespoints title 'default'");
+			Plot p((gParams.outPath + "p2t4_timeAssemble1").c_str(), hMeshes, timesAssembleDefault,
+					"Time comparison (assembly)", "", " w linespoints title 'default'");
 			p.addYVector(timesAssembleLumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
@@ -718,7 +718,7 @@ int timetest()
 			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
 			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
 
-			Plot p("p2t4_timeSolve1", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_timeSolve1").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
 			p.addScriptLine("set nokey");
@@ -730,7 +730,7 @@ int timetest()
 			Vector& y = gParams.calcMLumping ? timesAssembleLumping : timesAssembleDefault;
 			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
 
-			Plot p("p2t4_timeSolve1", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_timeSolve1").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
 			p.addScriptLine("set nokey");
@@ -857,7 +857,7 @@ int precisiontest()
 	{
 		// compare default and lumping methods
 		{
-			Plot p("p2t4_error1", hMeshes, errorsDefault, "Error", "",
+			Plot p((gParams.outPath + "p2t4_error1").c_str(), hMeshes, errorsDefault, "Error", "",
 					" w linespoints title 'default'");
 			p.addYVector(errorsLumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
@@ -867,7 +867,7 @@ int precisiontest()
 		}
 
 		{
-			Plot p("p2t4_errorL21", hMeshes, errorsL2Default, "Error L2", "",
+			Plot p((gParams.outPath + "p2t4_errorL21").c_str(), hMeshes, errorsL2Default, "Error L2", "",
 					" w linespoints title 'default'");
 			p.addYVector(errorsL2Lumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
@@ -877,8 +877,8 @@ int precisiontest()
 		}
 
 		{
-			Plot p("p2t4_errorGradientL21", hMeshes, errorsGradientL2Default, "Error Gradient L2", "",
-					" w linespoints title 'default'");
+			Plot p((gParams.outPath + "p2t4_errorGradientL21").c_str(), hMeshes, errorsGradientL2Default,
+					"Error Gradient L2", "", " w linespoints title 'default'");
 			p.addYVector(errorsGradientL2Lumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "error");
@@ -893,7 +893,7 @@ int precisiontest()
 			Vector& y = gParams.calcMLumping ? errorsLumping : errorsDefault;
 			string s = gParams.calcMLumping ? "Errors with mass lumping" : "Errors" ;
 
-			Plot p("p2t4_error1", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_error1").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "error");
 			p.addScriptLine("set nokey");
@@ -905,7 +905,7 @@ int precisiontest()
 			Vector& y = gParams.calcMLumping ? errorsL2Lumping : errorsL2Default;
 			string s = gParams.calcMLumping ? "Errors L2 with mass lumping" : "Errors L2" ;
 
-			Plot p("p2t4_errorL21", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_errorL21").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "error");
 			p.addScriptLine("set nokey");
@@ -917,7 +917,7 @@ int precisiontest()
 			Vector& y = gParams.calcMLumping ? errorsL2Lumping : errorsL2Default;
 			string s = gParams.calcMLumping ? "Errors Gradient L2 with mass lumping" : "Errors Gradient L2" ;
 
-			Plot p("p2t4_errorGradientL21", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_errorGradientL21").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "error");
 			p.addScriptLine("set nokey");

@@ -50,10 +50,10 @@ void deletePtrArray(T* array, uint size)
 // ----------------------------------------------------------------------------
 
 /** macro for safe deletion of pointers */
-#define SAFE_DELETE(P) if (P) delete P
+#define SAFE_DELETE(P) if (P) delete P; P = 0
 
 /** macro for safe deletion of dynamic arrays */
-#define SAFE_ARRDELETE(A) if (A) delete[] A
+#define SAFE_ARRDELETE(A) if (A) delete[] A; A = 0
 
 // ---
 

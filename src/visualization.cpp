@@ -134,7 +134,7 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 {
 	assert(mXPtr);
 	
-	string fileName = "data/plots/" + mName;
+	string fileName = mName;
 	
 	if (type == ePT_GNUPLOT)
 	{
@@ -292,7 +292,7 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 {
 	assert(mMeshPtr);
 	
-	string fileName = "data/plots/" + mName;
+	string fileName = mName;
 	
 	if (type == ePT_GNUPLOT || type == ePT_GNUPLOT_SURF)
 	{

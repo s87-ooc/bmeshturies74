@@ -202,15 +202,7 @@ int main(int argc, char* argv[])
 
 	return iReturn;
 /*
-
-				// plot last step
-
-				ostringstream buf;
-				buf << iMsh + 1;
-
-				// Plot solving times if we're investigating a mesh in more detail
-				if (gParams.meshCount == 1)
-				{
+{
 					Vector x(nSteps);
 					Vector y(nSteps);
 
@@ -224,67 +216,6 @@ int main(int argc, char* argv[])
 					p.generate(ePT_GNUPLOT, true);
 					if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
 				}
-
-				// ---
-
-			}
-
-	// ------------------------------------------------------------------------
-	// ------------------------------------------------------------------------
-	// ------------------------------------------------------------------------
-
-	// plot combined data
-
-	if (gParams.meshCount > 1)
-	{
-		{
-			Vector x(gParams.dtCount);
-			Vector y(gParams.dtCount);
-			Vector ylump(gParams.dtCount);
-
-			for (uint i = 0; i < gParams.dtCount; i++)
-			{
-				x(i) = gParams.dth[i];
-				y(i) = gParams.uNorms[0][0](i);
-			}
-
-			Plot p("p2t2_cfl", x, y, "CFL condition", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-
-		{
-			Vector x(gParams.meshCount);
-			Vector y(gParams.meshCount);
-			Vector ylump(gParams.meshCount);
-
-			for (uint i = 0; i < gParams.meshCount; i++)
-			{
-				x(i) = gParams.hInner[i];
-				y(i) = gParams.times[0][i];
-			}
-
-			Plot p("p2t4_time2", x, y, "Mass Lumping: Time", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-
-		{
-			Vector x(gParams.dtCount);
-			Vector y(gParams.dtCount);
-			Vector ylump(gParams.dtCount);
-
-			for (uint i = 0; i < gParams.dtCount; i++)
-			{
-				x(i) = gParams.dth[i];
-				y(i) = gParams.uNorms[1][0](i);
-			}
-
-			Plot p("p2t4_stability", x, y, "Mass Lumping: Stability", "", " w linespoints");
-			p.generate(ePT_GNUPLOT, true);
-			if (gParams.save) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-	}
 	*/
 	return 0;
 }
@@ -439,6 +370,11 @@ int parseCmd(int argc, char* argv[])
 			{
 				char* sDim = strtok(argv[iArg], ",");
 
+				if (sDim)
+				{
+					gParams.CFLs.clear();
+				}
+
 				while (sDim)
 				{
 					double cfl;
@@ -512,6 +448,27 @@ bool loadMesh(const char* file, Mesh& mesh, clock_t& tLoadMesh)
 	CLOCK(tLoadMesh);
 
 	return true;
+}
+
+void renderFrame(const char* name, uint step, double t, Vector& u, Mesh& mesh)
+{
+	stringstream buf;
+	buf << name;
+	if (step < 100)
+	{
+		if (step < 10)
+		{
+			buf << "0";
+		}
+		buf << "0";
+	}
+	buf << step;
+
+	string plotFile;
+	buf >> plotFile;
+
+	PlotMesh p(plotFile.c_str(), mesh, u);
+	p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
 }
 
 void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
@@ -594,8 +551,8 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 
 	if (gParams.render)
 	{
-		PlotMesh p("wave_gnuplot_000", mesh, uLast);
-		p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
+		renderFrame((gParams.outPath + "wave_gnuplot_u_").c_str(), 0, 0, uLast, mesh);
+		renderFrame((gParams.outPath + "wave_gnuplot_v_").c_str(), 0, 0, vLast, mesh);
 	}
 
 	// ---
@@ -621,19 +578,23 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 		uLast = u;
 		vLast = v;
 
+		// @@@
+		//cout << "|u| " << u.norm2() << endl;
+		//cout << "|v| " << v.norm2() << endl;
+
 		CLOCK(tSteps[i]);
 
 		// in CFLtest mode we're handling divergency
-		if (gParams.mode == eWM_CFLTEST)
+		/*if (gParams.mode == eWM_CFLTEST)
 		{
 			double _unorm = u.norm2();
 			// the development after 2.25s should not grow too much
-			if (_unorm > 12.)
+			if (_unorm > 5.)
 			{
 				cout << "Divergency, abort" << endl;
 				break;
 			}
-		}
+		}*/
 
 		// track initial position
 		originPos(i+1) = mesh.eval(0.0, 0.0, uLast);
@@ -641,23 +602,8 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 
 		if (gParams.render)
 		{
-			stringstream buf;
-			buf << "wave_gnuplot_";
-			if (i+1 < 100)
-			{
-				if (i+1 < 10)
-				{
-					buf << "0";
-				}
-				buf << "0";
-			}
-			buf << i+1;
-
-			string plotFile;
-			buf >> plotFile;
-
-			PlotMesh p(plotFile.c_str(), mesh, u);
-			p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl");
+			renderFrame((gParams.outPath + "wave_gnuplot_u_").c_str(), i+1, (i+1) * timestep, u, mesh);
+			renderFrame((gParams.outPath + "wave_gnuplot_v_").c_str(), i+1, (i+1) * timestep, v, mesh);
 		}
 	}
 
@@ -674,7 +620,7 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 	// Plot position of origin over time
 	if (origin)
 	{
-		Plot p("p2t3_origin", timeVals, originPos, "Position of origin", "", " w linespoints");
+		Plot p((gParams.outPath + "p2t3_origin").c_str(), timeVals, originPos, "Position of origin", "", " w linespoints");
 		p.addScriptLine("set nokey");
 		p.setAxisLabel(ePA_X, "t [s]");
 		p.setAxisLabel(ePA_Y, "z");
@@ -707,8 +653,6 @@ int simple()
 
 	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
 	{
-		cout << endl << "Loading the mesh " << gParams.files[iMsh] << "..." << endl;
-
 		Mesh mesh;
 		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
 		{
@@ -716,6 +660,8 @@ int simple()
 		}
 
 		double h = mesh.maxIncircleDiameter();
+
+		cout << endl << "Loaded the mesh " << gParams.files[iMsh] << " with h: " << h << "..." << endl;
 
 		// ----------
 
@@ -728,14 +674,14 @@ int simple()
 		// visualization of initial data
 
 		{
-			PlotMesh p("p2t1_u0", mesh, wave::u0, "Initial distribution");
+			PlotMesh p((gParams.outPath + "p2t1_u0").c_str(), mesh, wave::u0, "Initial distribution");
 			p.generate(ePT_GNUPLOT, true);
 			p.generate(ePT_MEDIT);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 
 		{
-			PlotMesh p("p2t1_u1", mesh, wave::u1, "Initial velocity");
+			PlotMesh p((gParams.outPath + "p2t1_u1").c_str(), mesh, wave::u1, "Initial velocity");
 			p.generate(ePT_GNUPLOT, true);
 			p.generate(ePT_MEDIT);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
@@ -773,14 +719,14 @@ int simple()
 			//plotU.generate(ePT_GNUPLOT_SURF, !gParams.quiet, false, "", "", 20);
 
 			{
-				PlotMesh p("p2t1_u", mesh, u, "u(T, x)");
+				PlotMesh p((gParams.outPath + "p2t1_u").c_str(), mesh, u, "u(T, x)");
 				p.generate(ePT_MEDIT);
 				p.generate(ePT_GNUPLOT, !gParams.quiet, false, "data/_gnuplot/wave.ptpl");
 				if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
 			}
 
 			{
-				PlotMesh p("p2t1_v", mesh, v, "v(T, x)");
+				PlotMesh p((gParams.outPath + "p2t1_v").c_str(), mesh, v, "v(T, x)");
 				p.generate(ePT_MEDIT);
 				p.generate(ePT_GNUPLOT, !gParams.quiet, false, "data/_gnuplot/wave.ptpl");
 				if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true, "data/_gnuplot/wave.ptpl"); }
@@ -842,8 +788,6 @@ int timetest()
 
 	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
 	{
-		cout << endl << "Loading the mesh " << gParams.files[iMsh] << "..." << endl;
-
 		Mesh mesh;
 		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
 		{
@@ -851,6 +795,8 @@ int timetest()
 		}
 
 		hMeshes(iMsh) = mesh.maxIncircleDiameter();
+
+		cout << endl << "Loaded the mesh " << gParams.files[iMsh] << " with h: " << hMeshes(iMsh) << "..." << endl;
 
 		// ----------
 
@@ -907,8 +853,8 @@ int timetest()
 	{
 		// compare default and lumping methods
 		{
-			Plot p("p2t4_timeSolve2", hMeshes, timesSolveDefault, "Time comparison (solving)", "",
-					" w linespoints title 'default'");
+			Plot p((gParams.outPath + "p2t4_timeSolve2").c_str(), hMeshes, timesSolveDefault,
+					"Time comparison (solving)", "", " w linespoints title 'default'");
 			p.addYVector(timesSolveLumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
@@ -917,8 +863,8 @@ int timetest()
 		}
 
 		{
-			Plot p("p2t4_timeAssemble2", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "",
-					" w linespoints title 'default'");
+			Plot p((gParams.outPath + "p2t4_timeAssemble2").c_str(), hMeshes, timesAssembleDefault,
+					"Time comparison (assembly)", "", " w linespoints title 'default'");
 			p.addYVector(timesAssembleLumping, " w linespoints title 'mass lumping'");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
@@ -933,7 +879,7 @@ int timetest()
 			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
 			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
 
-			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_timeSolve2").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
 			p.addScriptLine("set nokey");
@@ -945,7 +891,7 @@ int timetest()
 			Vector& y = gParams.calcMLumping ? timesAssembleLumping : timesAssembleDefault;
 			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
 
-			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
+			Plot p((gParams.outPath + "p2t4_timeSolve2").c_str(), hMeshes, y, s.c_str(), "", " w linespoints");
 			p.setAxisLabel(ePA_X, "h");
 			p.setAxisLabel(ePA_Y, "t [s]");
 			p.addScriptLine("set nokey");
@@ -964,7 +910,7 @@ int timetest()
 int cfltest()
 {
 	cout << "CFLtest over " << gParams.files.size() << " meshes and " << gParams.CFLs.size() << " factors" << endl;
-/*
+
 	// ---
 
 	clock_t times[eT_END];
@@ -975,135 +921,154 @@ int cfltest()
 	// ---
 
 	uint meshCount = gParams.files.size();
+	uint CFLCount = gParams.CFLs.size();
 
-	Vector hMeshes(meshCount);
+	Vector* uNormsDefault = new Vector[meshCount];
+	Vector* vNormsDefault = new Vector[meshCount];
 
-	Vector timesAssembleDefault(meshCount);
-	Vector timesSolveDefault(meshCount);
-
-	Vector timesAssembleLumping(meshCount);
-	Vector timesSolveLumping(meshCount);
+	Vector* uNormsLumping = new Vector[meshCount];
+	Vector* vNormsLumping = new Vector[meshCount];
 
 	// Calculate solutions and clock the time
 
 	for (uint iMsh = 0; iMsh < gParams.files.size(); iMsh++)
 	{
-		cout << endl << "Loading the mesh " << gParams.files[iMsh] << "..." << endl;
-
 		Mesh mesh;
 		if (!loadMesh(gParams.files[iMsh].c_str(), mesh, times[eT_LOADMESH]))
 		{
 			return 1;
 		}
 
-		hMeshes(iMsh) = mesh.maxIncircleDiameter();
+		double h = mesh.maxIncircleDiameter();
 
-		// ----------
+		cout << endl << "Loaded the mesh " << gParams.files[iMsh] << " with h: " << h << "..." << endl;
 
-		// setup timestep
+		uNormsDefault[iMsh] = Vector(CFLCount);
+		vNormsDefault[iMsh] = Vector(CFLCount);
 
-		double dt = gParams.dt < 0 ? hMeshes(iMsh) / .3 : gParams.dt;
+		uNormsLumping[iMsh] = Vector(CFLCount);
+		vNormsLumping[iMsh] = Vector(CFLCount);
 
-		// problem will be solved with and/or without mass lumping (method), no lumping first if desired
-
-		bool solved = false;
-		bool lumping = !gParams.calcMDefault;
-
-		while (!solved)
+		for (uint iCFL = 0; iCFL < CFLCount; iCFL++)
 		{
-			Vector u(mesh.countVertices());
-			Vector v(mesh.countVertices());
+			// setup timestep
 
-			solveWave(u, v, mesh, lumping, dt, false, times[eT_MATM], times[eT_SOLVE]);
+			double dt = h * gParams.CFLs[iCFL];
 
-			// ----------
+			// problem will be solved with and/or without mass lumping (method), no lumping first if desired
 
-			double assembleTime = ((double)times[eT_MATM]) / CLOCKS_PER_SEC;
-			double solveTime = ((double) times[eT_SOLVE]) / CLOCKS_PER_SEC;
+			bool solved = false;
+			bool lumping = !gParams.calcMDefault;
 
-			if (lumping)
+			while (!solved)
 			{
-				timesAssembleLumping(iMsh) = assembleTime;
-				timesSolveLumping(iMsh) = solveTime;
-			}
-			else
-			{
-				timesAssembleDefault(iMsh) = assembleTime;
-				timesSolveDefault(iMsh) = solveTime;
-			}
+				Vector u(mesh.countVertices());
+				Vector v(mesh.countVertices());
 
-			// ----------
+				solveWave(u, v, mesh, lumping, dt, false, times[eT_MATM], times[eT_SOLVE]);
 
-			if (!lumping && gParams.calcMLumping)
-			{
-				// lumping is always the second step if we had the default method before
-				lumping = true;
-			}
-			else
-			{
-				solved = true;
+				// ----------
+
+				double uNorm = u.norm2();
+				double vNorm = v.norm2();
+
+				cout << "|u| = " << uNorm << endl;
+				cout << "|v| = " << vNorm << endl;
+
+				if (lumping)
+				{
+					uNormsLumping[iMsh](iCFL) = uNorm;
+					vNormsLumping[iMsh](iCFL) = vNorm;
+				}
+				else
+				{
+					uNormsDefault[iMsh](iCFL) = uNorm;
+					vNormsDefault[iMsh](iCFL) = vNorm;
+				}
+
+				// ----------
+
+				if (!lumping && gParams.calcMLumping)
+				{
+					// lumping is always the second step if we had the default method before
+					lumping = true;
+				}
+				else
+				{
+					solved = true;
+				}
 			}
 		}
 	}
+
 	// ---
 
 	// visualization
+
+	Vector CFLs(CFLCount);
+	for (uint i = 0; i < CFLCount; i++)
+	{
+		CFLs(i) = gParams.CFLs[i];
+	} 
 
 	if (gParams.calcMLumping && gParams.calcMDefault)
 	{
 		// compare default and lumping methods
 		{
-			Plot p("p2t4_timeSolve2", hMeshes, timesSolveDefault, "Time comparison (solving)", "",
+			Plot p("p2t4_uStability", CFLs, uNormsDefault[0], "Stability of u", "",
 					" w linespoints title 'default'");
-			p.addYVector(timesSolveLumping, " w linespoints title 'mass lumping'");
-			p.setAxisLabel(ePA_X, "h");
-			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addYVector(uNormsLumping[0], " w linespoints title 'mass lumping'");
+			for (uint i = 1; i < meshCount; i++)
+			{
+				p.addYVector(uNormsDefault[i], " w linespoints title 'default'");
+				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
+			}
+			p.setAxisLabel(ePA_X, "dt/h");
+			p.setAxisLabel(ePA_Y, "|u|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 
 		{
-			Plot p("p2t4_timeAssemble2", hMeshes, timesAssembleDefault, "Time comparison (assembly)", "",
+			Plot p("p2t4_vStability", CFLs, vNormsDefault[0], "Stability of v", "",
 					" w linespoints title 'default'");
-			p.addYVector(timesAssembleLumping, " w linespoints title 'mass lumping'");
-			p.setAxisLabel(ePA_X, "h");
-			p.setAxisLabel(ePA_Y, "t [s]");
+			p.addYVector(vNormsLumping[0], " w linespoints title 'mass lumping'");
+			for (uint i = 1; i < meshCount; i++)
+			{
+				p.addYVector(uNormsDefault[i], " w linespoints title 'default'");
+				p.addYVector(uNormsLumping[i], " w linespoints title 'mass lumping'");
+			}
+			p.setAxisLabel(ePA_X, "dt/h");
+			p.setAxisLabel(ePA_Y, "|v|");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
 		}
 	}
 	else
 	{
-		// plot default OR lumping times
-		{
+		// plot default OR lumping stability
+		/*{
 			Vector& y = gParams.calcMLumping ? timesSolveLumping : timesSolveDefault;
-			string s = gParams.calcMLumping ? "Time with mass lumping (solving)" : "Time (solving)" ;
+			string s = gParams.calcMLumping ? "Stability of u with lumping" : "Stability of u" ;
 
 			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
-			p.setAxisLabel(ePA_X, "h");
+			p.setAxisLabel(ePA_X, "dt/h");
 			p.setAxisLabel(ePA_Y, "t [s]");
 			p.addScriptLine("set nokey");
 			p.generate(ePT_GNUPLOT, !gParams.quiet);
 			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
-		}
-
-		{
-			Vector& y = gParams.calcMLumping ? timesAssembleLumping : timesAssembleDefault;
-			string s = gParams.calcMLumping ? "Time with mass lumping (assembly)" : "Time (assembly)" ;
-
-			Plot p("p2t4_timeSolve2", hMeshes, y, s.c_str(), "", " w linespoints");
-			p.setAxisLabel(ePA_X, "h");
-			p.setAxisLabel(ePA_Y, "t [s]");
-			p.addScriptLine("set nokey");
-			p.generate(ePT_GNUPLOT, !gParams.quiet);
-			if (gParams.generatePNG) { p.generate(ePT_GNUPLOT, true, true); }
-		}
+		}*/
 	}
 
 	// ---
 
 	CLOCK(times[eT_END]);
-*/
+
+	SAFE_ARRDELETE(uNormsDefault);
+	SAFE_ARRDELETE(vNormsDefault);
+	SAFE_ARRDELETE(uNormsLumping);
+	SAFE_ARRDELETE(vNormsLumping);
+
 	return 0;
 }
 
