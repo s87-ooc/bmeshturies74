@@ -579,7 +579,7 @@ void solveWave(Vector& uResult, Vector& vResult, Mesh& mesh, bool lumping,
 		if (gParams.mode == eWM_CFLTEST)
 		{
 			// the norm of the next step should not explode
-			if (dot(u, u) / dot(uLast, uLast) > 1.5)
+			if (dot(u, u) / dot(uLast, uLast) > 3.)
 			{
 				cout << "Divergency at " << (i+1)*timestep << "s (" << i+1 << "steps), abort" << endl;
 				break;
