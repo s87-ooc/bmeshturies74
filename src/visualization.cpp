@@ -231,11 +231,11 @@ void Plot::generate(EPlotType type, bool run, bool savePNG)
 			
 			system(cmd.c_str());
 
-			if (!savePNG)
+			/*if (!savePNG)
 			{
 				cout << "\n<<< Press any key to continue >>>";
 				cin.get();
-			}
+			}*/
 		}
 	}
 }
@@ -401,11 +401,11 @@ void PlotMesh::generate(EPlotType type, bool run, bool savePNG, const char* temp
 
 			system(cmd.c_str());
 			
-			if (!savePNG)
+			/*if (!savePNG)
 			{
 				cout << "\n<<< Press any key to continue >>>";
 				cin.get();
-			}
+			}*/
 		}
 	}
 	else if (type == ePT_MEDIT)
